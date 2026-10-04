@@ -51,7 +51,8 @@ namespace SlugDesign
         [System.NonSerialized] public float bagSwell = 1f;
         [Tooltip("背中を覗いたとき、自分の画面だけでバッグを大きくする倍率")] public float bagLookScale = 1.6f;
         [Range(0f, 1f), Tooltip("背中を覗いたとき、自分の画面だけでバッグの口を目のほうへ傾ける割合（1 = 真っすぐ目に向ける）")] public float bagLookTilt = 0.45f;
-        [Tooltip("ふたを開けきったときの角度（度）。ふたは頭側のふちを軸に開く")] public float bagLidAngle = 150f;
+        [Tooltip("ふたを開けきったときの角度（度）。ふたは頭側のふちを軸に開く")] public float bagLidAngle = 105f;
+        [Range(0f, 1f), Tooltip("背中を覗いたとき、自分の画面でふたも大きくする割合（0 = 大きくしない、1 = バッグと同じだけ）")] public float bagLidGrow = 0.3f;
 
         readonly List<Object> _owned = new List<Object>();
         readonly List<Renderer> _helmetRenderers = new List<Renderer>();
@@ -171,7 +172,9 @@ namespace SlugDesign
             // the lid swings up about its hinge (the edge on the head side, against the back)
             Vector3 hinge = slug.FollowerLocal(_bagHinge, _bagT, _bagP, _bagN);
             Quaternion swing = Quaternion.AngleAxis(-bagLidAngle * open, bend * _bagX);
-            Place(_bagLid, pos + rot * (s * (hinge - swing * hinge)), rot * swing, s);
+            // (in the own view the lid grows less than the bag, so it does not stand up across the mouth)
+            float lid = Mathf.Lerp(1f, s, bagLidGrow) / s;
+            Place(_bagLid, pos + rot * (s * (hinge - lid * (swing * hinge))), rot * swing, s * lid);
 
             Vector3 mouth = slug.FollowerLocal(_bagC + _bagUp * _bagSz.y, _bagT, _bagP, _bagN);
             BagMouthPosition = vis.TransformPoint(pos + rot * (s * mouth));
@@ -475,7 +478,7 @@ namespace SlugDesign
             // the lid over the top (the end toward the head), a little bigger than the bag, hinged on its edge against
             // the back; a pocket low on the outside; and the dark mouth under the lid
             var lid = new GearMesh();
-            lid.RoundedBox(c + up * (sz.y * 0.68f) + nOut * 0.004f, x, up, nOut, new Vector3(sz.x * 1.05f, sz.y * 0.36f, sz.z * 1.08f), 0.42f);
+            lid.RoundedBox(c + up * (sz.y * 0.79f) + nOut * 0.004f, x, up, nOut, new Vector3(sz.x * 0.98f, sz.y * 0.25f, sz.z * 1.04f), 0.42f);
             var pocket = new GearMesh();
             pocket.RoundedBox(c + nOut * (sz.z * 0.92f) - up * (sz.y * 0.38f), x, up, nOut, new Vector3(sz.x * 0.58f, sz.y * 0.32f, 0.02f), 0.45f);
             var mouth = new GearMesh();

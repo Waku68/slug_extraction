@@ -72,6 +72,7 @@ namespace SlugExtract
 
         readonly List<ItemKind> _items = new List<ItemKind>();
         SlugLoadout _loadout;
+        SelfPortrait _portrait;
         // the things seen in the bag's mouth while peeking (drawn only for the own camera)
         readonly GameObject[] _shown = new GameObject[3];
         readonly ItemKind[] _shownKind = new ItemKind[3];
@@ -91,6 +92,7 @@ namespace SlugExtract
         void Start()
         {
             _loadout = GetComponent<SlugLoadout>();
+            _portrait = GetComponent<SelfPortrait>();
             UnityEngine.Rendering.RenderPipelineManager.beginCameraRendering += OnBeginCamera;
             SetKind(kind);
             foreach (var k in startItems) TryAdd(k, 1);
@@ -479,7 +481,11 @@ namespace SlugExtract
             float w = Screen.width, h = Screen.height;
             var old = GUI.color;
 
-            // ---- top left, always: the bag's silhouette swelling with its bulk, coloured by its weight; no numbers
+            // ---- top left, always (beside the slug itself when it is shown there): the bag's silhouette swelling with
+            //      its bulk, coloured by its weight; no numbers
+            bool portrait = _portrait && _portrait.Shown;
+            var guiMatrix = GUI.matrix;
+            if (portrait) GUI.matrix = guiMatrix * Matrix4x4.Translate(new Vector3(_portrait.Area.xMax - 2f, 0f, 0f));
             GUI.Box(new Rect(10, 10, 96, 112), GUIContent.none);
             if (HasBag)
             {
@@ -507,11 +513,13 @@ namespace SlugExtract
                 GUI.DrawTexture(new Rect(88, 14, 10, 10), Texture2D.whiteTexture);     // something is safe inside the body
                 GUI.color = old;
             }
+            GUI.matrix = guiMatrix;
 
             // ---- peeking: what is on top, and the numbers
             if (_peek > 0.6f)
             {
-                var r = new Rect(10, 128, 400, 150);          // under the bag's shape, clear of the back in view
+                // under the bag's shape (and the slug itself), clear of the back in view
+                var r = new Rect(10, portrait ? Mathf.Max(128f, _portrait.Area.yMax + 10f) : 128f, 400, 150);
                 GUI.Box(r, GUIContent.none);
                 GUI.Box(r, GUIContent.none);
                 string top = Top.HasValue ? settings.Def(Top.Value).displayName : "（空）";

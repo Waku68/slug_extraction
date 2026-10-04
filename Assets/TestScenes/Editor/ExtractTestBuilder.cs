@@ -130,6 +130,11 @@ namespace SlugExtract
                 if (!carry) carry = root.AddComponent<SlugCarry>();
                 carry.bag = bag; carry.controller = bag.controller; carry.cameraRig = bag.cameraRig; carry.slug = slug;
                 EditorUtility.SetDirty(carry);
+                // and sees itself in the top left corner
+                var portrait = root.GetComponent<SelfPortrait>();
+                if (!portrait) portrait = root.AddComponent<SelfPortrait>();
+                portrait.controller = bag.controller;
+                EditorUtility.SetDirty(portrait);
             }
             EditorUtility.SetDirty(bag);
             EditorUtility.SetDirty(gear);

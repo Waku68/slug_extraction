@@ -168,7 +168,7 @@ namespace SlugMove
             {
                 float w = peek * peek * (3f - 2f * peek);
                 Quaternion yawOnly = Quaternion.Euler(0f, Yaw, 0f);
-                Vector3 over = slug.FaceCenterWorld + yawOnly * s.peekEye;
+                Vector3 over = slug.FaceCenterUnturnedWorld + yawOnly * s.peekEye;     // (from where the face was before it turned)
                 Vector3 to = peekTarget - over;
                 Quaternion peekRot = to.sqrMagnitude > 1e-6f ? Quaternion.LookRotation(to, Vector3.up) : rot;
                 pos = Vector3.Lerp(pos, over, w);

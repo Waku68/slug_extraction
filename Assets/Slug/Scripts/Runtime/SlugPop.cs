@@ -107,6 +107,9 @@ namespace SlugDesign
 
         /// <summary>Middle of the face, in world space. Used to aim close-up cameras.</summary>
         public Vector3 FaceCenterWorld => _visual != null ? _visual.transform.TransformPoint(Bend(_faceCenter, FaceT)) : transform.position;
+        /// <summary>Where the middle of the face would be with the head not turned on the neck (<see cref="SetHeadTwist"/>).</summary>
+        public Vector3 FaceCenterUnturnedWorld => _visual != null
+            ? _visual.transform.TransformPoint(TurnDir(Upright(Drop(_faceCenter, FaceT), FaceT) - _turnPivot, FaceT) + _turnPivot) : transform.position;
         public Vector3 FaceForwardWorld => _visual != null ? _visual.transform.TransformDirection(BendDir(_faceFwd, FaceT)) : transform.forward;
         public Vector3 FaceUpWorld => _visual != null ? _visual.transform.TransformDirection(BendDir(_faceUp, FaceT)) : transform.up;
         public bool HasHands => _hasHands && _visual != null;
