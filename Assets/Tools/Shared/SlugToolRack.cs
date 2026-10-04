@@ -106,7 +106,7 @@ namespace SlugMove
             _reseatTimer -= Time.deltaTime;
             if (_seatedFor != slug.Shape || _reseatTimer <= 0f) Reseat();
 
-            int held = loadout.Current;
+            int held = loadout.HandsFull ? -1 : loadout.Current;      // with something else in the hands, every tool rides on the body
             if (loadout.pickaxe)
             {
                 var pose = Follow(_pickSeat);

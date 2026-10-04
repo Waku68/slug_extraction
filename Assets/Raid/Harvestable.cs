@@ -4,8 +4,9 @@ using UnityEngine;
 namespace SlugExtract
 {
     /// <summary>
-    /// A node that is struck with the pickaxe (Fortnite-style): every hit puts items straight into the bag,
-    /// the node jolts and sheds chips, and the last hit gives a bonus and breaks it.
+    /// A node that is struck with the pickaxe (Fortnite-style): every hit knocks one thing out of it (a chunk of rock
+    /// salt about 30 cm across, a turnip) that pops out toward the one who struck it and lands on the ground, to be taken
+    /// in the hands and put in the bag; the node jolts and sheds chips, and the last hit gives a bonus and breaks it.
     /// </summary>
     public class Harvestable : MonoBehaviour, IPickaxeTarget, IPickaxeSurface
     {
@@ -24,7 +25,7 @@ namespace SlugExtract
         bool _breaking;
         float _breakT;
 
-        /// <summary>Called after every hit: (item, amount that went into the bag, bag was full).</summary>
+        /// <summary>Called after every hit: (item, how many came out, false).</summary>
         public static event System.Action<ItemKind, int, bool> Harvested;
 
         void Awake()
@@ -36,16 +37,21 @@ namespace SlugExtract
         public void OnPickaxeHit(GameObject hitter, RaycastHit hit)
         {
             if (_breaking || _left <= 0) return;
-            var bag = hitter.GetComponent<SlugBag>();
-            bool full = bag != null && !bag.Fits(kind);
-            Chips(hit.point, hit.normal, full ? 3 : 6);
+            Chips(hit.point, hit.normal, 6);
             _punch = 1f;
-            if (full) { Harvested?.Invoke(kind, 0, true); return; }   // nothing fits: the node is not used up
-
             _left--;
             int amount = yieldPerHit + (_left == 0 ? breakBonus : 0);
-            int added = bag != null ? bag.TryAdd(kind, amount) : 0;
-            Harvested?.Invoke(kind, added, added < amount);
+            // it pops out of the struck face toward the one who struck it, and falls to the ground
+            Vector3 toward = Vector3.ProjectOnPlane(hitter.transform.position - transform.position, Vector3.up).normalized;
+            var ignore = hitter.GetComponent<Collider>();
+            float size = settings.Def(kind).size;
+            for (int i = 0; i < amount; i++)
+            {
+                Vector3 from = hit.point + hit.normal * (size * 0.6f) + Vector3.up * (size * 0.3f);
+                Vector3 v = (toward * Random.Range(1f, 1.6f) + Vector3.up * Random.Range(1.6f, 2.2f) + Random.insideUnitSphere * 0.4f);
+                ItemPickup.Spawn(settings, kind, from, v, ignore);
+            }
+            Harvested?.Invoke(kind, amount, false);
             if (_left == 0) _breaking = true;
         }
 

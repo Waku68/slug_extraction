@@ -10,9 +10,9 @@ namespace SlugMove
     /// how much salt is left (it empties from the bottom up, as the follower pushes the salt up). Drawn compact with a
     /// long barrel. Slugs load it with refined salt, poured in from the top like a paintball marker's loader: a small
     /// filler with a hinged lid sits on the dust cover and feeds the magazine below (it stays on the gun).
-    /// The right hand holds the magazine; to reload it fetches a leaf pouch of salt from the belt, flips the lid open,
-    /// and pours a thin stream into the filler (as long as it takes, or until the trigger is pulled), then puts the pouch
-    /// back. The left hand cups the handguard by the muzzle throughout. (Guns set to <see cref="ReloadStyle.Magazine"/>
+    /// The right hand holds the magazine; to reload it grabs a handful of salt from the belt (the gloves keep the salt
+    /// off the skin), flips the lid open, and lets a thin stream run from the fist into the filler (as long as it takes,
+    /// or until the trigger is pulled), then goes back to the magazine. The left hand cups the handguard by the muzzle throughout. (Guns set to <see cref="ReloadStyle.Magazine"/>
     /// still pull the magazine out and bring it back full.)
     /// </summary>
     public class SlugRifle : SlugGunModel
@@ -45,9 +45,9 @@ namespace SlugMove
 
         /// <summary>The middle of the filler's mouth, and the lid's hinge at its back edge.</summary>
         static readonly Vector3 FillerTop = new Vector3(0f, 0.112f, 0.255f), LidHinge = new Vector3(0f, 0.112f, 0.234f);
-        /// <summary>Where the right hand holds the pouch while pouring: above the filler, a little behind it.</summary>
+        /// <summary>Where the right hand holds the handful of salt while pouring: above the filler, a little behind it.</summary>
         static readonly Vector3 PourHand = new Vector3(0.004f, 0.172f, 0.222f);
-        /// <summary>The pouch's spout (pouch space).</summary>
+        /// <summary>Where the salt runs out of the fist (fist space).</summary>
         static readonly Vector3 SpoutLocal = new Vector3(0f, 0f, 0.04f);
         protected override float RawButtZ => StockCut;
 
@@ -69,8 +69,7 @@ namespace SlugMove
         }
 
         static Mesh _woodMesh, _steelMesh, _coverMesh, _rubberMesh, _magMesh, _windowMesh, _bottleMesh, _brassMesh;
-        static Mesh _fillerMesh, _fillerHoleMesh, _lidMesh, _pouchMesh, _spoutMesh, _streamMesh;
-        static Material _leaf;
+        static Mesh _fillerMesh, _fillerHoleMesh, _lidMesh, _pouchMesh, _streamMesh;
 
         Transform _mag, _lid, _pouch, _stream;
         Mesh _fillMesh;
@@ -96,8 +95,7 @@ namespace SlugMove
             _lid = Moving(Pivot(transform, "Lid", LidHinge));
             Part(_lid, "LidSteel", _lidMesh, Steel, castShadows);
             _pouch = Moving(Pivot(transform, "Pouch", PourHand));
-            Part(_pouch, "PouchLeaf", _pouchMesh, _leaf, castShadows);
-            Part(_pouch, "PouchSpout", _spoutMesh, Salt, castShadows);
+            Part(_pouch, "Handful", _pouchMesh, Salt, castShadows);
             _pouch.gameObject.SetActive(false);
             _stream = Moving(Pivot(transform, "Stream", FillerTop));
             Part(_stream, "SaltStream", _streamMesh, Salt, false);
@@ -105,9 +103,9 @@ namespace SlugMove
         }
 
         /// <summary>
-        /// Reloading by pouring: the right hand goes from the magazine down to the belt for the pouch (the lid flips open
-        /// meanwhile), up over the filler, tips the pouch and pours (a thin stream runs into the filler, the hand
-        /// shaking a little), then takes the pouch back to the belt and returns to the magazine as the lid shuts.
+        /// Reloading by pouring: the right hand goes from the magazine down to the belt and grabs a handful of salt (the
+        /// lid flips open meanwhile), comes up over the filler, tips the fist and lets the salt run in (a thin stream, the
+        /// hand shaking a little), then goes back past the belt to the magazine as the lid shuts.
         /// A magazine-style reload rocks the magazine out, carries it away and brings it back full.
         /// </summary>
         protected override void RawPose(GunHandling h, GunSettings s, out Hand right, out Hand left)
@@ -249,9 +247,8 @@ namespace SlugMove
                 .ToMesh("RifleValve");
 
             // ---- the filler on the dust cover: a brass collar and a short flared mouth, dark inside, with a steel lid
-            //      hinged at its back; and the leaf pouch it is filled from (pouch space: the fist at the origin, the
-            //      spout along +Z), and a thin stream of salt (a unit length up +Y, stretched to fit)
-            _leaf = Mat(Shader.Find("Universal Render Pipeline/Lit"), new Color(0.36f, 0.56f, 0.25f), 0f, 0.25f);
+            //      hinged at its back; the handful of salt it is filled from (fist space: the salt runs out along +Z),
+            //      and a thin stream of salt (a unit length up +Y, stretched to fit)
             _fillerMesh = new ProfileMesh()
                 .Tube(new Vector3(0f, 0.079f, FillerTop.z), new Vector3(0f, 0.091f, FillerTop.z), 0.012f, 12)
                 .Tube(new Vector3(0f, 0.091f, FillerTop.z), new Vector3(0f, FillerTop.y, FillerTop.z), 0.012f, 12, 0.0195f)
@@ -263,13 +260,10 @@ namespace SlugMove
                 .Tube(new Vector3(0f, 0.0004f, FillerTop.z - LidHinge.z), new Vector3(0f, 0.0044f, FillerTop.z - LidHinge.z), 0.0215f, 14)
                 .Tube(new Vector3(0f, 0.0044f, FillerTop.z - LidHinge.z + 0.012f), new Vector3(0f, 0.0084f, FillerTop.z - LidHinge.z + 0.012f), 0.004f, 8)   // a little tab
                 .ToMesh("RifleLid");
-            // the fist closes on the pouch's neck: the plump bag sits behind it, the spout pokes out in front
+            // a handful of salt: a white lump in the (gloved) fist, bulging out where the salt runs from
             _pouchMesh = new ProfileMesh()
-                .Extrude(Zy(-0.1f, 0f, -0.094f, 0.024f, -0.07f, 0.034f, -0.04f, 0.03f, -0.018f, 0.014f, -0.012f, 0f, -0.018f, -0.014f,
-                            -0.04f, -0.03f, -0.07f, -0.034f, -0.094f, -0.024f), 0.026f, 0.012f)
-                .Tube(new Vector3(0f, 0f, -0.016f), new Vector3(0f, 0f, 0.03f), 0.009f, 8, 0.007f)
-                .ToMesh("SaltPouch");
-            _spoutMesh = new ProfileMesh().Tube(new Vector3(0f, 0f, 0.028f), new Vector3(0f, 0f, SpoutLocal.z), 0.0062f, 8).ToMesh("SaltPouchSpout");
+                .Extrude(Zy(-0.018f, -0.012f, 0.004f, -0.02f, 0.03f, -0.014f, 0.04f, 0f, 0.03f, 0.014f, 0.004f, 0.02f, -0.018f, 0.012f), 0.019f, 0.008f)
+                .ToMesh("SaltHandful");
             _streamMesh = new ProfileMesh().Tube(Vector3.zero, Vector3.up, 0.0028f, 6).ToMesh("SaltStream");
 
             // ---- wood: the pistol grip, the handguard below the barrel and the cover above it

@@ -123,6 +123,14 @@ namespace SlugExtract
             bag.gear = gear;
             bag.hitboxes = root.GetComponent<SlugHitboxes>();
             bag.cameraRig = root.GetComponent<SlugCameraRig>();
+            // the player carries things in its hands on the way to the bag
+            if (bag.controller)
+            {
+                var carry = root.GetComponent<SlugCarry>();
+                if (!carry) carry = root.AddComponent<SlugCarry>();
+                carry.bag = bag; carry.controller = bag.controller; carry.cameraRig = bag.cameraRig; carry.slug = slug;
+                EditorUtility.SetDirty(carry);
+            }
             EditorUtility.SetDirty(bag);
             EditorUtility.SetDirty(gear);
         }

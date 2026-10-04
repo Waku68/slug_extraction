@@ -32,6 +32,8 @@ namespace SlugMove
 
         /// <summary>The slot in hand: <see cref="PickaxeSlot"/>, <see cref="BackSlot"/> or <see cref="HipSlot"/>.</summary>
         public int Current { get; private set; }
+        /// <summary>Something else is in the hands (a chunk of salt being carried): every tool is put away and none can be taken.</summary>
+        public bool HandsFull { get; private set; }
         public const int Count = 3;
         /// <summary>Called when the carried things or the one in hand change.</summary>
         public event System.Action Changed;
@@ -91,7 +93,7 @@ namespace SlugMove
 
         void Update()
         {
-            if (!inputEnabled || Cursor.lockState != CursorLockMode.Locked || (Rig && Rig.HandsBusy)) return;
+            if (!inputEnabled || HandsFull || Cursor.lockState != CursorLockMode.Locked || (Rig && Rig.HandsBusy)) return;
             var kb = Keyboard.current;
             if (kb != null)
             {
@@ -143,6 +145,24 @@ namespace SlugMove
             return settings.DrawTime(slot != HipSlot, slot == PickaxeSlot);
         }
 
+        /// <summary>
+        /// The hands take something (true): every tool is put away where it rides. Free again (false): the tool that was in
+        /// hand is taken in hand again (from the back, that takes its moment).
+        /// </summary>
+        public void SetHandsFull(bool full)
+        {
+            if (full == HandsFull) return;
+            HandsFull = full;
+            if (full)
+            {
+                if (pickaxe) pickaxe.enabled = false;
+                if (knife) knife.enabled = false;
+                foreach (var g in guns) if (g) g.enabled = false;
+                Changed?.Invoke();
+            }
+            else Select(Current, false, true);
+        }
+
         /// <summary>Sets what is carried (before setting out). The tool in hand is taken in hand again from where it now rides.</summary>
         public void SetLoadout(GunKind back, HipTool hipTool)
         {
@@ -167,7 +187,7 @@ namespace SlugMove
             for (int i = 0; i < Count; i++)
             {
                 var r = new Rect(x0 + i * (W + Gap), y, W, H);
-                bool on = i == Current;
+                bool on = i == Current && !HandsFull;
                 GUI.color = on ? new Color(1f, 0.92f, 0.6f, 1f) : new Color(1f, 1f, 1f, 0.55f);
                 GUI.Box(r, GUIContent.none);
                 string where = i == HipSlot ? "腰" : "背中";

@@ -4966,6 +4966,7 @@ GameObject:
   - component: {fileID: 838981255}
   - component: {fileID: 838981257}
   - component: {fileID: 838981254}
+  - component: {fileID: 838981258}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -5267,6 +5268,28 @@ MonoBehaviour:
   loadout: {fileID: 838981243}
   slug: {fileID: 1315264688}
   cameraRig: {fileID: 838981246}
+--- !u!114 &838981258
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 838981241}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d29c475fc04e64e4ca7a93b413d0f41e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SlugExtract.SlugCarry
+  bag: {fileID: 838981242}
+  controller: {fileID: 838981250}
+  cameraRig: {fileID: 838981246}
+  slug: {fileID: 1315264688}
+  holdOffset: {x: 0, y: -0.03, z: 0.05}
+  fpHold: {x: 0, y: -0.17, z: 0.36}
+  fpScale: 0.45
+  armRadiusRoot: 0.022
+  armRadiusHand: 0.015
+  fistSize: {x: 0.05, y: 0.042, z: 0.05}
 --- !u!1 &895090680
 GameObject:
   m_ObjectHideFlags: 0

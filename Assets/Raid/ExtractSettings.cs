@@ -14,6 +14,7 @@ namespace SlugExtract
         [Tooltip("1 個の重さ。重いほど遅くなる")] public float weight = 1f;
         [Tooltip("1 個のかさ。かさが多いほどバッグが膨らみ、背中の当たり判定が大きくなる")] public float volume = 1f;
         [Tooltip("1 個の価値（塩に換算）")] public int value = 10;
+        [Tooltip("1 個の大きさ（m）。採ると 1 個ずつ出てきて、手でつかんで運ぶ")] public float size = 0.1f;
         [Tooltip("体の中の隠し場所にしまえるか（塩はしまえない：ナメクジが溶ける）")] public bool canHide = true;
         [Tooltip("叩いて採るときの欠片の色")] public Color chipColor = Color.white;
     }
@@ -44,8 +45,8 @@ namespace SlugExtract
         [Header("重さと速さ（上限はない）")]
         [Tooltip("閾値：この重さを超えると、這うのが明らかに遅くなる")] public float weightThreshold = 10f;
         [Range(0f, 0.5f), Tooltip("閾値までに遅くなる割合（閾値ちょうどで、この分だけ遅い）")] public float lightSlowdown = 0.15f;
-        [Range(0.1f, 1f), Tooltip("閾値を超えた瞬間の速さの倍率（ここで明らかに落ちる）")] public float overSpeed = 0.75f;
-        [Range(0.1f, 1f), Tooltip("いちばん遅いときの速さの倍率")] public float heaviestSpeed = 0.6f;
+        [Range(0.1f, 1f), Tooltip("閾値を超えた瞬間の速さの倍率（ここで明らかに落ちる）")] public float overSpeed = 0.3f;
+        [Range(0.1f, 1f), Tooltip("いちばん遅いときの速さの倍率（overSpeed と同じなら、超えたらずっと同じ遅さ）")] public float heaviestSpeed = 0.3f;
         [Tooltip("閾値をどれだけ超えると、いちばん遅くなるか（重さ）")] public float heavyRange = 10f;
 
         [Header("バッグの膨らみ")]
@@ -56,7 +57,8 @@ namespace SlugExtract
         [Tooltip("背中に弾が 1 粒当たったときに減る耐久（弾の速さ 140 m/s あたり）")] public float hitDamage = 8f;
         [Tooltip("エコバッグを広げる時間（秒）。その間は無防備")] public float ecoOpenTime = 3f;
         [Range(0.1f, 1f), Tooltip("背中を覗いている間の速さの倍率")] public float peekSpeed = 0.4f;
-        [Tooltip("落ちている物を拾える距離（m）")] public float pickupReach = 0.75f;
+        [Tooltip("落ちている物をつかめる距離（m）")] public float pickupReach = 0.8f;
+        [Tooltip("つかむ・バッグに入れる・バッグから出す時間（秒）")] public float grabTime = 0.3f, stowTime = 0.5f, takeOutTime = 0.5f;
 
         [Header("バッグの種類")]
         public BagDef cloth = new BagDef { displayName = "布の袋", durability = 60f, bodyDamage = 1f, capacity = 0f, swell = 1f, weight = 0.3f };
@@ -71,8 +73,8 @@ namespace SlugExtract
         public BagDef snailShell = new BagDef { displayName = "カタツムリの殻", durability = 200f, bodyDamage = 0.3f, capacity = 6f, swell = 0f, weight = 0f };
 
         [Header("採取物")]
-        public ItemDef rockSalt = new ItemDef { displayName = "岩塩", weight = 1.5f, volume = 0.6f, value = 25, canHide = false, chipColor = new Color(0.95f, 0.88f, 0.9f) };
-        public ItemDef crop = new ItemDef { displayName = "雨カブ", weight = 0.5f, volume = 1.2f, value = 8, canHide = true, chipColor = new Color(0.55f, 0.75f, 0.3f) };
+        public ItemDef rockSalt = new ItemDef { displayName = "岩塩", weight = 1.5f, volume = 0.6f, value = 25, size = 0.3f, canHide = false, chipColor = new Color(0.95f, 0.88f, 0.9f) };
+        public ItemDef crop = new ItemDef { displayName = "雨カブ", weight = 0.5f, volume = 1.2f, value = 8, size = 0.15f, canHide = true, chipColor = new Color(0.55f, 0.75f, 0.3f) };
 
         public ItemDef Def(ItemKind k) => k == ItemKind.RockSalt ? rockSalt : crop;
 

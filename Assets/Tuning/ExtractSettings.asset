@@ -17,15 +17,18 @@ MonoBehaviour:
   extractRadius: 1.5
   weightThreshold: 10
   lightSlowdown: 0.15
-  overSpeed: 0.75
-  heaviestSpeed: 0.6
+  overSpeed: 0.3
+  heaviestSpeed: 0.3
   heavyRange: 10
   swellPerVolume: 0.05
   swellVisualMax: 2.6
   hitDamage: 8
   ecoOpenTime: 3
   peekSpeed: 0.4
-  pickupReach: 0.75
+  pickupReach: 0.8
+  grabTime: 0.3
+  stowTime: 0.5
+  takeOutTime: 0.5
   cloth:
     displayName: "\u5E03\u306E\u888B"
     durability: 60
@@ -85,6 +88,7 @@ MonoBehaviour:
     weight: 1.5
     volume: 0.6
     value: 25
+    size: 0.3
     canHide: 0
     chipColor: {r: 0.95, g: 0.88, b: 0.9, a: 1}
   crop:
@@ -92,5 +96,6 @@ MonoBehaviour:
     weight: 0.5
     volume: 1.2
     value: 8
+    size: 0.15
     canHide: 1
     chipColor: {r: 0.55, g: 0.75, b: 0.3, a: 1}

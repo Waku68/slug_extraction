@@ -41,8 +41,7 @@ namespace SlugExtract
         void OnHarvested(ItemKind kind, int added, bool full)
         {
             var name = settings.Def(kind).displayName;
-            if (added > 0) Log($"+{added} {name}");
-            if (full) Log("バッグがいっぱい");
+            if (added > 0) Log($"{name}が出た（E でつかむ）");
         }
 
         void Log(string text)
@@ -85,6 +84,13 @@ namespace SlugExtract
                 _stashValue += bag.Value;
                 _stashSalt += bag.Count(ItemKind.RockSalt);
                 _stashCrop += bag.Count(ItemKind.Crop);
+            }
+            // what is in the hands at the exit comes home too
+            if (s == State.Extracted && bag.Holding)
+            {
+                var held = settings.Def(bag.HeldKind);
+                _stashValue += held.value;
+                if (bag.HeldKind == ItemKind.RockSalt) _stashSalt++; else _stashCrop++;
             }
             // what was pushed into the body always comes home
             _savedText = null;
@@ -132,7 +138,7 @@ namespace SlugExtract
             {
                 if (_extractProgress > 0f)
                     GUI.Label(new Rect(0, h * 0.3f, w, 50), $"脱出中… {Mathf.Clamp01(_extractProgress / settings.extractTime) * 100f:0}%", _big);
-                GUI.Label(new Rect(0, h - 40, w, 30), "左クリック 叩く・撃つ・突く（1 ピッケル / 2 背中の銃 / 3 腰の道具）／ E 拾う / G 落とす（長押しで投げる）/ Q 覗く / X 体にしまう ／ 光の柱が脱出口", _small);
+                GUI.Label(new Rect(0, h - 40, w, 30), "左クリック 叩く・撃つ・突く（1 ピッケル / 2 背中の銃 / 3 腰の道具）／ E つかむ・バッグに入れる / G バッグから出す・落とす / Q 覗く / X 体に突っ込む ／ 光の柱が脱出口", _small);
                 return;
             }
 

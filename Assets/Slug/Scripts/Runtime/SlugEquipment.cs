@@ -123,6 +123,17 @@ namespace SlugDesign
 
         T Own<T>(T o) where T : Object { o.hideFlags = HideFlags.DontSave; _owned.Add(o); return o; }
 
+        /// <summary>Shows or hides the bag's lid (and its pocket): hidden, the top of the bag shows what is inside.</summary>
+        public void SetBagLidVisible(bool on)
+        {
+            foreach (var o in _owned)
+                if (o is GameObject go && go && go.name == "BagFlaps")
+                {
+                    var r = go.GetComponent<Renderer>();
+                    if (r && r.enabled != on) r.enabled = on;
+                }
+        }
+
         /// <summary>Puts the gear (back) on. Called on enable, on every slug rebuild and after a change in the inspector.</summary>
         public void Build()
         {
