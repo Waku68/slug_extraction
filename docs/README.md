@@ -24,6 +24,7 @@ Oct 4, 2026
 | | [bag_ui_discussion.md](discussions/bag_ui_discussion.md) | バッグUIの話し合い 1回目（覗き込む、数字の出し方） |
 | | [bag_ui_discussion_2.md](discussions/bag_ui_discussion_2.md) | バッグの話し合い 2回目（入れ物の分け方、カタツムリの殻、隠し場所） |
 | | [bag_ui_discussion_3.md](discussions/bag_ui_discussion_3.md) | バッグの話し合い 3回目（耐久値、ごちゃまぜ、弾は持ち込みだけ、網バッグ） |
+| | [tool_carry_discussion.md](discussions/tool_carry_discussion.md) | 道具の持ち方・持ち替え・バッグが壊れたあと（エコバッグ、大物を抱える） |
 | `ideas/` | [base_ideas.md](ideas/base_ideas.md) | 拠点の設備の案出し |
 | `tech/` | [tool_craft_notes.md](tech/tool_craft_notes.md) | 作り方のメモ：ピッケル、銃3種、装備、当たり判定、縮んで伸びる、気をつけること |
 
