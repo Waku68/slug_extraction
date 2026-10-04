@@ -15,6 +15,7 @@ namespace SlugExtract
         [Tooltip("1 個のかさ。かさが多いほどバッグが膨らみ、背中の当たり判定が大きくなる")] public float volume = 1f;
         [Tooltip("1 個の価値（塩に換算）")] public int value = 10;
         [Tooltip("1 個の大きさ（m）。採ると 1 個ずつ出てきて、手でつかんで運ぶ")] public float size = 0.1f;
+        [Tooltip("手に持ったときに見える大きさ（m）。持っている感じが出るように、実物より大きく見せてよい")] public float heldSize = 0.1f;
         [Tooltip("体の中の隠し場所にしまえるか（塩はしまえない：ナメクジが溶ける）")] public bool canHide = true;
         [Tooltip("叩いて採るときの欠片の色")] public Color chipColor = Color.white;
     }
@@ -57,6 +58,7 @@ namespace SlugExtract
         [Tooltip("背中に弾が 1 粒当たったときに減る耐久（弾の速さ 140 m/s あたり）")] public float hitDamage = 8f;
         [Tooltip("エコバッグを広げる時間（秒）。その間は無防備")] public float ecoOpenTime = 3f;
         [Range(0.1f, 1f), Tooltip("背中を覗いている間の速さの倍率")] public float peekSpeed = 0.4f;
+        [Tooltip("背中を覗くときに体をねじる角度（度）。頑張って後ろを見て、ぎりぎり見えるくらい")] public float peekTwist = 55f;
         [Tooltip("落ちている物をつかめる距離（m）")] public float pickupReach = 0.8f;
         [Tooltip("つかむ・バッグに入れる・バッグから出す時間（秒）")] public float grabTime = 0.3f, stowTime = 0.5f, takeOutTime = 0.5f;
 
@@ -73,8 +75,8 @@ namespace SlugExtract
         public BagDef snailShell = new BagDef { displayName = "カタツムリの殻", durability = 200f, bodyDamage = 0.3f, capacity = 6f, swell = 0f, weight = 0f };
 
         [Header("採取物")]
-        public ItemDef rockSalt = new ItemDef { displayName = "岩塩", weight = 1.5f, volume = 0.6f, value = 25, size = 0.3f, canHide = false, chipColor = new Color(0.95f, 0.88f, 0.9f) };
-        public ItemDef crop = new ItemDef { displayName = "雨カブ", weight = 0.5f, volume = 1.2f, value = 8, size = 0.15f, canHide = true, chipColor = new Color(0.55f, 0.75f, 0.3f) };
+        public ItemDef rockSalt = new ItemDef { displayName = "岩塩", weight = 1.5f, volume = 0.6f, value = 25, size = 0.2f, heldSize = 0.3f, canHide = false, chipColor = new Color(0.95f, 0.88f, 0.9f) };
+        public ItemDef crop = new ItemDef { displayName = "雨カブ", weight = 0.5f, volume = 1.2f, value = 8, size = 0.15f, heldSize = 0.15f, canHide = true, chipColor = new Color(0.55f, 0.75f, 0.3f) };
 
         public ItemDef Def(ItemKind k) => k == ItemKind.RockSalt ? rockSalt : crop;
 

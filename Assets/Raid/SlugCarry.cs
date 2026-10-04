@@ -6,7 +6,8 @@ namespace SlugExtract
 {
     /// <summary>
     /// The thing in the slug's hands (<see cref="SlugBag.Holding"/>): a chunk of rock salt or a turnip held in both
-    /// gloved fists in front of the chest. Taking it from the ground, the arms stretch down to where it lay and bring it
+    /// gloved fists in front of the chest, drawn at its held size (<see cref="ItemDef.heldSize"/>: bigger than it really
+    /// is, so it feels like a handful; it grows to it as it is taken up). Taking it from the ground, the arms stretch down to where it lay and bring it
     /// up; putting it in the bag, they lift it over the right shoulder and down into the mouth of the bag on the back
     /// (it shrinks out of sight as it goes in); taking something out is the same the other way.
     /// Drawn twice over like the tools: the body's thing and arms (seen by every camera except the player's own in first
@@ -102,7 +103,8 @@ namespace SlugExtract
             Ensure(bag.HeldKind);
             Show(true);
 
-            float size = bag.settings.Def(bag.HeldKind).size;
+            var def = bag.settings.Def(bag.HeldKind);
+            float size = def.heldSize, real = def.size / Mathf.Max(def.heldSize, 1e-3f);
             Quaternion body = controller.transform.rotation;
             Vector3 mid = (slug.HandRootWorld(-1f) + slug.HandRootWorld(1f)) * 0.5f;
             Vector3 hold = mid + body * (holdOffset + Vector3.forward * (size * 0.5f));
@@ -113,6 +115,7 @@ namespace SlugExtract
             {
                 case SlugBag.CarryPhase.Grab:
                     pos = Vector3.Lerp(bag.GrabFrom, hold, u);
+                    scale = Mathf.Lerp(real, 1f, u);                                  // from its real size to the held one
                     away = 1f - u;
                     break;
                 case SlugBag.CarryPhase.Stow:

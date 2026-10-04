@@ -30,8 +30,9 @@ namespace SlugMove
         [System.NonSerialized] public bool handsBusy;
         /// <summary>The hands are not free for the tools (peeking, or busy).</summary>
         public bool HandsBusy => Peeking || handsBusy;
-        /// <summary>The own body is in view (third person, or peeking at the back): draw it, not the first-person copies.</summary>
-        public bool ShowsBody => thirdPerson || Peeking;
+        /// <summary>The own body's tools are in view (third person): draw them, not the first-person copies. Peeking keeps the
+        /// first-person copies, so nothing in hand swings across the look at the bag.</summary>
+        public bool ShowsBody => thirdPerson;
 
         /// <summary>Where the eyes look (degrees). The body follows it.</summary>
         public float Yaw { get; private set; }

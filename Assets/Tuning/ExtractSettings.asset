@@ -25,6 +25,7 @@ MonoBehaviour:
   hitDamage: 8
   ecoOpenTime: 3
   peekSpeed: 0.4
+  peekTwist: 55
   pickupReach: 0.8
   grabTime: 0.3
   stowTime: 0.5
@@ -88,7 +89,8 @@ MonoBehaviour:
     weight: 1.5
     volume: 0.6
     value: 25
-    size: 0.3
+    size: 0.2
+    heldSize: 0.3
     canHide: 0
     chipColor: {r: 0.95, g: 0.88, b: 0.9, a: 1}
   crop:
@@ -97,5 +99,6 @@ MonoBehaviour:
     volume: 1.2
     value: 8
     size: 0.15
+    heldSize: 0.15
     canHide: 1
     chipColor: {r: 0.55, g: 0.75, b: 0.3, a: 1}
