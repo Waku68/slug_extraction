@@ -51,7 +51,7 @@ namespace SlugDesign
         [System.NonSerialized] public float bagSwell = 1f;
         [Tooltip("背中を覗いたとき、自分の画面だけでバッグを大きくする倍率")] public float bagLookScale = 1.6f;
         [Range(0f, 1f), Tooltip("背中を覗いたとき、自分の画面だけでバッグの口を目のほうへ傾ける割合（1 = 真っすぐ目に向ける）")] public float bagLookTilt = 0.45f;
-        [Tooltip("ふたを開けきったときの角度（度）。ふたは背中から遠いほうのふちを軸に、外側へ開く")] public float bagLidAngle = 105f;
+        [Tooltip("ふたを開けきったときの角度（度）。ふたは背中から遠いほうのふちを軸に、外側へ開く")] public float bagLidAngle = 140f;
         [Range(0f, 1f), Tooltip("背中を覗いたとき、自分の画面でふたも大きくする割合（0 = 大きくしない、1 = バッグと同じだけ）")] public float bagLidGrow = 0.3f;
 
         readonly List<Object> _owned = new List<Object>();

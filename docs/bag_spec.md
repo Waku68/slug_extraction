@@ -188,7 +188,7 @@ Oct 4, 2026
 | 採取すると 1 個ずつ出てくる（岩塩 30 cm） | 済 | `Harvestable`、`ItemPickup` |
 | 手で持つ：つかむ（E）→ 入れる（E）、出す（G）→ 落とす・投げる（G）・体に突っ込む（X） | 済 | `SlugBag`（流れ）、`SlugCarry`（両手で抱える見た目、一人称も） |
 | 手に持っている間は道具が体に戻る | 済 | `SlugLoadout.SetHandsFull` |
-| 覗く：頭だけを右へ 90° 回す・ふたが背中から遠いほうのふちを軸に外側へ 105° 開く（周りから見える）、右肩の上から斜めに見下ろす視点、自分の画面だけ背負っているバッグが大きく傾いて、口に上の 2 つ（パンパンなら 3 つ） | 済 | `SlugPop.SetHeadTwist`、`SlugEquipment.PoseBag`、`SlugBag.OnBeginCamera` |
+| 覗く：頭だけを右へ 90° 回す・ふたが背中から遠いほうのふちを軸に外側へ 140° 開く（周りから見える）、右肩の上から斜めに見下ろす視点、自分の画面だけ背負っているバッグが大きく傾いて、口に上の 2 つ（パンパンなら 3 つ） | 済 | `SlugPop.SetHeadTwist`、`SlugEquipment.PoseBag`、`SlugBag.OnBeginCamera` |
 | 物を持ったまま覗くと、手と物は体のほうに描く（視点についてこない） | 済 | `SlugCameraRig.ShowsBody` |
 | 耐久、背中の弾で減る、破れたら中身が飛び散る | 済 | `SlugBag.OnHit` |
 | 背中の弾が体に通る割合（種類ごと） | 仮 | 当たり判定の倍率に入れた。体力がまだないので、GunTest の表示で倍率が見えるだけ |

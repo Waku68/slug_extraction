@@ -8243,7 +8243,7 @@ MonoBehaviour:
   bagSize: {x: 0.11, y: 0.12, z: 0.065}
   bagLookScale: 1.6
   bagLookTilt: 0.45
-  bagLidAngle: 105
+  bagLidAngle: 140
   bagLidGrow: 0.3
 --- !u!1 &1316406820
 GameObject:
