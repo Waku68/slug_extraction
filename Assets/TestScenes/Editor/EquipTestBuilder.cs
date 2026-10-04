@@ -26,7 +26,7 @@ namespace SlugMove
                 ("カタツムリ（スカブ）：殻", false, SlugEquipment.Armor.SnailShell, false),
                 ("ナメクジ：バッグだけ", false, SlugEquipment.Armor.None, true),
             };
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(SlugGalleryV3.PrefabPath);
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(SlugLookbook.PrefabPath);
             for (int i = 0; i < variants.Length; i++)
             {
                 var v = variants[i];
@@ -35,7 +35,7 @@ namespace SlugMove
                 go.transform.position = new Vector3((i - 1) * 1.2f, 0f, 0f);
                 go.transform.rotation = Quaternion.Euler(0f, 180f, 0f);         // facing the camera
                 var slug = go.GetComponent<SlugPop>();
-                SlugGalleryV7.ApplyCurrent(slug);
+                SlugLookbook.ApplyCurrent(slug);
                 slug.handsExtend = 0f;
                 PrefabUtility.RecordPrefabInstancePropertyModifications(slug);
                 var gear = go.AddComponent<SlugEquipment>();

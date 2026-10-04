@@ -12,9 +12,7 @@ namespace SlugExtract
     /// </summary>
     public static class ExtractTestBuilder
     {
-        const string Root = "Assets/Prototype/Extract";
-        const string GenDir = Root + "/Generated";
-        const string SettingsPath = Root + "/ExtractSettings.asset";
+        const string SettingsPath = MoveTestBuilder.TuningDir + "/ExtractSettings.asset";
         const string ScenePath = "Assets/Scenes/ExtractTest.unity";
 
         static ExtractSettings _settings;
@@ -103,7 +101,7 @@ namespace SlugExtract
         /// <summary>Loads (or creates once) the raid settings and the materials of the nodes. Call after MoveTestBuilder.NewScene.</summary>
         internal static ExtractSettings PrepareAssets()
         {
-            MoveTestBuilder.EnsureFolder(Root); MoveTestBuilder.EnsureFolder(GenDir);
+            MoveTestBuilder.EnsureFolder(MoveTestBuilder.TuningDir);
             _settings = AssetDatabase.LoadAssetAtPath<ExtractSettings>(SettingsPath);
             if (_settings == null)
             {

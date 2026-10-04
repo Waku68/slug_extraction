@@ -14,11 +14,11 @@ namespace SlugMove
     /// </summary>
     public static class MoveTestBuilder
     {
-        const string Root = "Assets/Prototype/MoveTest";
-        internal const string GenDir = Root + "/Generated";
-        const string SettingsPath = Root + "/SlugMoveSettings.asset";
+        internal const string TuningDir = "Assets/Tuning";   // every tuning asset, in one place
+        internal const string GenDir = "Assets/TestScenes/Generated";
+        const string SettingsPath = TuningDir + "/SlugMoveSettings.asset";
         const string ScenePath = "Assets/Scenes/MoveTest.unity";
-        const string FontPath = "Assets/Slug/Fonts/NotoSansJP SDF.asset";
+        const string FontPath = "Assets/Fonts/NotoSansJP SDF.asset";
 
         internal static Material _floorMat, _grayMat, _darkMat;
         internal static Transform _map;
@@ -41,7 +41,7 @@ namespace SlugMove
         /// <summary>The movement settings asset, created once (never overwritten, so tuned values survive).</summary>
         internal static SlugMoveSettings LoadSettings()
         {
-            EnsureFolder(Root); EnsureFolder(GenDir);
+            EnsureFolder(TuningDir); EnsureFolder(GenDir);
             var settings = AssetDatabase.LoadAssetAtPath<SlugMoveSettings>(SettingsPath);
             if (settings == null)
             {
@@ -54,8 +54,8 @@ namespace SlugMove
         /// <summary>The pickaxe swing settings asset, created once (never overwritten).</summary>
         internal static PickaxeSettings LoadPickaxeSettings()
         {
-            const string path = Root + "/PickaxeSettings.asset";
-            EnsureFolder(Root);
+            const string path = TuningDir + "/PickaxeSettings.asset";
+            EnsureFolder(TuningDir);
             var settings = AssetDatabase.LoadAssetAtPath<PickaxeSettings>(path);
             if (settings == null)
             {
@@ -71,8 +71,8 @@ namespace SlugMove
         /// </summary>
         internal static GunSettings LoadGunSettings(GunKind kind)
         {
-            string path = $"{Root}/{kind}Settings.asset";
-            EnsureFolder(Root);
+            string path = $"{TuningDir}/{kind}Settings.asset";
+            EnsureFolder(TuningDir);
             var settings = AssetDatabase.LoadAssetAtPath<GunSettings>(path);
             if (settings == null)
             {
@@ -126,13 +126,13 @@ namespace SlugMove
             cc.stepOffset = settings.stepHeight;
 
             // the capsule sits around the head; the body trails behind it (eyes at about +0.16 m, inside the capsule)
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(SlugGalleryV3.PrefabPath);
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(SlugLookbook.PrefabPath);
             var slugGo = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
             slugGo.name = "Body";
             slugGo.transform.SetParent(player.transform, false);
             slugGo.transform.localPosition = new Vector3(0f, -cc.skinWidth, -0.31f);
             var slug = slugGo.GetComponent<SlugPop>();
-            SlugGalleryV7.ApplyCurrent(slug);
+            SlugLookbook.ApplyCurrent(slug);
             PrefabUtility.RecordPrefabInstancePropertyModifications(slug);
             slug.Rebuild();
             // keep the face over the front of the capsule whatever the body length (the body is centred on its footprint)
