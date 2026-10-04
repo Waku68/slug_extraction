@@ -18,6 +18,8 @@ namespace SlugMove
         public bool thirdPerson;
         /// <summary>Magnification (a scope sets it): narrows the view and slows the look to match. 1 = none.</summary>
         [System.NonSerialized] public float zoom = 1f;
+        /// <summary>A menu is open (the loadout picker): the cursor stays free, a click does not lock it, the eyes do not turn.</summary>
+        [System.NonSerialized] public bool cursorFree;
 
         /// <summary>Where the eyes look (degrees). The body follows it.</summary>
         public float Yaw { get; private set; }
@@ -76,6 +78,11 @@ namespace SlugMove
             var kb = Keyboard.current;
             var mouse = Mouse.current;
             if (kb != null && kb.vKey.wasPressedThisFrame) thirdPerson = !thirdPerson;
+            if (cursorFree)
+            {
+                if (Cursor.lockState != CursorLockMode.None) LockCursor(false);
+                return;
+            }
             if (kb != null && kb.escapeKey.wasPressedThisFrame) LockCursor(false);
             if (mouse != null && mouse.leftButton.wasPressedThisFrame && Cursor.lockState != CursorLockMode.Locked) LockCursor(true);
 

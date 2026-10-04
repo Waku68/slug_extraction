@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d180d361f642f4b438ad3e03989dadf5, type: 3}
+  m_Name: LoadoutSettings
+  m_EditorClassIdentifier: Assembly-CSharp::SlugMove.LoadoutSettings
+  backDrawTime: 0.8
+  pickaxeDrawTime: 0.65
+  hipDrawTime: 0.3
+  reachPart: 0.4
+  backGunT: 0.52
+  backGunTilt: 32
+  backGunShift: 0.01
+  backGunAlong: 0.5
+  backGunStandOff: 0.03
+  pickaxeT: 0.5
+  pickaxeTilt: -34
+  pickaxeShift: -0.01
+  pickaxeAlong: 0.45
+  pickaxeStandOff: 0.008
+  hipT: 0.44
+  hipAngle: 105
+  hipTilt: 18
+  hipStandOff: 0.006
+  hipGripOut: 0.035
+  fpBackFrom: {x: 0.24, y: 0.3, z: 0.02}
+  fpBackTurn: {x: -80, y: 25, z: 35}
+  fpHipFrom: {x: 0.12, y: -0.3, z: 0.06}
+  fpHipTurn: {x: 70, y: 10, z: 10}

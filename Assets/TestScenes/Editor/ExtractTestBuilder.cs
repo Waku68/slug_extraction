@@ -89,6 +89,10 @@ namespace SlugExtract
             raid.tool = player.GetComponent<SlugToolHolder>();
             raid.guns = player.GetComponents<SlugGunHolder>();
             raid.loadout = player.GetComponent<SlugLoadout>();
+            // choose what to carry before setting out (the clock waits)
+            var picker = player.GetComponent<LoadoutPicker>();
+            picker.openOnStart = true; picker.allowToggle = false; picker.confirmLabel = "出撃する";
+            raid.picker = picker;
             raid.bag = bag;
             raid.exitPoint = exit;
 

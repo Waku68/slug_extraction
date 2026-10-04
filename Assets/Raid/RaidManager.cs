@@ -7,8 +7,9 @@ using UnityEngine.SceneManagement;
 namespace SlugExtract
 {
     /// <summary>
-    /// One solo raid: harvest, carry, and reach the exit before the rain stops. Running out of time means drying up
-    /// and losing everything carried. Shows the timer, the bag and the result; R starts over.
+    /// One solo raid: choose what to carry, harvest, carry, and reach the exit before the rain stops. Running out of
+    /// time means drying up and losing everything carried. Shows the timer, the bag and the result; R starts over.
+    /// The clock starts once the loadout is chosen (<see cref="picker"/>).
     /// The stash (everything brought home) lasts until play mode ends.
     /// </summary>
     public class RaidManager : MonoBehaviour
@@ -20,6 +21,7 @@ namespace SlugExtract
         public SlugToolHolder tool;
         public SlugGunHolder[] guns = new SlugGunHolder[0];
         public SlugLoadout loadout;
+        [Tooltip("出撃前に持ち物を選ぶ画面（選び終わるまで時間は進まない）")] public LoadoutPicker picker;
         public SlugBag bag;
         [Tooltip("脱出口の中心")] public Transform exitPoint;
 
@@ -57,6 +59,7 @@ namespace SlugExtract
                 return;
             }
 
+            if (picker && picker.IsOpen) return;     // still choosing what to carry
             _timeLeft -= Time.deltaTime;
             if (_timeLeft <= 0f) { _timeLeft = 0f; End(State.Failed); return; }
 
@@ -73,6 +76,7 @@ namespace SlugExtract
             controller.inputEnabled = false;
             tool.inputEnabled = false;
             foreach (var g in guns) if (g) g.inputEnabled = false;
+            if (loadout && loadout.knife) loadout.knife.inputEnabled = false;
             if (loadout) loadout.inputEnabled = false;
             _runs++;
             if (s == State.Extracted)
@@ -129,7 +133,7 @@ namespace SlugExtract
             {
                 if (_extractProgress > 0f)
                     GUI.Label(new Rect(0, h * 0.3f, w, 50), $"脱出中… {Mathf.Clamp01(_extractProgress / settings.extractTime) * 100f:0}%", _big);
-                GUI.Label(new Rect(0, h - 40, w, 30), "左クリック：ピッケルで叩く・銃で撃つ（1 ピッケル / 2 ライフル / 3 散弾銃 / 4 狙撃銃）／ 光の柱が脱出口", _small);
+                GUI.Label(new Rect(0, h - 40, w, 30), "左クリック：ピッケルで叩く・銃で撃つ・ナイフで突く（1 ピッケル / 2 背中の銃 / 3 腰の道具）／ 光の柱が脱出口", _small);
                 return;
             }
 

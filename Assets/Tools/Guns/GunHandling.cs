@@ -12,7 +12,7 @@ namespace SlugMove
     ///  - the action: a pump or a bolt worked by hand after every shot (no shot until it is done);
     ///  - reloading: a whole magazine (pulled out, taken away, brought back full) or one round at a time (open, insert
     ///    rounds, close; pulling the trigger stops loading after the round in hand);
-    ///  - scope: eased in and out on the aim button; equip: drawn up from below when taken in hand.
+    ///  - scope: eased in and out on the aim button; equip: taken in hand over a given time (longer from the back).
     /// Kicks are velocity impulses into damped springs, so a burst piles up and settles on its own.
     /// </summary>
     public class GunHandling
@@ -31,6 +31,8 @@ namespace SlugMove
         public float Raise => Smooth(_raise);
         /// <summary>0 = just taken in hand (still down out of the way), 1 = ready.</summary>
         public float Equip => Smooth(_equip);
+        /// <summary>0..1 through taking it in hand, not eased (the holder splits it into reaching for it and bringing it up).</summary>
+        public float EquipLinear => _equip;
         /// <summary>0..1: how far the scope is up to the eye (eased).</summary>
         public float Scope => Smooth(_scope);
         public bool Reloading => _stage != Stage.None;
@@ -73,7 +75,7 @@ namespace SlugMove
         const float CycleDelay = 0.08f;      // the action is worked a moment after the shot, once the kick has landed
         const float ClickBuffer = 0.25f;     // a click this early before the gun is ready still fires when it is
 
-        float _raise, _equip = 1f, _scope;
+        float _raise, _equip = 1f, _scope, _equipTime = -1f;
         float _kick, _kickV, _pitch, _pitchV, _yaw, _yawV, _roll, _rollV, _lean, _leanV;
         float _squeeze, _bloom, _cool, _sinceShot = 99f, _queued;
         bool _prevTrigger, _cycling, _ejected, _cycleSeated;
@@ -94,10 +96,14 @@ namespace SlugMove
             ShotsInBurst = 0;
         }
 
-        /// <summary>Takes the gun in hand: it comes up from below; a reload in progress starts over, a half-worked action finishes.</summary>
-        public void Draw()
+        /// <summary>
+        /// Takes the gun in hand over <paramref name="time"/> seconds (negative = the gun's own equip time, 0 = at once);
+        /// a reload in progress starts over, a half-worked action finishes.
+        /// </summary>
+        public void Draw(float time = -1f)
         {
-            _equip = 0f;
+            _equipTime = time;
+            _equip = time == 0f ? 1f : 0f;
             _raise = 0f;
             _scope = 0f;
             if (_stage == Stage.Magazine || _stage == Stage.Open) _stageT = 0f;
@@ -127,7 +133,7 @@ namespace SlugMove
         {
             var s = settings;
             _sinceShot += dt;
-            _equip = Mathf.MoveTowards(_equip, 1f, dt / Mathf.Max(s.equipTime, 1e-3f));
+            _equip = Mathf.MoveTowards(_equip, 1f, dt / Mathf.Max(_equipTime > 0f ? _equipTime : s.equipTime, 1e-3f));
 
             bool pressed = trigger && !_prevTrigger;
             _prevTrigger = trigger;

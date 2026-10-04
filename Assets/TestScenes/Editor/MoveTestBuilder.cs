@@ -65,9 +65,28 @@ namespace SlugMove
             return settings;
         }
 
+        /// <summary>The knife settings asset, created once (never overwritten).</summary>
+        internal static KnifeSettings LoadKnifeSettings() => LoadOnce<KnifeSettings>("KnifeSettings");
+
+        /// <summary>The loadout settings asset (draw times, where things ride on the body), created once (never overwritten).</summary>
+        internal static LoadoutSettings LoadLoadoutSettings() => LoadOnce<LoadoutSettings>("LoadoutSettings");
+
+        static T LoadOnce<T>(string name) where T : ScriptableObject
+        {
+            string path = $"{TuningDir}/{name}.asset";
+            EnsureFolder(TuningDir);
+            var asset = AssetDatabase.LoadAssetAtPath<T>(path);
+            if (asset == null)
+            {
+                asset = ScriptableObject.CreateInstance<T>();
+                AssetDatabase.CreateAsset(asset, path);
+            }
+            return asset;
+        }
+
         /// <summary>
-        /// The settings asset of one gun (RifleSettings / ShotgunSettings / SniperSettings), created once from the kind's
-        /// preset and never overwritten afterwards, so tuned values survive.
+        /// The settings asset of one gun (RifleSettings / ShotgunSettings / SniperSettings / PistolSettings), created once
+        /// from the kind's preset and never overwritten afterwards, so tuned values survive.
         /// </summary>
         internal static GunSettings LoadGunSettings(GunKind kind)
         {
@@ -155,8 +174,9 @@ namespace SlugMove
             rig.settings = settings; rig.controller = move; rig.slug = slug; rig.cam = cam;
             hud.controller = move; hud.cameraRig = rig;
             tool.pickaxe = LoadPickaxeSettings(); tool.controller = move; tool.cameraRig = rig; tool.slug = slug;
-            // the guns: 1 = pickaxe, 2 / 3 / 4 (or the wheel) = rifle, shotgun, sniper; only the one in hand is enabled
-            var kinds = new[] { GunKind.Rifle, GunKind.Shotgun, GunKind.Sniper };
+            // the guns that can be carried: one big gun on the back, the pistol (or the knife) on the hip.
+            // 1 = pickaxe, 2 = the back gun, 3 = the hip tool (or the wheel); only the one in hand is enabled
+            var kinds = new[] { GunKind.Rifle, GunKind.Shotgun, GunKind.Sniper, GunKind.Pistol };
             var guns = new SlugGunHolder[kinds.Length];
             for (int i = 0; i < kinds.Length; i++)
             {
@@ -166,9 +186,73 @@ namespace SlugMove
             }
             var loadout = player.AddComponent<SlugLoadout>();
             loadout.pickaxe = tool; loadout.guns = guns;
+            FitLoadout(player);
             // what a shot can hit, part by part (the movement capsule is not hit)
             player.AddComponent<SlugHitboxes>().slug = slug;
             return player;
+        }
+
+        /// <summary>
+        /// Gives a player everything it can carry and what goes with it: the pistol and the knife for the hip, the
+        /// loadout settings, the rack that shows the tools not in hand on the body, and the picker for choosing before
+        /// setting out. Safe to run again on a player that already has some of it.
+        /// </summary>
+        internal static void FitLoadout(GameObject player)
+        {
+            var loadout = player.GetComponent<SlugLoadout>();
+            var move = player.GetComponent<SlugMoveController>();
+            var rig = player.GetComponent<SlugCameraRig>();
+            var slug = player.GetComponentInChildren<SlugPop>();
+            var guns = new List<SlugGunHolder>(player.GetComponents<SlugGunHolder>());
+            if (!guns.Exists(g => g.gun && g.gun.kind == GunKind.Pistol))
+            {
+                var pistol = player.AddComponent<SlugGunHolder>();
+                pistol.gun = LoadGunSettings(GunKind.Pistol); pistol.controller = move; pistol.cameraRig = rig; pistol.slug = slug;
+                pistol.enabled = false;
+                guns.Add(pistol);
+            }
+            loadout.guns = guns.ToArray();
+            var knife = player.GetComponent<SlugKnifeHolder>();
+            if (!knife)
+            {
+                knife = player.AddComponent<SlugKnifeHolder>();
+                knife.enabled = false;
+            }
+            knife.knife = LoadKnifeSettings(); knife.controller = move; knife.cameraRig = rig; knife.slug = slug;
+            loadout.knife = knife;
+            loadout.settings = LoadLoadoutSettings();
+            var rack = player.GetComponent<SlugToolRack>();
+            if (!rack) rack = player.AddComponent<SlugToolRack>();
+            rack.loadout = loadout; rack.slug = slug; rack.cameraRig = rig;
+            var picker = player.GetComponent<LoadoutPicker>();
+            if (!picker) picker = player.AddComponent<LoadoutPicker>();
+            picker.loadout = loadout; picker.cameraRig = rig; picker.controller = move;
+        }
+
+        /// <summary>
+        /// Brings the players in the open scene up to date with <see cref="FitLoadout"/> (the scenes built before the
+        /// loadout existed); a raid starts with the picker open.
+        /// </summary>
+        [MenuItem("Slug/Update Player Loadout (open scene)")]
+        public static void UpdateOpenScene()
+        {
+            foreach (var loadout in Object.FindObjectsByType<SlugLoadout>(FindObjectsInactive.Include))
+            {
+                FitLoadout(loadout.gameObject);
+                var raid = Object.FindAnyObjectByType<SlugExtract.RaidManager>();
+                if (raid)
+                {
+                    var picker = loadout.GetComponent<LoadoutPicker>();
+                    picker.openOnStart = true; picker.allowToggle = false; picker.confirmLabel = "出撃する";
+                    raid.picker = picker;
+                    raid.guns = loadout.guns;
+                    EditorUtility.SetDirty(raid);
+                }
+                EditorUtility.SetDirty(loadout.gameObject);
+            }
+            EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+            EditorSceneManager.SaveOpenScenes();
+            AssetDatabase.SaveAssets();
         }
 
         // ------------------------------------------------------------------ map

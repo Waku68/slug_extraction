@@ -6,7 +6,7 @@ namespace SlugMove
     /// <summary>
     /// Tools for tuning the guns: slow motion (T), a readout of the gun in hand (how it is held, the action and the
     /// reload, the spread, the burst), the last hit (what, how far, which ring) and a running score on the targets
-    /// (C clears it). A shotgun blast counts each grain.
+    /// (C clears it). A shotgun blast counts each grain. Knife stabs show what they struck.
     /// </summary>
     public class GunDebug : MonoBehaviour
     {
@@ -27,6 +27,14 @@ namespace SlugMove
             }
             ShootingTarget.Scored += OnScored;
             SlugHitboxes.AnyHit += OnBodyHit;
+            if (loadout.knife) loadout.knife.Struck += OnStab;
+        }
+
+        void OnStab(RaycastHit hit, IShotTarget target)
+        {
+            if (target is SlugHitbox) _last = "ナイフ：" + _last;     // the part is already written
+            else if (target != null) _last = $"ナイフ：{(hit.collider.GetComponentInParent<ShootingTarget>() ? "的" : hit.collider.name)}";
+            else _last = $"ナイフ：{hit.collider.name}";
         }
 
         void OnBodyHit(SlugHitbox box, RaycastHit hit)
@@ -43,6 +51,7 @@ namespace SlugMove
                     if (g) { g.Fired -= OnFired; g.RoundHit -= OnHit; }
             ShootingTarget.Scored -= OnScored;
             SlugHitboxes.AnyHit -= OnBodyHit;
+            if (loadout && loadout.knife) loadout.knife.Struck -= OnStab;
         }
 
         void OnFired(Vector3 eye, Vector3 dir) => _shots++;
@@ -86,7 +95,8 @@ namespace SlugMove
             string line1, line2;
             if (gun == null || !gun.Ready)
             {
-                line1 = "構え  <b>ピッケルを持っている</b>";
+                line1 = loadout.DrawProgress < 1f ? $"構え  <b>{loadout.SlotName(loadout.Current)}を取り出している</b>"
+                      : $"構え  <b>{loadout.SlotName(loadout.Current)}を持っている</b>";
                 line2 = "";
             }
             else
@@ -107,7 +117,7 @@ namespace SlugMove
                 $"{line2}\n" +
                 $"最後の当たり  {_last}\n" +
                 $"的に当たった粒  {_onTarget} / {_shots}　　平均 {avg:0.0} 点\n" +
-                "<size=14>左クリック 撃つ ／ 右クリック 覗く（狙撃銃）／ R リロード ／ 1 ピッケル・2 ライフル・3 散弾銃・4 狙撃銃（ホイールでも）\n" +
+                "<size=14>左クリック 撃つ・突く ／ 右クリック 覗く（狙撃銃）／ R リロード ／ 1 ピッケル・2 背中の銃・3 腰の道具（ホイールでも）／ Tab 持ち物\n" +
                 "スペース長押し 縮む→離して伸びる（よける）／ T スロー ／ C 記録を消す ／ V 視点切替</size>";
             GUI.Box(new Rect(10, 10, 760, 150), GUIContent.none);
             GUI.Label(new Rect(20, 16, 750, 150), text, _style);

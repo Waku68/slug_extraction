@@ -3,7 +3,7 @@ using UnityEngine.Serialization;
 
 namespace SlugMove
 {
-    public enum GunKind { Rifle, Shotgun, Sniper }
+    public enum GunKind { Rifle, Shotgun, Sniper, Pistol }
     public enum FireMode { Auto, Semi }
     /// <summary>What has to be worked by hand after every shot.</summary>
     public enum GunAction { None, Pump, Bolt }
@@ -13,7 +13,7 @@ namespace SlugMove
     /// <summary>
     /// Tunables of one gun, in one asset per gun (read every frame, so they can be changed in play mode).
     /// Carried across the chest; the trigger shoulders it (the butt on the right shoulder) and it fires salt: grains of
-    /// refined salt (rifle), a handful of coarse salt (shotgun) or a chunk of rock salt (sniper). Every shot pushes it
+    /// refined salt (rifle, pistol), a handful of coarse salt (shotgun) or a chunk of rock salt (sniper). Every shot pushes it
     /// back into the soft shoulder, flips the muzzle and rocks the upper body; the eyes climb and come partly back.
     /// <see cref="Preset"/> gives the starting values of each kind.
     /// </summary>
@@ -22,6 +22,8 @@ namespace SlugMove
     {
         [Header("銃の種類")]
         [Tooltip("形と手の動き")] public GunKind kind = GunKind.Rifle;
+        /// <summary>A small gun (carried on the hip, quick to draw); the others are big and carried on the back.</summary>
+        public bool Small => kind == GunKind.Pistol;
         [Tooltip("画面に出す名前")] public string displayName = "アサルトライフル";
         [Tooltip("弾の名前")] public string ammoName = "精製塩";
         [Tooltip("Auto = 押しっぱなしで連射、Semi = 1 回押すごとに 1 発")] public FireMode fireMode = FireMode.Auto;
@@ -90,7 +92,7 @@ namespace SlugMove
         [Tooltip("照準の先に何もないときに銃口を向ける距離（m）")] public float farAimDistance = 60f;
 
         [Header("持ち替え・リロード")]
-        [Tooltip("持ち替えて構えるまでの時間（秒）")] public float equipTime = 0.35f;
+        [Tooltip("持ち替えて構えるまでの時間（秒）。持ち物の設定（LoadoutSettings）があれば、背中・腰から取る時間のほうを使う")] public float equipTime = 0.35f;
         [Tooltip("Magazine = マガジンごと替える、OneByOne = 1 発ずつ込める")] public ReloadStyle reloadStyle = ReloadStyle.Magazine;
         [Tooltip("マガジンを替える時間（秒）")] public float reloadTime = 1.5f;
         [Tooltip("1 発ずつ込めるとき：構え直してから込め始めるまでの時間（秒）")] public float reloadOpenTime = 0.3f;
@@ -177,6 +179,36 @@ namespace SlugMove
                     // the scope rides high above the bore: shoulder it lower in view, so its eyepiece stays out of the eye
                     fpShoulder = new Vector3(0.14f, -0.2f, 0f);
                     fpReloadFocus = new Vector3(0.04f, -0.1f, 0.28f); fpReloadTurn = new Vector3(-10f, -36f, 0f);
+                    break;
+                case GunKind.Pistol:
+                    // refined salt from a small gun on the hip: one shot per click, held out in both hands (no shoulder),
+                    // a quick magazine change through the grip
+                    displayName = "拳銃"; ammoName = "精製塩";
+                    fireMode = FireMode.Semi; action = GunAction.None;
+                    pellets = 1; pelletSpread = 0f;
+                    fireRate = 380f; magazineSize = 10; muzzleSpeed = 110f; gravityScale = 1.2f; roundLife = 0.9f;
+                    fireAtRaise = 0.6f;
+                    spreadBase = 0.6f; spreadPerShot = 0.55f; spreadMax = 3f; spreadRecovery = 6f; moveSpread = 1.2f;
+                    climbPerShot = 1.3f; climbYaw = 0.45f; climbYawBias = 0.15f; climbRecovery = 0.8f; climbRecoverySpeed = 12f;
+                    shake = 0.18f; shakeDuration = 0.06f;
+                    kickBack = 0.012f; kickPitch = 9f; kickYaw = 1.5f; kickRoll = 2f; shoulderLean = 1.2f; fistSqueeze = 0.16f;
+                    kickSpringHz = 8f; kickDamping = 0.5f; leanSpringHz = 5f;
+                    raiseTime = 0.1f; lowerTime = 0.25f; holdTime = 0.8f; readyLean = 2f;
+                    // held out in front of the chest, both hands on the grip (the "butt" is the back of the grip)
+                    buttOffset = new Vector3(-0.075f, 0.035f, 0.17f);
+                    carryRightHand = new Vector3(-0.05f, -0.035f, 0.1f);
+                    carryDirection = new Vector3(-0.15f, -0.75f, 0.65f);
+                    carryUp = new Vector3(0f, 0.65f, 0.75f);
+                    lowPitch = 18f; lowYaw = 6f; lowRoll = 4f; lowButtOffset = new Vector3(-0.005f, -0.012f, -0.02f);
+                    equipTime = 0.3f;
+                    reloadStyle = ReloadStyle.Magazine; reloadTime = 1.15f;
+                    reloadRoll = 26f; reloadPitch = -4f; reloadButtOffset = new Vector3(-0.01f, 0.005f, -0.03f);
+                    magazineDrop = 0.07f; magazineAway = new Vector3(-0.07f, -0.1f, -0.02f);
+                    roundColor = new Color(1f, 0.98f, 0.92f); grainSize = 0.01f; tracerLength = 0.35f; convergeDistance = 3f;
+                    markScale = 0.8f; chips = 2; flashTime = 0.03f; flashSize = 0.75f; flashLight = 0.9f;
+                    fpShoulder = new Vector3(0.055f, -0.085f, 0.24f);
+                    fpScale = 0.45f; fpLowAngles = 0.5f; fpLowOffset = new Vector3(0.004f, -0.006f, 0f);
+                    fpReloadFocus = new Vector3(0.035f, -0.075f, 0.25f); fpReloadTurn = new Vector3(-6f, -32f, 0f);
                     break;
             }
         }

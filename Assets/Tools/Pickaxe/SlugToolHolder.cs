@@ -18,6 +18,8 @@ namespace SlugMove
     /// swept against the colliders every small step). Third person shows that pickaxe and the arms as they are.
     /// First person draws the same pose shrunk toward the eye (so it never pokes into walls, yet lands on the same
     /// spot on screen) and, while the slug holds still, shifted to a comfortable place in view.
+    /// Taken in hand, it comes off the back (<see cref="SlugToolRack"/>): the right hand reaches over the shoulder for it,
+    /// brings it round, and the left hand takes the end of the handle; no swing until it is in hand.
     /// Runs after the camera rig so the first-person copy follows this frame's camera.
     /// </summary>
     [DefaultExecutionOrder(100)]
@@ -28,6 +30,10 @@ namespace SlugMove
         public SlugCameraRig cameraRig;
         public SlugPop slug;
         [Tooltip("false の間は振れない（試合の終了後など）")] public bool inputEnabled = true;
+        /// <summary>How long the next draw takes (set by the loadout before enabling; 0 or less = at once).</summary>
+        [System.NonSerialized] public float drawTime = -1f;
+        /// <summary>0..1: how far the pickaxe has been taken in hand (1 = ready to swing).</summary>
+        public float DrawProgress => _draw;
 
         /// <summary>Every blow that lands on something (target is null for plain ground and walls).</summary>
         public event System.Action<RaycastHit, IPickaxeTarget> Struck;
@@ -46,8 +52,10 @@ namespace SlugMove
         InputAction _attack;
         SlugPickaxe _tool, _viewTool;
         SlugArmSet _arms;
+        SlugToolRack _rack;
         Renderer[] _viewRenderers = new Renderer[0], _bodyRenderers = new Renderer[0];
         bool _ready;
+        float _draw = 1f;
 
         /// <summary>
         /// Layer of the tools and arms on the body. For the player's own camera in first person they only cast their
@@ -62,6 +70,7 @@ namespace SlugMove
             _attack = InputSystem.actions != null ? InputSystem.actions.FindAction("Player/Attack") : null;
             _attack?.Enable();
             UnityEngine.Rendering.RenderPipelineManager.beginCameraRendering += OnBeginCamera;
+            _draw = drawTime > 0f ? 0f : 1f;
             if (_ready) Show(true);
         }
 
@@ -98,6 +107,7 @@ namespace SlugMove
         void Start()
         {
             _swing.settings = pickaxe;
+            _rack = GetComponent<SlugToolRack>();
             _tool = SlugPickaxe.Create("Pickaxe", null, true);
             _viewTool = SlugPickaxe.Create("ViewPickaxe", cameraRig.cam.transform, false);
 
@@ -124,7 +134,8 @@ namespace SlugMove
         {
             if (!_ready) return;
             _swing.settings = pickaxe;
-            bool canSwing = inputEnabled && !controller.Climbing && Cursor.lockState == CursorLockMode.Locked;
+            if (_draw < 1f) _draw = Mathf.MoveTowards(_draw, 1f, Time.deltaTime / Mathf.Max(drawTime, 1e-3f));
+            bool canSwing = inputEnabled && _draw >= 1f && !controller.Climbing && Cursor.lockState == CursorLockMode.Locked;
             bool held = canSwing && _attack != null && _attack.IsPressed();
             if (held && (_swing.Phase == SwingPhase.Idle || (_swing.Phase == SwingPhase.Recover && _swing.Blend < pickaxe.chainAt)))
                 BeginSwing();
@@ -345,6 +356,14 @@ namespace SlugMove
             //      player's own in first person (that one shows the first-person copy below)
             ToolPose bodyRest = RestThirdPerson(out float tpUpper);
             ToolPose pose = _swing.PoseLocal(bodyRest.InverseTransformed(Root)).Transformed(Root);
+            // taken in hand: the right hand reaches it on the back, then brings it round to the ready pose
+            var ls = _rack && _rack.loadout ? _rack.loadout.settings : null;
+            ToolPose stow = default;
+            bool drawing = ls && _draw < 1f && _rack.TryStowPose(this, out stow);
+            float reachPart = ls ? ls.reachPart : 0.4f;
+            float dReach = drawing ? Ease(_draw / Mathf.Max(reachPart, 1e-3f)) : 1f;
+            float dPull = drawing ? Ease((_draw - reachPart) / Mathf.Max(1f - reachPart, 1e-3f)) : 1f;
+            if (drawing) pose = ToolPose.Lerp(stow, pose, dPull);
             TipWorld = pose.Point(SlugPickaxe.TipLocal);
             _tool.transform.SetPositionAndRotation(pose.position, pose.rotation);
             _tool.SetMode(true, false);
@@ -352,8 +371,15 @@ namespace SlugMove
             // a right-handed hold: the left hand at the end of the handle, the right hand up by the head.
             // The right hand slides down to the left one on the blow and back up afterwards.
             Vector3 rightGrip = pose.Point(new Vector3(0f, Mathf.Lerp(tpUpper, together, _swing.HandSlide), 0f));
+            Vector3 leftGripBody = pose.GripLow;
+            if (drawing)
+            {
+                Quaternion body = Root.rotation;
+                rightGrip = Vector3.Lerp(slug.HandRootWorld(1f) + body * new Vector3(-0.01f, -0.01f, 0.05f), rightGrip, dReach);
+                leftGripBody = Vector3.Lerp(slug.HandRootWorld(-1f) + body * new Vector3(0.01f, -0.01f, 0.05f), leftGripBody, dPull);
+            }
             BuildArm(_arms.BodyR, slug.HandRootWorld(1f), slug.HandRootNormalWorld(1f), rightGrip, handle, 1f, 1f);
-            BuildArm(_arms.BodyL, slug.HandRootWorld(-1f), slug.HandRootNormalWorld(-1f), pose.GripLow, handle, 1f, 1f);
+            BuildArm(_arms.BodyL, slug.HandRootWorld(-1f), slug.HandRootNormalWorld(-1f), leftGripBody, handle, 1f, 1f);
             var cam = cameraRig.cam;
 
             // ---- first person: the same swing from the first-person ready pose, shrunk toward the eye and
@@ -420,8 +446,30 @@ namespace SlugMove
             Vector3 viewHandle = fix * (turn * (toCam * handle));
             // the first-person arms come up from below the bottom of the screen
             Vector3 up = new Vector3(0f, 1f, 0.4f).normalized;
-            BuildArm(_arms.ViewR, s.fpArmAnchor, up, Map(rightGrip), viewHandle, scale * s.fpArmThickness, scale);
-            BuildArm(_arms.ViewL, s.fpArmAnchorLeft, up, Map(leftGrip), viewHandle, scale * s.fpArmThickness, scale);
+            Vector3 rightV = Map(rightGrip), leftV = Map(leftGrip);
+            if (drawing)
+            {
+                // off the back: it comes down into view from the upper right, turned head-up, about the left hand's grip
+                var t = _viewTool.transform;
+                Quaternion r1 = t.localRotation, r0 = Quaternion.Euler(ls.fpBackTurn) * r1;
+                Vector3 g = ToolPose.GripLowLocal * scale;
+                Quaternion r = Quaternion.Slerp(r0, r1, dPull);
+                Vector3 grip = Vector3.Lerp(ls.fpBackFrom * scale, t.localPosition + r1 * g, dPull);
+                t.localRotation = r;
+                t.localPosition = grip - r * g;
+                viewHandle = r * Vector3.up;
+                float upper = Mathf.Lerp(s.restUpperHand, together, _swing.HandSlide);
+                rightV = Vector3.Lerp(s.fpArmAnchor + up * 0.03f, t.localPosition + r * new Vector3(0f, upper * scale, 0f), dReach);
+                leftV = Vector3.Lerp(s.fpArmAnchorLeft + up * 0.03f, grip, dPull);
+            }
+            BuildArm(_arms.ViewR, s.fpArmAnchor, up, rightV, viewHandle, scale * s.fpArmThickness, scale);
+            BuildArm(_arms.ViewL, s.fpArmAnchorLeft, up, leftV, viewHandle, scale * s.fpArmThickness, scale);
+        }
+
+        static float Ease(float x)
+        {
+            x = Mathf.Clamp01(x);
+            return x * x * (3f - 2f * x);
         }
 
         static float Tanh(float x)

@@ -4,7 +4,8 @@ using UnityEngine;
 namespace SlugMove
 {
     /// <summary>
-    /// A gun built from code (<see cref="SlugRifle"/>, <see cref="SlugShotgun"/>, <see cref="SlugSniper"/>): the shape,
+    /// A gun built from code (<see cref="SlugRifle"/>, <see cref="SlugShotgun"/>, <see cref="SlugSniper"/>,
+    /// <see cref="SlugPistol"/>): the shape,
     /// its moving parts (magazine, pump, bolt), and where the two hands go for any state of the handling.
     ///
     /// Local space, the same for every gun: the bore runs along +Z at <see cref="BoreY"/>, up is +Y, and the origin is
@@ -55,6 +56,7 @@ namespace SlugMove
             {
                 GunKind.Shotgun => root.AddComponent<SlugShotgun>(),
                 GunKind.Sniper => root.AddComponent<SlugSniper>(),
+                GunKind.Pistol => root.AddComponent<SlugPistol>(),
                 _ => root.AddComponent<SlugRifle>(),
             };
             gun.Build(castShadows);

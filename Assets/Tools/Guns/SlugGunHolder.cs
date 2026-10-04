@@ -6,7 +6,7 @@ using UnityEngine.Serialization;
 namespace SlugMove
 {
     /// <summary>
-    /// One of the slug's guns on stretchy arms (an assault rifle, a pump shotgun or a bolt-action sniper, by
+    /// One of the slug's guns on stretchy arms (an assault rifle, a pump shotgun, a bolt-action sniper or a pistol, by
     /// <see cref="GunSettings.kind"/>). Carried across the chest; Attack shoulders it (the butt on the right shoulder) and
     /// fires (hold for full auto; a click per shot otherwise, with the pump or bolt worked by hand in between). R reloads
     /// (a whole magazine, or one round at a time until full or until the trigger is pulled). Guns with a scope look
@@ -18,6 +18,9 @@ namespace SlugMove
     /// first person), and a first-person copy shouldered low and right in view, drawn shrunk toward the eye so it reaches
     /// far less into walls (and pulled back when one is right in front). Rounds fly from the eye (<see cref="SaltRound"/>);
     /// the eyes climb with every shot and come partly back afterwards.
+    /// Taken in hand, it comes off the body where it rides (<see cref="SlugToolRack"/>): the right hand reaches for it
+    /// (over the shoulder for the back, down to the hip for a small gun), brings it up, and the left hand takes it on
+    /// the way. In first person it comes down from the upper right (the back) or up from the lower right (the hip).
     /// Runs after the camera rig so the first-person copy follows this frame's camera.
     /// </summary>
     [DefaultExecutionOrder(100)]
@@ -29,6 +32,10 @@ namespace SlugMove
         public SlugPop slug;
         [Tooltip("false の間は撃てない（試合の終了後など）")] public bool inputEnabled = true;
         [Tooltip("弾数と照準を画面に出す")] public bool showHud = true;
+        /// <summary>How long the next draw takes (set by the loadout before enabling; negative = the gun's own equip time, 0 = at once).</summary>
+        [System.NonSerialized] public float drawTime = -1f;
+        /// <summary>The next draw is from the back (else from the hip).</summary>
+        [System.NonSerialized] public bool drawFromBack = true;
 
         /// <summary>Every round fired (from the eye, direction); a shotgun blast fires several at once.</summary>
         public event System.Action<Vector3, Vector3> Fired;
@@ -56,6 +63,7 @@ namespace SlugMove
         InputAction _attack;
         SlugGunModel _gun, _viewGun;
         SlugArmSet _arms;
+        SlugToolRack _rack;
         Light _flashLight;
         Renderer[] _viewRenderers = new Renderer[0], _bodyRenderers = new Renderer[0], _bodyUnshadowed = new Renderer[0];
         bool _ready, _aimInit;
@@ -75,7 +83,7 @@ namespace SlugMove
             UnityEngine.Rendering.RenderPipelineManager.beginCameraRendering += OnBeginCamera;
             if (!_ready) return;
             Show(true);
-            _handling.Draw();
+            _handling.Draw(drawTime);
             _expectedPitch = cameraRig.Pitch;
         }
 
@@ -120,8 +128,9 @@ namespace SlugMove
         {
             _handling.settings = gun;
             _handling.Reset();
-            _handling.Draw();
+            _handling.Draw(drawTime);
             _handling.Cue += OnCue;
+            _rack = GetComponent<SlugToolRack>();
             string name = gun.kind.ToString();
             _gun = SlugGunModel.Create(gun.kind, name, null, true);
             _viewGun = SlugGunModel.Create(gun.kind, "View" + name, cameraRig.cam.transform, false);
@@ -178,7 +187,7 @@ namespace SlugMove
         public void Simulate(float dt, bool trigger, bool reload, bool aim = false)
         {
             _handling.settings = gun;
-            if (reload) _handling.StartReload();
+            if (reload && _handling.EquipLinear >= 1f) _handling.StartReload();
             Recover(dt);
             int n = Mathf.Clamp(Mathf.CeilToInt(dt / SubStep), 1, 32);
             for (int i = 0; i < n; i++)
@@ -303,7 +312,14 @@ namespace SlugMove
             // ---- the pose: shouldered, carried across the chest, tilted for a reload, down out of the way while being
             //      drawn; the kick pushes it back into the shoulder and flips the muzzle
             // (a reload holds it up, tilted, instead of carried: the hands work on it in front of the chest)
-            float tilt = h.ReloadTilt, low = (1f - h.Raise) * (1f - tilt), stow = 1f - h.Equip;
+            // taken in hand: first the right hand reaches the gun where it rides on the body, then brings it up
+            var ls = _rack && _rack.loadout ? _rack.loadout.settings : null;
+            ToolPose stowPose = default;
+            bool fromRack = ls && h.EquipLinear < 1f && _rack.TryStowPose(this, out stowPose);
+            float lin = h.EquipLinear, reachPart = ls ? ls.reachPart : 0.4f;
+            float drawReach = fromRack ? Ease(lin / Mathf.Max(reachPart, 1e-3f)) : 1f;
+            float drawPull = fromRack ? Ease((lin - reachPart) / Mathf.Max(1f - reachPart, 1e-3f)) : 1f;
+            float tilt = h.ReloadTilt, low = (1f - h.Raise) * (1f - tilt), stow = fromRack ? 0f : 1f - h.Equip;
             // working a bolt cants the gun a little toward the hand on it
             float cant = gun.action == GunAction.Bolt && h.Cycling ? 10f * Mathf.Sin(Mathf.PI * h.Cycle) : 0f;
             Quaternion HoldTurn(float lowAmount) => Quaternion.Euler(
@@ -322,6 +338,7 @@ namespace SlugMove
             }
             pos += body * (StowOffset * stow);
             var pose = new ToolPose { position = pos, rotation = rot };
+            if (fromRack) { pose = BlendAtGrip(stowPose, pose, drawPull, _gun.RestGripLocal); rot = pose.rotation; }
 
             float q = h.Squeeze * s.fistSqueeze;
             Vector3 fist = Vector3.Scale(s.fistSize, new Vector3(1f + q * 0.5f, 1f - q, 1f + q * 0.5f));
@@ -334,9 +351,21 @@ namespace SlugMove
             _flashLight.enabled = flash;
             _flashLight.intensity = s.flashLight;
             _bodyMuzzle = pose.Point(_gun.MuzzleLocal);
-            SlugArmSet.Build(_arms.BodyR, slug.HandRootWorld(1f), slug.HandRootNormalWorld(1f), pose.Point(right.point), rot * right.axis,
+            Vector3 rightGrip = pose.Point(right.point), leftGrip = pose.Point(left.point);
+            Vector3 rightAxis = rot * right.axis, leftAxis = rot * left.axis;
+            // reaching: the right hand travels from in front of the chest to the gun on the body; the left one waits
+            // in front of the chest and takes the gun as it comes up
+            Vector3 restR = slug.HandRootWorld(1f) + body * RestHand;
+            Vector3 restL = slug.HandRootWorld(-1f) + body * Vector3.Scale(RestHand, new Vector3(-1f, 1f, 1f));
+            if (fromRack)
+            {
+                rightGrip = Vector3.Lerp(restR, rightGrip, drawReach);
+                leftGrip = Vector3.Lerp(restL, leftGrip, drawPull);
+                leftAxis = Vector3.Slerp(body * Vector3.forward, leftAxis, drawPull);
+            }
+            SlugArmSet.Build(_arms.BodyR, slug.HandRootWorld(1f), slug.HandRootNormalWorld(1f), rightGrip, rightAxis,
                              s.armRadiusRoot, s.armRadiusHand, fist, 1f);
-            SlugArmSet.Build(_arms.BodyL, slug.HandRootWorld(-1f), slug.HandRootNormalWorld(-1f), pose.Point(left.point), rot * left.axis,
+            SlugArmSet.Build(_arms.BodyL, slug.HandRootWorld(-1f), slug.HandRootNormalWorld(-1f), leftGrip, leftAxis,
                              s.armRadiusRoot, s.armRadiusHand, fist, 1f);
 
             // ---- first person: the same handling, but shouldered at a set place low and right in view (the real
@@ -374,6 +403,17 @@ namespace SlugMove
                 rotV = Quaternion.Slerp(poseV.rotation, rotA, w);
                 poseV = new ToolPose { position = Vector3.Lerp(poseV.position, posA, w), rotation = rotV };
             }
+            if (fromRack)
+            {
+                // off the back it comes down into view from the upper right, off the hip up from the lower right
+                var stowV = new ToolPose
+                {
+                    position = drawFromBack ? ls.fpBackFrom : ls.fpHipFrom,
+                    rotation = Quaternion.Euler(drawFromBack ? ls.fpBackTurn : ls.fpHipTurn) * poseV.rotation,
+                };
+                poseV = BlendAtGrip(stowV, poseV, drawPull, _viewGun.RestGripLocal);
+                rotV = poseV.rotation;
+            }
 
             float sc = s.fpScale;
             Vector3 offset = s.fpLowOffset * low;
@@ -389,10 +429,42 @@ namespace SlugMove
             Place(_viewGun, poseV.position * sc + offset, rotV, Vector3.one * sc, ammo, flash, true);
             _viewMuzzle = cam.transform.TransformPoint(Map(_viewGun.MuzzleLocal));
             float thick = sc * s.fpArmThickness;
-            SlugArmSet.Build(_arms.ViewR, MapBody(slug.HandRootWorld(1f)), toCam * slug.HandRootNormalWorld(1f),
-                             Map(rightV.point), rotV * rightV.axis, s.armRadiusRoot * thick, s.armRadiusHand * thick, fist * sc, sc);
+            Vector3 rightV2 = Map(rightV.point), leftV2 = Map(leftV.point), leftAxisV = rotV * leftV.axis;
+            Vector3 rootRV = MapBody(slug.HandRootWorld(1f));
+            if (fromRack)
+            {
+                // The real arm roots sit just under the eyes, so an arm reaching for a gun out of view would sweep
+                // across it. While the gun comes in, the right arm comes from off the right edge (the back) or the
+                // bottom right (the hip), and the left hand waits under the view; both settle as the gun arrives.
+                float join = Ease((drawPull - 0.45f) / 0.55f);
+                rootRV = Vector3.Lerp(drawFromBack ? FpBackArmRoot : FpHipArmRoot, rootRV, join);
+                leftV2 = Vector3.Lerp(MapBody(restL) + FpHandBelow, leftV2, join);
+            }
+            SlugArmSet.Build(_arms.ViewR, rootRV, toCam * slug.HandRootNormalWorld(1f),
+                             rightV2, rotV * rightV.axis, s.armRadiusRoot * thick, s.armRadiusHand * thick, fist * sc, sc);
             SlugArmSet.Build(_arms.ViewL, MapBody(slug.HandRootWorld(-1f)), toCam * slug.HandRootNormalWorld(-1f),
-                             Map(leftV.point), rotV * leftV.axis, s.armRadiusRoot * thick, s.armRadiusHand * thick, fist * sc, sc);
+                             leftV2, leftAxisV, s.armRadiusRoot * thick, s.armRadiusHand * thick, fist * sc, sc);
+        }
+
+        /// <summary>Where an empty hand waits: just in front of where the right arm grows (body space; mirrored for the left).</summary>
+        static readonly Vector3 RestHand = new Vector3(-0.01f, -0.01f, 0.05f);
+        /// <summary>First person, while a gun is drawn (drawn camera space, m): how far under its rest the left hand waits
+        /// out of view, and where the right arm comes from (off the right edge for the back, the bottom right for the hip).</summary>
+        static readonly Vector3 FpHandBelow = new Vector3(-0.01f, -0.06f, -0.01f);
+        static readonly Vector3 FpBackArmRoot = new Vector3(0.09f, 0.01f, 0.025f), FpHipArmRoot = new Vector3(0.06f, -0.06f, 0.03f);
+
+        static float Ease(float x)
+        {
+            x = Mathf.Clamp01(x);
+            return x * x * (3f - 2f * x);
+        }
+
+        /// <summary>Blends two poses about a grip point: the hand moves in a line, the gun turns in it.</summary>
+        static ToolPose BlendAtGrip(ToolPose a, ToolPose b, float t, Vector3 gripLocal)
+        {
+            Quaternion rot = Quaternion.Slerp(a.rotation, b.rotation, t);
+            Vector3 grip = Vector3.Lerp(a.Point(gripLocal), b.Point(gripLocal), t);
+            return new ToolPose { position = grip - rot * gripLocal, rotation = rot };
         }
 
         /// <summary>

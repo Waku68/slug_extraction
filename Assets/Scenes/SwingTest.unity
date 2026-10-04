@@ -1354,6 +1354,10 @@ GameObject:
   - component: {fileID: 350503060}
   - component: {fileID: 350503059}
   - component: {fileID: 350503058}
+  - component: {fileID: 350503068}
+  - component: {fileID: 350503067}
+  - component: {fileID: 350503066}
+  - component: {fileID: 350503065}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -1443,6 +1447,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SlugMove.SlugHitboxes
   slug: {fileID: 888352898}
   showGizmos: 1
+  bareMultiplier: 1
+  tentacleMultiplier: 1.4
+  helmetMultiplier: 0.6
+  plateMultiplier: 0.6
+  backItemMultiplier: 1
 --- !u!114 &350503059
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1455,13 +1464,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b84ef45e8198cf44a861a63c94ba129a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SlugMove.SlugLoadout
+  settings: {fileID: 11400000, guid: 23510671b6d92274d8ef407aac9f653b, type: 2}
   pickaxe: {fileID: 350503054}
   guns:
   - {fileID: 350503062}
   - {fileID: 350503061}
   - {fileID: 350503060}
+  - {fileID: 350503068}
+  knife: {fileID: 350503067}
+  backGun: 0
+  hip: 0
   startWith: 0
   inputEnabled: 1
+  showHud: 1
 --- !u!114 &350503060
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1555,6 +1570,74 @@ CharacterController:
   m_SkinWidth: 0.03
   m_MinMoveDistance: 0
   m_Center: {x: 0, y: 0.28, z: 0}
+--- !u!114 &350503065
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 350503053}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 78d1583b00316f749bb4d1da5a990dac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SlugMove.LoadoutPicker
+  loadout: {fileID: 350503059}
+  cameraRig: {fileID: 350503056}
+  controller: {fileID: 350503057}
+  openOnStart: 0
+  allowToggle: 1
+  confirmLabel: "\u6C7A\u5B9A"
+--- !u!114 &350503066
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 350503053}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 72c986e5acf23b84caf6237276a5e05c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SlugMove.SlugToolRack
+  loadout: {fileID: 350503059}
+  slug: {fileID: 888352898}
+  cameraRig: {fileID: 350503056}
+--- !u!114 &350503067
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 350503053}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a09cdd29e705b6144a7fc2502f47dba1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SlugMove.SlugKnifeHolder
+  knife: {fileID: 11400000, guid: 396d9adf3354a634aa7a779e05fbe180, type: 2}
+  controller: {fileID: 350503057}
+  cameraRig: {fileID: 350503056}
+  slug: {fileID: 888352898}
+  inputEnabled: 1
+--- !u!114 &350503068
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 350503053}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f06c7557e4fac0f4892b482d29825596, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SlugMove.SlugGunHolder
+  gun: {fileID: 11400000, guid: 0cfbecedf6fc9c84b882a1ec780aa3d6, type: 2}
+  controller: {fileID: 350503057}
+  cameraRig: {fileID: 350503056}
+  slug: {fileID: 888352898}
+  inputEnabled: 1
+  showHud: 1
 --- !u!1 &376248762
 GameObject:
   m_ObjectHideFlags: 0
