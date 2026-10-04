@@ -22,11 +22,12 @@ Oct 4, 2026
 | `discussions/` | [base_discussion.md](discussions/base_discussion.md) | 拠点の話し合い（種類、飾り、集会所） |
 | | [snail_discussion.md](discussions/snail_discussion.md) | カタツムリの見た目の話し合い |
 | | [bag_ui_discussion.md](discussions/bag_ui_discussion.md) | バッグUIの話し合い 1回目（覗き込む、数字の出し方） |
-| | [bag_ui_discussion_2.md](discussions/bag_ui_discussion_2.md) | バッグの話し合い 2回目（塩袋・背負い袋・体の中の隠し場所、カタツムリの殻） |
+| | [bag_ui_discussion_2.md](discussions/bag_ui_discussion_2.md) | バッグの話し合い 2回目（入れ物の分け方、カタツムリの殻、隠し場所） |
+| | [bag_ui_discussion_3.md](discussions/bag_ui_discussion_3.md) | バッグの話し合い 3回目（耐久値、ごちゃまぜ、弾は持ち込みだけ、網バッグ） |
 | `ideas/` | [base_ideas.md](ideas/base_ideas.md) | 拠点の設備の案出し |
 | `tech/` | [tool_craft_notes.md](tech/tool_craft_notes.md) | 作り方のメモ：ピッケル、銃3種、装備、当たり判定、縮んで伸びる、気をつけること |
 
-話し合い（`discussions/`）は「Claude といつもの4人」の記録。進め方は、まず4人がそれぞれ意見を出す → 少し話し合う → 暗黙の了解をひっくり返した案をみんなで話す → まとめ。結論は spec.md に反映してある。
+話し合い（`discussions/`）は「Claude といつもの4人」の記録。進め方は、まず4人がそれぞれ意見を出す → 少し話し合う → 暗黙の了解をひっくり返した案（3つ）→ 極端案（2つ）→ まとめ。結論は spec.md に反映してある。
 
 ## Assets の地図
 

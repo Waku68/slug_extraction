@@ -25,7 +25,7 @@ namespace SlugMove
         [Tooltip("触角（弱点）に当たったときの倍率")] public float tentacleMultiplier = 1.4f;
         [Tooltip("ヘルメットの上から頭に当たったときの倍率（防具ごとに変える予定）")] public float helmetMultiplier = 0.6f;
         [Tooltip("殻板の上から胸に当たったときの倍率（防具ごとに変える予定）")] public float plateMultiplier = 0.6f;
-        [Tooltip("背中の物（バッグ／殻）に当たったときの倍率（未決定。塩が漏れる案あり）")] public float backItemMultiplier = 1f;
+        [Tooltip("背中の物（バッグ／殻）に当たったときの体への倍率（未決定。バッグの耐久値が減って体は無傷、の案が有力）")] public float backItemMultiplier = 1f;
 
         /// <summary>Every hit on any slug's hitboxes (the part, the hit).</summary>
         public static event System.Action<SlugHitbox, RaycastHit> AnyHit;
