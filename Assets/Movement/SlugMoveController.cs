@@ -22,11 +22,11 @@ namespace SlugMove
         [Tooltip("速度の倍率（荷物の重さなど、ほかのコンポーネントが変える）")] public float speedMultiplier = 1f;
         [Tooltip("false の間は入力を受け付けない（試合の終了後など）")] public bool inputEnabled = true;
         [Tooltip("上半身の前後の傾き（度、+ = 前）。ピッケルを振る動きなど、ほかのコンポーネントが変える")] public float leanDegrees;
-        /// <summary>How far the front of the body is twisted round to the right (degrees; the rear stays put): looking
+        /// <summary>How far the head is turned round on the neck to the right (degrees; the body stays put): looking
         /// back at the bag. Set by the bag.</summary>
         [System.NonSerialized] public float twistDegrees;
-        /// <summary>Lying flat (Z toggles it): the upper body down near the ground, the face and arms moved up to the front
-        /// of it. Slow, and no stretching or climbing meanwhile.</summary>
+        /// <summary>Lying low (Z toggles it): the head sinks straight down (the neck squashes) and the arms move up toward
+        /// it. Slow, and no stretching or climbing meanwhile.</summary>
         [System.NonSerialized] public bool prone;
         /// <summary>0..1: how far down it is.</summary>
         public float Prone01 { get; private set; }
@@ -368,11 +368,8 @@ namespace SlugMove
             Vector3 nLocal = Quaternion.Inverse(transform.rotation) * n;
             Quaternion target = Quaternion.FromToRotation(Vector3.up, nLocal);
             _tilt = Quaternion.Slerp(_tilt, target, 1f - Mathf.Exp(-settings.slopeAlignSpeed * dt));
-            // a twist turns the whole body about the turning point, and the rear is swung back by as much (below), so
-            // only the front comes round
-            Quaternion twist = Quaternion.Euler(0f, twistDegrees, 0f);
-            body.localRotation = _tilt * twist;
-            body.localPosition = _tilt * (twist * _bodyBasePos);
+            body.localRotation = _tilt;
+            body.localPosition = _tilt * _bodyBasePos;
             // shrinking makes it short, wide and low; stretching makes it long, thin and low
             float e = 1f + _stretch;
             var sc = _stretch < 0f ? new Vector3(Mathf.Pow(e, -0.55f), Mathf.Pow(e, 0.4f), e)
@@ -385,11 +382,11 @@ namespace SlugMove
             {
                 Vector3 f = _tilt * Vector3.forward;
                 float pitchUp = Mathf.Atan2(f.y, f.z) * Mathf.Rad2Deg;
-                // lying down: the front bends forward from the chest, flat to the ground
-                float down = Prone01 * Prone01 * (3f - 2f * Prone01);
-                _slug.SetProne(down);
-                _slug.SetUpright(pitchUp * settings.uprightAmount + leanDegrees + settings.proneLean * down);
-                _slug.SetTurn(_tailLag + twistDegrees, transform.position);     // the slug turns about this point
+                // lying down: the head sinks; looking at the bag: the head turns on the neck
+                _slug.SetProne(Prone01 * Prone01 * (3f - 2f * Prone01));
+                _slug.SetHeadTwist(twistDegrees);
+                _slug.SetUpright(pitchUp * settings.uprightAmount + leanDegrees);
+                _slug.SetTurn(_tailLag, transform.position);     // the slug turns about this point
             }
         }
     }

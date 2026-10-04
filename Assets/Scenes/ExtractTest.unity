@@ -8156,14 +8156,6 @@ PrefabInstance:
       value: 0.55
       objectReference: {fileID: 0}
     - target: {fileID: 8084910285950271412, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
-      propertyPath: pronePivotT
-      value: 0.6
-      objectReference: {fileID: 0}
-    - target: {fileID: 8084910285950271412, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
-      propertyPath: proneFaceAngle
-      value: 60
-      objectReference: {fileID: 0}
-    - target: {fileID: 8084910285950271412, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
       propertyPath: tentacleDirection
       value: 0.5
       objectReference: {fileID: 0}

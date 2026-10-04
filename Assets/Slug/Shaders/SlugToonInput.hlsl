@@ -142,6 +142,15 @@ CBUFFER_START(UnityPerMaterial)
     float  _TurnAngle;       // radians about the body y axis (the tail's lag behind the front)
     float4 _TurnPivot;       // xyz: a point on the turning axis, in body space
     float4 _TurnRange;       // x..y: the bend fades out along the body (uv.y): full at the tail, none from y on
+
+    // lying down: the front sinks straight down (the neck squashes), more toward the head
+    float  _DropAmount;      // how far the head sinks (body space)
+    float4 _DropRange;       // x..y: the sinking fades in along the body (uv.y): none before x, all of it from y on
+
+    // the head turned round on the neck (looking back at the bag)
+    float  _TwistAngle;      // radians about the body y axis (+ = to the right)
+    float4 _TwistPivot;      // xyz: a point on the neck's axis, in body space
+    float4 _TwistRange;      // x..y: the turn fades in along the body (uv.y): none before x, all of it from y on
 CBUFFER_END
 
 // Global overrides so screenshots can freeze the crawl animation at a known time.
@@ -224,6 +233,27 @@ void UprightBend(inout float3 posOS, inout float3 nrmOS, float t)
     nrmOS = float3(nrmOS.x, nrmOS.y * c - nrmOS.z * s, nrmOS.y * s + nrmOS.z * c);
 }
 
+// Lying down: the front sinks straight down, more toward the head, so the neck squashes and the head stays upright.
+// Mirrored on the CPU by SlugPop.Drop().
+void ProneDrop(inout float3 posOS, float t)
+{
+    if (_DropAmount < 1e-5) return;
+    posOS.y -= _DropAmount * smoothstep(_DropRange.x, _DropRange.y, t);
+}
+
+// Turns the head round on the neck (about the vertical axis through _TwistPivot), more toward the head.
+// Mirrored on the CPU by SlugPop.Twist().
+void HeadTwist(inout float3 posOS, inout float3 nrmOS, float t)
+{
+    if (abs(_TwistAngle) < 1e-4) return;
+    float a = _TwistAngle * smoothstep(_TwistRange.x, _TwistRange.y, t);
+    float s = sin(a), c = cos(a);
+    float3 p = posOS + _PartOffset.xyz - _TwistPivot.xyz;
+    p = float3(p.x * c + p.z * s, p.y, -p.x * s + p.z * c);
+    posOS = p + _TwistPivot.xyz - _PartOffset.xyz;
+    nrmOS = float3(nrmOS.x * c + nrmOS.z * s, nrmOS.y, -nrmOS.x * s + nrmOS.z * c);
+}
+
 // Swings the rear about the vertical turning axis, more toward the tail, so after a turn the tail trails behind and
 // then follows (instead of the whole body turning rigidly). Mirrored on the CPU by SlugPop.Turn().
 void TurnBend(inout float3 posOS, inout float3 nrmOS, float t)
@@ -259,6 +289,8 @@ void SlugDeform(inout float3 posOS, inout float3 nrmOS, float3 tanOS, float2 uv,
             float h = uv.y;
             posOS += _SwayDir.xyz * (sin(phs + 1.3 * h) * _SwayAmp * h * h);
         }
+        ProneDrop(posOS, _FollowT);
+        HeadTwist(posOS, nrmOS, _FollowT);
         UprightBend(posOS, nrmOS, _FollowT);
         TurnBend(posOS, nrmOS, _FollowT);
         return;
@@ -304,6 +336,8 @@ void SlugDeform(inout float3 posOS, inout float3 nrmOS, float3 tanOS, float2 uv,
         posOS += nrmOS * (wave * _SkirtAmp * band);
     }
 
+    ProneDrop(posOS, t);
+    HeadTwist(posOS, nrmOS, t);
     UprightBend(posOS, nrmOS, t);
     TurnBend(posOS, nrmOS, t);
 }

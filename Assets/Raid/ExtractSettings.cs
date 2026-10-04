@@ -58,7 +58,7 @@ namespace SlugExtract
         [Tooltip("背中に弾が 1 粒当たったときに減る耐久（弾の速さ 140 m/s あたり）")] public float hitDamage = 8f;
         [Tooltip("エコバッグを広げる時間（秒）。その間は無防備")] public float ecoOpenTime = 3f;
         [Range(0.1f, 1f), Tooltip("背中を覗いている間の速さの倍率")] public float peekSpeed = 0.4f;
-        [Tooltip("背中を覗くときに体をねじる角度（度）。頑張って後ろを見て、ぎりぎり見えるくらい")] public float peekTwist = 90f;
+        [Tooltip("背中を覗くときに頭を回す角度（度）。体はそのままで、頭だけ首の上で回る")] public float peekTwist = 90f;
         [Tooltip("落ちている物をつかめる距離（m）")] public float pickupReach = 0.8f;
         [Tooltip("つかむ・バッグに入れる・バッグから出す時間（秒）")] public float grabTime = 0.3f, stowTime = 0.5f, takeOutTime = 0.5f;
 

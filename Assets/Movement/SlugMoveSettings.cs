@@ -55,11 +55,10 @@ namespace SlugMove
         public float lungeSpringDamping = 0.35f;
 
         [Header("背中を覗く（Q）")]
-        [Tooltip("覗くときの目の高さ（顔の真ん中から上へ, m）")] public float peekHeight = 0.4f;
-        [Tooltip("覗くときに目をずらす量（顔からバッグと反対の向き, m）。負なら首の後ろの上から見下ろす")] public float peekBack = -0.12f;
+        [Tooltip("覗くときの目の位置（顔の真ん中から、見ている向き基準：右, 上, 前, m）。右肩の上から斜めにバッグを見下ろす")]
+        public Vector3 peekEye = new Vector3(0.34f, 0.2f, -0.2f);
 
         [Header("伏せ（Z キーで切り替え）")]
-        [Tooltip("伏せたときに上半身を前へ倒す角度（度）。胸から先が地面すれすれまで下がる")] public float proneLean = 70f;
         [Range(0.05f, 1f), Tooltip("伏せている間の速さの倍率")] public float proneSpeed = 0.35f;
         [Tooltip("伏せる・起き上がるのにかかる時間（秒）")] public float proneTime = 0.4f;
 

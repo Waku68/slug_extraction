@@ -163,15 +163,12 @@ namespace SlugMove
                 rot = look * Quaternion.Euler(0f, 0f, roll);
             }
 
-            // ---- peeking: the head bends round (the body twists) and the eyes look down from over it at the bag on the back
+            // ---- peeking: the head turns round over the right shoulder and the eyes look down at the bag on the back
             if (peek > 0f)
             {
                 float w = peek * peek * (3f - 2f * peek);
-                Vector3 face = slug.FaceCenterWorld;
-                Vector3 away = face - peekTarget;
-                away.y = 0f;
-                away = away.sqrMagnitude > 1e-6f ? away.normalized : Quaternion.Euler(0f, Yaw, 0f) * Vector3.forward;
-                Vector3 over = face + Vector3.up * s.peekHeight + away * s.peekBack;
+                Quaternion yawOnly = Quaternion.Euler(0f, Yaw, 0f);
+                Vector3 over = slug.FaceCenterWorld + yawOnly * s.peekEye;
                 Vector3 to = peekTarget - over;
                 Quaternion peekRot = to.sqrMagnitude > 1e-6f ? Quaternion.LookRotation(to, Vector3.up) : rot;
                 pos = Vector3.Lerp(pos, over, w);

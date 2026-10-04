@@ -44,9 +44,7 @@ MonoBehaviour:
   lungeStretch: 0.3
   lungeSpringHz: 3
   lungeSpringDamping: 0.35
-  peekHeight: 0.4
-  peekBack: -0.12
-  proneLean: 70
+  peekEye: {x: 0.34, y: 0.2, z: -0.2}
   proneSpeed: 0.35
   proneTime: 0.4
   idleCrawlRate: 0.2

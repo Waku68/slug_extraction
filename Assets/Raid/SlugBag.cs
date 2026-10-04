@@ -20,7 +20,7 @@ namespace SlugExtract
     /// Everything goes through the hands (gloved, so salt does not burn them). In a raid: E takes what lies in front
     /// (a chunk just struck out of a rock, something dropped) in the hands, and with something in the hands E puts it in
     /// the bag (over the shoulder); G takes the top thing out of the bag into the hands, and with something in the hands
-    /// G drops it (hold and let go to throw); X pushes what is in the hands into the body; Q (hold) twists the body round
+    /// G drops it (hold and let go to throw); X pushes what is in the hands into the body; Q (hold) turns the head round
     /// to look at the back and flips the bag's lid open (everyone sees both); in the own view the bag on the back is
     /// drawn big and tipped toward the eyes: in its mouth the top two things, drawn chunky and easy to tell apart
     /// (three, spilling over, when it is crammed), and the numbers. While the hands are full the tools are put away.
@@ -435,7 +435,7 @@ namespace SlugExtract
         void LateUpdate()
         {
             if (!IsPlayer) return;
-            // everyone sees the body strain round to look at its back (and the lid flip open: OnBeginCamera)
+            // everyone sees the head turn round to look at its back (and the lid flip open: OnBeginCamera)
             controller.twistDegrees = settings.peekTwist * Ease(_peek);
 
             // the top two things (three when crammed), placed in the mouth for the own camera (OnBeginCamera)

@@ -140,6 +140,11 @@ Shader "Slug/Toon"
         [HideInInspector] _TurnAngle("Turn Angle", Float) = 0
         [HideInInspector] _TurnPivot("Turn Pivot", Vector) = (0, 0, 0, 0)
         [HideInInspector] _TurnRange("Turn Range", Vector) = (0, 1, 0, 0)
+        [HideInInspector] _DropAmount("Drop Amount", Float) = 0
+        [HideInInspector] _DropRange("Drop Range", Vector) = (0, 1, 0, 0)
+        [HideInInspector] _TwistAngle("Twist Angle", Float) = 0
+        [HideInInspector] _TwistPivot("Twist Pivot", Vector) = (0, 0, 0, 0)
+        [HideInInspector] _TwistRange("Twist Range", Vector) = (0, 1, 0, 0)
 
         [HideInInspector] _Surface("Surface", Float) = 0
         [HideInInspector] _SrcBlend("Src Blend", Float) = 1

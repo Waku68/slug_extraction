@@ -53,9 +53,12 @@ namespace SlugDesign
         [Range(0f, 1f), Tooltip("手の付け根を脇腹の真横からどれだけ上へずらすか")] public float handRaise = 0f;
         [Range(0f, 1f), Tooltip("腕を前へ伸ばす量。1 = 少し長く、胸の前へ向く（両手で道具を持つ）")] public float handReach = 0f;
         [Range(0f, 0.9f), Tooltip("坂で上半身を起こすときに曲げる位置（体の長さ方向、0 = 尾、1 = 頭）。高いほど首から上だけが起きる")] public float uprightPivotT = 0.65f;
-        [Range(0.3f, 0.9f), Tooltip("伏せたときに上半身を倒す位置（体の長さ方向、0 = 尾、1 = 頭）。低いほど胸から先が地面に近づく")] public float pronePivotT = 0.6f;
+        [Tooltip("伏せたときに頭を下げる高さ（m）。頭はそのまま真下へ下がり、首が縮む")] public float proneDrop = 0.2f;
+        [Tooltip("伏せたときに縮む範囲（体の長さ方向、0 = 尾、1 = 頭）。x より尾側は下がらず、y より頭側はまるごと下がる")]
+        public Vector2 proneDropRange = new Vector2(0.35f, 0.8f);
         [Range(0f, 0.35f), Tooltip("伏せたときに手の付け根を頭のほうへずらす量（体の長さ方向）")] public float proneHandShift = 0.2f;
-        [Range(0f, 120f), Tooltip("伏せたときに顔（目・口・触角）を頭のてっぺんのほうへずらす角度（度）。倒した上半身の先で前を向く")] public float proneFaceAngle = 60f;
+        [Tooltip("頭を回す（背中を覗く）ときにねじれる範囲（体の長さ方向）。x より尾側は回らず、y より頭側はまるごと回る")]
+        public Vector2 headTwistRange = new Vector2(0.62f, 0.82f);
         [Tooltip("足（手と同じ円錐形）を、腹が地面に付くあたりの両脇に生やす")] public bool feet = true;
         [Range(0f, 0.6f), Tooltip("足の付け根の位置（体の長さ方向、0 = 尾、1 = 頭）")] public float footT = 0.3f;
         [Range(0.4f, 1f), Tooltip("おなか（地面に付いている後ろ側）の長さの倍率。1 = そのまま、小さいほど胸から尾までが短い")] public float bellyLength = 1f;
@@ -94,15 +97,9 @@ namespace SlugDesign
         // hand roots on the skin (body space, rest pose): point, outward normal, and the ring they sit on (for the crawl)
         struct SkinPoint { public Vector3 point, normal, pivot; public float t, radius; }
         SkinPoint _rootL, _rootR, _rootLProne, _rootRProne;
-        // lying down (see SetProne): how far, where the front bends when standing, and how the face is found on the head
-        float _prone, _standPivotT = 0.65f;
-        bool _faceOk, _headPosed;
-        Vector3 _faceOrigin, _faceBaseF, _faceBaseU, _faceCenter0, _faceFwd0, _faceUp0;
-        Quaternion _headTurn = Quaternion.identity;
-        // the head's features (eyes, mouth, tentacles: parts riding the skin), turned up over the head while lying down
-        // (moveTurn / moveShift: how it is moved over the rest shape, v -> moveTurn * v + moveShift)
-        struct HeadPart { public Transform tr; public Vector3 pos0, attach, normal, moveShift; public Quaternion moveTurn; public float t; }
-        readonly List<HeadPart> _headParts = new List<HeadPart>();
+        // lying down (the head sinks) and the head turned round on the neck (see SetProne, SetHeadTwist)
+        float _prone, _twistDeg;
+        Vector3 _twistPivot;
         // tentacle roots (body space, rest pose): where they leave the skin, their direction and thickness
         readonly Vector3[] _earRoot = new Vector3[2], _earAxis = new Vector3[2];
         float _earRadius, _earLength;
@@ -162,60 +159,26 @@ namespace SlugDesign
             };
         }
 
-        /// <summary>How far the slug lies down (0 = up, 1 = flat on the ground).</summary>
+        /// <summary>How far the slug lies down (0 = up, 1 = down).</summary>
         public float Prone => _prone;
 
         /// <summary>
-        /// Lies the slug down by <paramref name="amount"/> (0..1): the place where the front bends moves down to the chest
-        /// (<see cref="pronePivotT"/>), so bending it forward (<see cref="SetUpright"/>) lays the whole upper body near the
-        /// ground; the face slides up onto the top of the head and the arm roots move up toward it, so they look and reach
-        /// forward from the front of the lowered body.
+        /// Lies the slug down by <paramref name="amount"/> (0..1): the head sinks straight down by <see cref="proneDrop"/>
+        /// (the neck squashes; the face still looks ahead) and the arm roots move up toward it.
         /// </summary>
         public void SetProne(float amount)
         {
             amount = Mathf.Clamp01(amount);
             if (Mathf.Abs(amount - _prone) < 1e-4f) return;
             _prone = amount;
-            ApplyProne();
+            SetUpright(_uprightDeg);
         }
 
-        void ApplyProne()
+        /// <summary>Turns the head round on the neck by this many degrees (+ = to the right), the body staying as it is.</summary>
+        public void SetHeadTwist(float degrees)
         {
-            if (_shape == null) return;
-            float pt = Mathf.Lerp(_standPivotT, pronePivotT, _prone);
-            _shape.RingInfo(pt, out _uprightPivot, out _);
-            _uprightRange = new Vector2(pt - 0.08f, Mathf.Min(pt + 0.2f, 1f));
-            _headTurn = Quaternion.AngleAxis(proneFaceAngle * _prone, Vector3.Cross(_faceBaseF, _faceBaseU).normalized);
-            // the parts on the head (and a face made of parts) slide up over it: turned as the head turns, and put
-            // back on the skin where that direction meets it (the head is longer than it is wide)
-            for (int i = 0; i < _headParts.Count; i++)
-            {
-                var h = _headParts[i];
-                h.moveTurn = _headTurn;
-                h.moveShift = OnHead(h.attach) - _headTurn * h.attach;
-                _headParts[i] = h;
-            }
-            if (!_faceOk)
-            {
-                _faceCenter = OnHead(_faceCenter0);
-                _faceFwd = _headTurn * _faceFwd0;
-                _faceUp = _headTurn * _faceUp0;
-            }
-            else
-            {
-                // the face slides up over the head: found the same way as when built, looking further up
-                float a = (4f + proneFaceAngle * _prone) * Mathf.Deg2Rad;
-                Vector3 dir = (_faceBaseF * Mathf.Cos(a) + _faceBaseU * Mathf.Sin(a)).normalized;
-                Vector3 upHint = _faceBaseU * Mathf.Cos(a - 4f * Mathf.Deg2Rad) - _faceBaseF * Mathf.Sin(a - 4f * Mathf.Deg2Rad);
-                if (_shape.Raycast(_faceOrigin, dir, out var pc, out var nc))
-                {
-                    DecalFrame(nc, upHint, out _, out var u);
-                    _faceCenter = new Vector3(0f, pc.y, pc.z); _faceFwd = nc; _faceUp = u;
-                    _body.SetVector("_FaceC", V4(_faceCenter, 1f));
-                    _body.SetVector("_FaceU", V4(u));
-                    _body.SetVector("_FaceN", V4(nc));
-                }
-            }
+            if (Mathf.Abs(degrees - _twistDeg) < 1e-3f) return;
+            _twistDeg = degrees;
             SetUpright(_uprightDeg);
         }
 
@@ -233,58 +196,6 @@ namespace SlugDesign
 
         /// <summary>How a <see cref="GearFollower"/> part at <paramref name="t"/> is turned right now (visual space).</summary>
         public Quaternion FollowerRotation(float t) => Quaternion.LookRotation(BendDir(Vector3.forward, t), BendDir(Vector3.up, t));
-
-        /// <summary>Where a point on the head's skin goes as the features slide up over the head (rest shape).</summary>
-        Vector3 OnHead(Vector3 point)
-        {
-            Vector3 d = _headTurn * (point - _faceOrigin);
-            if (_prone > 0f && d.sqrMagnitude > 1e-8f && _shape.Raycast(_faceOrigin, d.normalized, out var p, out _)) return p;
-            return _faceOrigin + d;
-        }
-
-        /// <summary>The parts on the head that ride the skin (eyes, mouth, cheeks, lids, tentacles).</summary>
-        void CollectHeadParts()
-        {
-            _headParts.Clear();
-            _headPosed = false;
-            foreach (Transform c in _visual.transform)
-            {
-                string n = c.name;
-                if (!(n.StartsWith("Eye_") || n.StartsWith("Cheek_") || n == "Mouth" || n.StartsWith("Ear_") || n.StartsWith("Lid_"))) continue;
-                var r = c.GetComponent<Renderer>();
-                var m = r ? r.sharedMaterial : null;
-                if (m == null || m.GetFloat("_FollowMode") < 0.5f) continue;
-                Vector4 pivot = m.GetVector("_FollowPivot"), radial = m.GetVector("_FollowRadial");
-                _headParts.Add(new HeadPart
-                {
-                    tr = c, pos0 = c.localPosition, t = m.GetFloat("_FollowT"), moveTurn = Quaternion.identity,
-                    attach = (Vector3)pivot + (Vector3)radial, normal = m.GetVector("_FollowNormal"),
-                });
-            }
-        }
-
-        /// <summary>
-        /// Moves the head's parts up over the head (as worked out in ApplyProne), on top of the way they ride the skin
-        /// this frame. Called after every bend.
-        /// </summary>
-        void PoseHead()
-        {
-            bool on = _prone > 0f;
-            if (!on && !_headPosed) return;
-            _headPosed = on;
-            foreach (var h in _headParts)
-            {
-                if (!h.tr) continue;
-                if (!on) { h.tr.localPosition = h.pos0; h.tr.localRotation = Quaternion.identity; continue; }
-                // the part rides the skin rigidly (F); move it in the rest shape instead: F * move * F^-1
-                Quaternion a = FollowerRotation(h.t);
-                Vector3 b = FollowerLocal(Vector3.zero, h.t, h.attach, h.normal);
-                Quaternion rot = a * h.moveTurn * Quaternion.Inverse(a);
-                Vector3 pos = b - rot * b + a * h.moveShift;
-                h.tr.localPosition = rot * h.pos0 + pos;
-                h.tr.localRotation = rot;
-            }
-        }
 
         /// <summary>The hands' material (colour, toon shading, outline), to dress arms made elsewhere.</summary>
         public Material HandMaterial => _hand;
@@ -327,8 +238,12 @@ namespace SlugDesign
                 m.SetFloat("_UprightAngle", a);
                 m.SetVector("_UprightPivot", _uprightPivot);
                 m.SetVector("_UprightRange", new Vector4(_uprightRange.x, _uprightRange.y, 0f, 0f));
+                m.SetFloat("_DropAmount", proneDrop * _prone);
+                m.SetVector("_DropRange", new Vector4(proneDropRange.x, Mathf.Max(proneDropRange.y, proneDropRange.x + 1e-3f), 0f, 0f));
+                m.SetFloat("_TwistAngle", _twistDeg * Mathf.Deg2Rad);
+                m.SetVector("_TwistPivot", _twistPivot);
+                m.SetVector("_TwistRange", new Vector4(headTwistRange.x, Mathf.Max(headTwistRange.y, headTwistRange.x + 1e-3f), 0f, 0f));
             }
-            PoseHead();
         }
 
         /// <summary>
@@ -351,7 +266,6 @@ namespace SlugDesign
                 m.SetVector("_TurnPivot", _turnPivot);
                 m.SetVector("_TurnRange", range);
             }
-            PoseHead();
         }
 
         /// <summary>How far the rear is swung back at t (radians about body y, same as TurnBend in the shader).</summary>
@@ -369,9 +283,30 @@ namespace SlugDesign
             return new Vector3(v.x * c + v.z * s, v.y, -v.x * s + v.z * c);
         }
 
-        /// <summary>Body-space point after both bends (upright, then the turn), as the shader moves it.</summary>
-        Vector3 Bend(Vector3 p, float t) => TurnDir(Upright(p, t) - _turnPivot, t) + _turnPivot;
-        Vector3 BendDir(Vector3 v, float t) => TurnDir(UprightDir(v, t), t);
+        /// <summary>Body-space point after all the bends (lying down, the head's turn, upright, then the turn), as the shader moves it.</summary>
+        Vector3 Bend(Vector3 p, float t) => TurnDir(Upright(Twist(Drop(p, t), t), t) - _turnPivot, t) + _turnPivot;
+        Vector3 BendDir(Vector3 v, float t) => TurnDir(UprightDir(TwistDir(v, t), t), t);
+
+        /// <summary>Same as ProneDrop in the shader.</summary>
+        Vector3 Drop(Vector3 p, float t)
+        {
+            if (_prone <= 0f) return p;
+            float x = Mathf.Clamp01((t - proneDropRange.x) / Mathf.Max(proneDropRange.y - proneDropRange.x, 1e-3f));
+            p.y -= proneDrop * _prone * x * x * (3f - 2f * x);
+            return p;
+        }
+
+        /// <summary>Same as HeadTwist in the shader.</summary>
+        Vector3 Twist(Vector3 p, float t) => TwistDir(p - _twistPivot, t) + _twistPivot;
+
+        Vector3 TwistDir(Vector3 v, float t)
+        {
+            if (Mathf.Abs(_twistDeg) < 1e-3f) return v;
+            float x = Mathf.Clamp01((t - headTwistRange.x) / Mathf.Max(headTwistRange.y - headTwistRange.x, 1e-3f));
+            float a = _twistDeg * Mathf.Deg2Rad * x * x * (3f - 2f * x);
+            float s = Mathf.Sin(a), c = Mathf.Cos(a);
+            return new Vector3(v.x * c + v.z * s, v.y, -v.x * s + v.z * c);
+        }
 
         float UprightAngleAt(float t)
         {
@@ -592,9 +527,10 @@ namespace SlugDesign
             shape.RingInfo(0f, out _tailPivot, out _);
             // the upright bend pivots at the chest: the neck and head stand up over it on a slope
             float pivotT = Mathf.Max(uprightPivotT, spec.bendStart);
-            _standPivotT = pivotT;
             shape.RingInfo(pivotT, out _uprightPivot, out _);
             _uprightRange = new Vector2(pivotT - 0.08f, Mathf.Min(pivotT + 0.2f, 1f));
+            // the head turns on the neck about the vertical axis through the middle of the head
+            _twistPivot = shape.FrameAt(0.88f).center;
 
             // ---------------- face: painted flat on the skin
             float headT = 0.88f;
@@ -611,18 +547,15 @@ namespace SlugDesign
             };
 
             var face = new FaceFrame { hf = fr.rx };
-            _faceOrigin = origin; _faceBaseF = faceF; _faceBaseU = faceU;
             if (shape.Raycast(origin, dirOf(0f, 4f), out var pc, out var nc))
             {
                 DecalFrame(nc, faceU, out var r, out var u);
                 face.ok = true; face.c = new Vector3(0f, pc.y, pc.z); face.r = new Vector3(1f, 0f, 0f); face.u = u; face.n = nc;
                 _faceCenter = face.c; _faceFwd = nc; _faceUp = u;
-                _faceCenter0 = face.c; _faceFwd0 = nc; _faceUp0 = u;
             }
 
             bool v4 = bodyStyle == SlugBodyStyle.V4Round;
             if (v4) face.ok = false;                       // the v4 face is made of small 3D parts, not painted
-            _faceOk = face.ok;
             ConfigureMaterials(spec, shape, face);
             Part("Body", shape.mesh, _body, Vector3.zero, Quaternion.identity, Vector3.one);
             if (v4) BuildV4Face(shape);
@@ -700,8 +633,7 @@ namespace SlugDesign
                     // lying down, the arms grow from further up toward the head
                     var prone = root;
                     Ring hp = shape.FrameAt(Mathf.Min(handT + proneHandShift, 0.95f));
-                    Vector3 rayP = (hp.right * side + Vector3.up * handRaise).normalized;
-                    if (shape.RaycastT(hp.center, rayP, out var pp, out var np, out var pT))
+                    if (shape.RaycastT(hp.center, rayDir, out var pp, out var np, out var pT))
                     {
                         shape.RingInfo(Mathf.Clamp01(pT), out var pPivot, out var pRadius);
                         prone = new SkinPoint { point = pp, normal = np, pivot = pPivot, t = pT, radius = pRadius };
@@ -730,8 +662,6 @@ namespace SlugDesign
             _visual.transform.localPosition = new Vector3(-b0.center.x, 0f, -b0.center.z);
             ApplyHands();
             _renderers = _visual.GetComponentsInChildren<Renderer>(true);
-            CollectHeadParts();
-            if (_prone > 0f) ApplyProne();
             SetUpright(_uprightDeg);
             _turnDeg = 0f;
             SetTurn(0f, transform.position);
