@@ -1,0 +1,101 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71843ff1f4aae984aaf7b62b8a32c13b, type: 3}
+  m_Name: RifleSettings
+  m_EditorClassIdentifier: Assembly-CSharp::SlugMove.RifleSettings
+  kind: 0
+  displayName: "\u30A2\u30B5\u30EB\u30C8\u30E9\u30A4\u30D5\u30EB"
+  ammoName: "\u7CBE\u88FD\u5869"
+  fireMode: 0
+  action: 0
+  cycleTime: 0.6
+  pellets: 1
+  pelletSpread: 0
+  fireRate: 600
+  magazineSize: 30
+  muzzleSpeed: 140
+  gravityScale: 1
+  roundLife: 1.2
+  fireAtRaise: 0.7
+  scopeFov: 0
+  scopeTime: 0.18
+  scopeSpread: 0.1
+  scopeEyeRelief: 0.07
+  spreadBase: 0.3
+  spreadPerShot: 0.3
+  spreadMax: 3
+  spreadRecovery: 8
+  moveSpread: 1.5
+  climbPerShot: 0.55
+  climbYaw: 0.3
+  climbYawBias: 0.25
+  climbRecovery: 0.65
+  climbRecoverySpeed: 9
+  shake: 0.22
+  shakeDuration: 0.07
+  kickBack: 0.022
+  kickPitch: 3.5
+  kickYaw: 1.2
+  kickRoll: 2.5
+  shoulderLean: 2.5
+  fistSqueeze: 0.12
+  kickSpringHz: 9
+  kickDamping: 0.5
+  leanSpringHz: 4.5
+  leanDamping: 0.45
+  raiseTime: 0.12
+  lowerTime: 0.3
+  holdTime: 0.9
+  readyLean: 4
+  buttOffset: {x: -0.012, y: 0.022, z: 0.022}
+  carryRightHand: {x: -0.04, y: -0.03, z: 0.1}
+  carryDirection: {x: -0.85, y: -0.6, z: 0.15}
+  carryUp: {x: 0, y: 0.7, z: 1}
+  lowPitch: 30
+  lowYaw: 22
+  lowRoll: 12
+  lowButtOffset: {x: 0.01, y: -0.035, z: 0.035}
+  aimLagHz: 11
+  minAimDistance: 2.5
+  farAimDistance: 60
+  equipTime: 0.35
+  reloadStyle: 0
+  reloadTime: 1.5
+  reloadOpenTime: 0.3
+  insertTime: 0.45
+  reloadCloseTime: 0.3
+  reloadRoll: 28
+  reloadPitch: -10
+  reloadButtOffset: {x: -0.02, y: -0.02, z: 0.03}
+  magazineDrop: 0.09
+  magazineAway: {x: 0.08, y: -0.14, z: -0.08}
+  actionTravel: 0.07
+  roundColor: {r: 1, g: 0.98, b: 0.92, a: 1}
+  convergeDistance: 4
+  tracerLength: 0.45
+  grainSize: 0.012
+  markScale: 1
+  chips: 2
+  flashTime: 0.035
+  flashSize: 1
+  flashLight: 1.2
+  fpShoulder: {x: 0.13, y: -0.15, z: -0.01}
+  fpScale: 0.42
+  fpLowAngles: 0.45
+  fpLowOffset: {x: 0.006, y: -0.008, z: 0}
+  fpReloadFocus: {x: 0.05, y: -0.115, z: 0.3}
+  fpReloadTurn: {x: -6, y: -40, z: 0}
+  fpWallMargin: 0.03
+  armRadiusRoot: 0.022
+  armRadiusHand: 0.015
+  fistSize: {x: 0.05, y: 0.042, z: 0.05}
+  fpArmThickness: 0.7

@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34373ed24d3d88845ad2eff544be8493, type: 3}
+  m_Name: SlugMoveSettings
+  m_EditorClassIdentifier: Assembly-CSharp::SlugMove.SlugMoveSettings
+  maxSpeed: 1.2
+  acceleration: 1.5
+  deceleration: 0.3
+  slideTime: 0.5
+  strafeMultiplier: 0.6
+  backwardMultiplier: 0.5
+  bodyTurnSpeed: 120
+  tailFollowHz: 0.75
+  tailFollowPerSpeed: 1.2
+  tailFollowDamping: 0.8
+  tailMaxLag: 80
+  slopeLimit: 60
+  uphillSlowdown: 0.6
+  downhillSpeedup: 0.2
+  steepSlideSpeed: 1.2
+  slopeAlignSpeed: 6
+  uprightAmount: 1
+  stepHeight: 0.15
+  climbHeight: 0.45
+  climbSpeed: 0.3
+  climbTilt: 50
+  lungeChargeTime: 0.45
+  lungeSpeedMin: 1.6
+  lungeSpeedMax: 3.3
+  lungeUp: 1.15
+  lungeCooldown: 0.7
+  lungeChargeMove: 0.25
+  lungeSlideTime: 0.42
+  lungeSquash: 0.28
+  lungeStretch: 0.3
+  lungeSpringHz: 3
+  lungeSpringDamping: 0.35
+  idleCrawlRate: 0.2
+  crawlRatePerSpeed: 1.1
+  mouseSensitivity: 0.08
+  fieldOfView: 70
+  eyeForward: 0.04
+  eyeUp: 0
+  minPitch: -80
+  maxPitch: 80
+  bobStrength: 1
+  bobFrequency: 1
+  bobVertical: 0.01
+  bobLateral: 0.008
+  bobRoll: 0.6
+  stretchFollow: 0.5
+  thirdPersonDistance: 1.8
+  thirdPersonHeight: 0.45

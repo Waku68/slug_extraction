@@ -1,0 +1,5 @@
+{
+  "enabledPlugins": {
+    "unity-cli@unity-cli-plugin": true
+  }
+}

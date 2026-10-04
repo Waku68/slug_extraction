@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 380c2f307c247764ca60e0bacfa58391, type: 3}
+  m_Name: ExtractSettings
+  m_EditorClassIdentifier: Assembly-CSharp::SlugExtract.ExtractSettings
+  timeLimit: 240
+  extractTime: 3
+  extractRadius: 1.5
+  bagCapacity: 20
+  speedAtFull: 0.55
+  rockSalt:
+    displayName: "\u5CA9\u5869"
+    weight: 1.5
+    value: 25
+    chipColor: {r: 0.95, g: 0.88, b: 0.9, a: 1}
+  crop:
+    displayName: "\u96E8\u30AB\u30D6"
+    weight: 0.5
+    value: 8
+    chipColor: {r: 0.55, g: 0.75, b: 0.3, a: 1}

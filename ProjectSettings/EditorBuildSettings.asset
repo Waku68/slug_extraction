@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1045 &1
+EditorBuildSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/MoveTest.unity
+    guid: bf332f540e1ef63489d9aa0499b8ae89
+  - enabled: 1
+    path: Assets/Scenes/ExtractTest.unity
+    guid: b9c1fde671903d24ab09d3328e082056
+  - enabled: 1
+    path: Assets/Scenes/SwingTest.unity
+    guid: 61733e1dff0e6c243b1c6e60c1ae91fb
+  - enabled: 1
+    path: Assets/Scenes/GunTest.unity
+    guid: 91ac69a2c8ce84f4680e12733be7bc8a
+  m_configObjects:
+    com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 289c1b55c9541489481df5cc06664110, type: 3}

@@ -1,0 +1,5 @@
+# keep Unity files exactly as written (no line-ending conversion)
+* -text
+*.png binary
+*.jpg binary
+*.ttf binary

@@ -1,0 +1,80 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42ededc180c774149bd1f53910f35100, type: 3}
+  m_Name: PickaxeSettings
+  m_EditorClassIdentifier: Assembly-CSharp::SlugMove.PickaxeSettings
+  windupTime: 0.22
+  windupHold: 0.06
+  strikeTime: 0.16
+  strikeEase: 2
+  impactTime: 0.18
+  followTime: 0.22
+  recoverFrequency: 2.2
+  chainAt: 0.45
+  swingSpan: 115
+  aimTolerance: 0.1
+  aimDepth: 0.06
+  swingSlant: 30
+  anticipation: 8
+  wristCock: 25
+  windupArm: 0.15
+  minArm: 0.04
+  maxArm: 0.28
+  hitReach: 0.15
+  handsTogetherGap: 0.07
+  followAngle: 30
+  missDistance: 0.9
+  pivotOffset: {x: 0.07, y: 0.02, z: -0.02}
+  tpLeftHand: {x: 0.04, y: -0.03, z: 0.08}
+  tpRightHand: {x: -0.02, y: 0.06, z: 0.08}
+  tpHeadDir: {x: 0, y: 0.4, z: 1}
+  restGrip: {x: -0.04, y: -0.08, z: 0.1}
+  restHandleDir: {x: 0.45, y: 0.88, z: 0}
+  restHeadDir: {x: -0.3, y: 0, z: 1}
+  restUpperHand: 0.3
+  aimPitchFollow: 0.7
+  sweepStart: 0.15
+  tipRadius: 0.035
+  hardRestitution: 0.5
+  hardHitStop: 0.07
+  softPenetration: 0.05
+  softHitStop: 0.035
+  otherRestitution: 0.3
+  otherHitStop: 0.05
+  armSquish: 1.2
+  handleQuiver: 500
+  shake: 1
+  shakeDuration: 0.2
+  leanBack: 12
+  leanForward: 16
+  fpScale: 0.5
+  fpStrikeHands: {x: 0.82, y: 0, z: 0.26}
+  fpStrikeScale: 0.55
+  fpArmThickness: 0.6
+  fpIdleOffset: {x: 0.135, y: -0.14, z: 0.22}
+  fpWindupOffset: {x: 0.05, y: 0.04, z: 0}
+  fpArmAnchor: {x: 0.2, y: -0.22, z: 0.1}
+  fpArmAnchorLeft: {x: 0.1, y: -0.26, z: 0.1}
+  fpStrikeBlend: 0.7
+  armRadiusRoot: 0.022
+  armRadiusHand: 0.015
+  fistSize: {x: 0.05, y: 0.042, z: 0.05}
+  impactSpringHz: 4.5
+  impactDamping: 0.3
+  armSpringHz: 6
+  armDamping: 0.3
+  quiverHz: 11
+  quiverDamping: 0.12
+  followSpringHz: 6
+  followDamping: 1
+  leanSpringHz: 4
+  leanDamping: 0.55

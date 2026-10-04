@@ -1,0 +1,80 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Appendage
+  m_Shader: {fileID: 4800000, guid: 72a14288f23380e46a8aeb3748fce5d4, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: 3000
+  stringTagMap:
+    RenderType: Transparent
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _Alpha: 0.58
+    - _AlphaEdge: 1.9
+    - _AmbientStrength: 0.35
+    - _BandSoftness: 0.1
+    - _Bands: 3
+    - _BellyAmount: 0
+    - _BodyLength: 0.72
+    - _BumpAmp: 0
+    - _BumpFreq: 9
+    - _Cull: 2
+    - _DentAmp: 0
+    - _DentFreq: 90
+    - _DstBlend: 10
+    - _Facet: 0
+    - _FeltAmount: 0
+    - _FuzzAmount: 0
+    - _JiggleAmp: 0.007
+    - _JiggleFreq: 10
+    - _JiggleSpeed: 8
+    - _OutlineWidth: 0
+    - _PatternSize: 0.3
+    - _PatternType: 0
+    - _RimAmount: 0.5
+    - _RimPower: 2.5
+    - _RuffleAmp: 0
+    - _RuffleFreq: 14
+    - _RuffleSpeed: 2
+    - _SparkleStrength: 1.4
+    - _SrcBlend: 5
+    - _StitchAmount: 0
+    - _StitchDash: 5
+    - _StitchRingT: 0
+    - _StitchWidth: 0.006
+    - _Surface: 1
+    - _WaveAmp: 0
+    - _WaveFreq: 1.2
+    - _WaveHeadFade: 0.55
+    - _WavePhase: 0
+    - _WaveSpeed: 0.8
+    - _ZWrite: 0
+    m_Colors:
+    - _BaseColor: {r: 0.63529414, g: 0.36078432, b: 1, a: 1}
+    - _BellyColor: {r: 0.7882353, g: 0.627451, b: 1, a: 1}
+    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _OutlineColor: {r: 0.24999997, g: 0.14999998, b: 0.24999997, a: 1}
+    - _PatternColor: {r: 1, g: 1, b: 1, a: 1}
+    - _PatternScale: {r: 9, g: 4.2971835, b: 0, a: 0}
+    - _RimColor: {r: 0.9411765, g: 0.85490197, b: 1, a: 1}
+    - _ShadeColor: {r: 0.49411765, g: 0.33333334, b: 0.84705883, a: 1}
+    - _StitchColor: {r: 0.29999998, g: 0.19999996, b: 0.14999998, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
