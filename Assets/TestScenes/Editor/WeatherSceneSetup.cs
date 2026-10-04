@@ -41,8 +41,11 @@ namespace SlugExtract
             return s;
         }
 
-        /// <summary>Fits the weather into the open scene (does not save).</summary>
-        public static void Fit()
+        /// <summary>
+        /// Fits the weather into the open scene (does not save). <paramref name="testFieldProps"/>: also the giant tree,
+        /// rocks, puddles and salt-flat zone of the ExtractTest field (other scenes bring their own).
+        /// </summary>
+        public static void Fit(bool testFieldProps = true)
         {
             var island = LoadIsland();
             var condition = LoadCondition();
@@ -58,8 +61,15 @@ namespace SlugExtract
             // the props, made anew
             var old = presenter.transform.Find("WeatherProps");
             if (old) Object.DestroyImmediate(old.gameObject);
+            if (testFieldProps) FitTestFieldProps(presenter.transform);
+            FitPlayers(condition);
+            EditorUtility.SetDirty(presenter);
+        }
+
+        static void FitTestFieldProps(Transform parent)
+        {
             var props = new GameObject("WeatherProps").transform;
-            props.SetParent(presenter.transform, false);
+            props.SetParent(parent, false);
             var rock = MoveTestBuilder.SaveMaterial("W_GiantRock", Shader.Find("Universal Render Pipeline/Lit"), new Color(0.36f, 0.35f, 0.34f));
             var bark = MoveTestBuilder.SaveMaterial("W_Bark", Shader.Find("Universal Render Pipeline/Lit"), new Color(0.33f, 0.25f, 0.18f));
             var leaves = MoveTestBuilder.SaveMaterial("W_Leaves", Shader.Find("Universal Render Pipeline/Lit"), new Color(0.24f, 0.38f, 0.2f));
@@ -89,7 +99,11 @@ namespace SlugExtract
                 Zone(props, name + "_Zone", MoistureZone.Kind.Water, at + Vector3.up * 0.5f, new Vector3(size, 1.2f, size));
             }
 
-            // the player's body: moisture and health
+        }
+
+        /// <summary>The player's body: moisture and health (and the raid that ends when it falls).</summary>
+        static void FitPlayers(ConditionSettings condition)
+        {
             foreach (var bag in Object.FindObjectsByType<SlugBag>(FindObjectsInactive.Include))
             {
                 if (!bag.controller) continue;
@@ -113,10 +127,9 @@ namespace SlugExtract
                     EditorUtility.SetDirty(raid);
                 }
             }
-            EditorUtility.SetDirty(presenter);
         }
 
-        static GameObject Prim(Transform parent, string name, PrimitiveType type, Material mat, Vector3 pos, Vector3 scale, float yaw)
+        internal static GameObject Prim(Transform parent, string name, PrimitiveType type, Material mat, Vector3 pos, Vector3 scale, float yaw)
         {
             var go = GameObject.CreatePrimitive(type);
             go.name = name;
@@ -127,7 +140,7 @@ namespace SlugExtract
             return go;
         }
 
-        static void Zone(Transform parent, string name, MoistureZone.Kind kind, Vector3 center, Vector3 size)
+        internal static void Zone(Transform parent, string name, MoistureZone.Kind kind, Vector3 center, Vector3 size)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);

@@ -57,9 +57,26 @@ namespace SlugExtract
             bumps.AddComponent<MeshCollider>().sharedMesh = mesh;
 
             // ---- the exit: a disc and a pillar of light, far from the start
+            var exit = BuildExit(map, new Vector3(14f, 0f, 24f));
+            MoveTestBuilder.Label("脱出口", new Vector3(14f, 2.2f, 22.3f), 3f);
+
+            // ---- the player and the raid
+            BuildRaidPlayer(moveSettings, new Vector3(0f, 0f, -24f), exit);
+
+            // the island's clock and weather, moisture zones, giant shade, the body's moisture and health
+            WeatherSceneSetup.Fit();
+            EditorSceneManager.SaveScene(scene, ScenePath);
+            MoveTestBuilder.AddToBuildSettings(ScenePath);
+            AssetDatabase.SaveAssets();
+            Debug.Log("[ExtractTest] scene saved: " + ScenePath);
+        }
+
+        /// <summary>The exit: a disc and a pillar of light at <paramref name="pos"/>.</summary>
+        internal static Transform BuildExit(Transform map, Vector3 pos)
+        {
             var exit = new GameObject("Exit").transform;
             exit.SetParent(map, false);
-            exit.position = new Vector3(14f, 0f, 24f);
+            exit.position = pos;
             var disc = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             disc.name = "ExitDisc";
             Object.DestroyImmediate(disc.GetComponent<Collider>());
@@ -75,10 +92,13 @@ namespace SlugExtract
             pillar.transform.localPosition = new Vector3(0f, 6f, 0f);
             pillar.GetComponent<Renderer>().sharedMaterial = _exitMat;
             pillar.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            MoveTestBuilder.Label("脱出口", new Vector3(14f, 2.2f, 22.3f), 3f);
+            return exit;
+        }
 
-            // ---- the player and the raid
-            var player = MoveTestBuilder.BuildPlayer(moveSettings, new Vector3(0f, 0f, -24f));
+        /// <summary>The player (with the bag, the carry, the portrait) and the raid that ends at <paramref name="exit"/>.</summary>
+        internal static GameObject BuildRaidPlayer(SlugMoveSettings moveSettings, Vector3 spawn, Transform exit)
+        {
+            var player = MoveTestBuilder.BuildPlayer(moveSettings, spawn);
             player.GetComponent<SlugMoveHud>().enabled = false;   // the raid has its own HUD
             var bag = player.AddComponent<SlugBag>();
             bag.settings = _settings;
@@ -96,13 +116,7 @@ namespace SlugExtract
             raid.picker = picker;
             raid.bag = bag;
             raid.exitPoint = exit;
-
-            // the island's clock and weather, moisture zones, giant shade, the body's moisture and health
-            WeatherSceneSetup.Fit();
-            EditorSceneManager.SaveScene(scene, ScenePath);
-            MoveTestBuilder.AddToBuildSettings(ScenePath);
-            AssetDatabase.SaveAssets();
-            Debug.Log("[ExtractTest] scene saved: " + ScenePath);
+            return player;
         }
 
         /// <summary>

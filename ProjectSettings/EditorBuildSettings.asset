@@ -17,5 +17,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/GunTest.unity
     guid: 91ac69a2c8ce84f4680e12733be7bc8a
+  - enabled: 1
+    path: Assets/Scenes/RegionTest.unity
+    guid: bfdacbb4c12450e4e99f24ebec5a5f57
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 289c1b55c9541489481df5cc06664110, type: 3}

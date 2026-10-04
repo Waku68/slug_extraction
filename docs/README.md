@@ -38,6 +38,7 @@ Oct 4, 2026
 | | [persistent_island_discussion.md](discussions/persistent_island_discussion.md) | 島がずっと続く世界（試合なし）：サーバーの節約、人が必ずいて落ち着かないか、巣穴に帰る、抜けると眠る。いつもの4人＋サーバー屋・Rust勢・探索好きの社会人 |
 | `ideas/` | [base_ideas.md](ideas/base_ideas.md) | 拠点の設備の案出し |
 | `tech/` | [tool_craft_notes.md](tech/tool_craft_notes.md) | 作り方のメモ：ピッケル、銃3種、装備、当たり判定、縮んで伸びる、気をつけること |
+| | [region_test_notes.md](tech/region_test_notes.md) | 灰色の区画（一辺 800 m）の試作と、這う時間の測定、分かったこと |
 | | [weather_notes.md](tech/weather_notes.md) | 島の時計・天気・湿り気の作り方、開発用のキー、撮り方 |
 | | [sound_list.md](tech/sound_list.md) | 音（効果音・BGM）の置き場所、ファイル名、取り込みの設定、要る音のリスト、鳴らすときのつなぎ口 |
 
@@ -76,7 +77,8 @@ Oct 4, 2026
 | `SwingTest` | ピッケルの振り（T スロー、G 軌跡） | `Slug/SwingTest Build Scene` |
 | `GunTest` | 銃4種とナイフ（Tab で持ち物を選ぶ）、的、練習用ナメクジ（当たった部位と倍率） | `Slug/GunTest Build Scene` |
 | `EquipTest` | 装備の見比べ（3体並び） | `Slug/EquipTest Build Scene` |
-| `ExtractTest` | 出撃前に持ち物を選んで、採って逃げる（ソロ、4分） | `Slug/ExtractTest Build Scene` |
+| `ExtractTest` | 出撃前に持ち物を選んで、採って逃げる（ソロ）。島の時計と天気、湿り気（F3 で開発用の数字） | `Slug/ExtractTest Build Scene`、天気だけ入れ直すなら `Slug/Update Weather (open scene)` |
+| `RegionTest` | 一辺 800 m の灰色の区画（森・川・洞窟・塩田）を這う。試作 | `Slug/RegionTest Build Scene` |
 
 どのシーンも、1 ピッケル、2 背中の銃、3 腰の道具。古い作り方のシーンに持ち物を足すのは `Slug/Update Player Loadout (open scene)`。
 | `SlugLookbook` | 今のキャラを雨の背景で見る、撮る | `Slug/Lookbook Build Scene`、`Slug/Lookbook Capture Screenshots` |
@@ -87,6 +89,7 @@ Oct 4, 2026
 | --- | --- |
 | `Character/` | 今のキャラ（全体、顔、這う動きのコマ）。`history/` に v1・v2 の全体図 |
 | `Equip/`・`Gun/`・`Move/` | 装備・銃・移動を作ったときの確認用の絵 |
+| `Weather/` | 天気の時計（朝昼夕夜、曇り・雨）、湿り気の見た目、灰色の区画の見下ろし |
 | `_Old/` | **削除予定**。v1 の各案の絵、v2 の案ごとの絵 |
 
 ## 履歴（git）
