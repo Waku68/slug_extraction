@@ -33,6 +33,7 @@ Oct 4, 2026
 | | [moisture_discussion.md](discussions/moisture_discussion.md) | 湿り気の数字（決めた：晴れの日なた5分、塩の上は2倍、水の苔玉、120までためる） |
 | | [health_damage_discussion.md](discussions/health_damage_discussion.md) | 体力とダメージ（何発で倒れるか、塩の希少性と弾の値段、ダウン、回復） |
 | | [regions_discussion.md](discussions/regions_discussion.md) | 島の5区画（候補12、組み合わせ案、巣穴を掘れる場所、天気でつながる区画） |
+| | [no_numbers_discussion.md](discussions/no_numbers_discussion.md) | 数字を出さない世界（バッグの数字を島でも拠点でもなくしたら：天秤、秤、体で感じる重さ、色に頼らない） |
 | | [persistent_island_discussion.md](discussions/persistent_island_discussion.md) | 島がずっと続く世界（試合なし）：サーバーの節約、人が必ずいて落ち着かないか、巣穴に帰る、抜けると眠る。いつもの4人＋サーバー屋・Rust勢・探索好きの社会人 |
 | `ideas/` | [base_ideas.md](ideas/base_ideas.md) | 拠点の設備の案出し |
 | `tech/` | [tool_craft_notes.md](tech/tool_craft_notes.md) | 作り方のメモ：ピッケル、銃3種、装備、当たり判定、縮んで伸びる、気をつけること |
