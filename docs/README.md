@@ -28,6 +28,7 @@ Oct 4, 2026
 | | [slug_gun_discussion.md](discussions/slug_gun_discussion.md) | ナメクジの銃を構造から考え直す（握り込む、空気、塩に触れない、体で受ける） |
 | | [tool_carry_discussion.md](discussions/tool_carry_discussion.md) | 道具の持ち方・持ち替え・バッグが壊れたあと（エコバッグ、大物を抱える） |
 | | [map_discussion.md](discussions/map_discussion.md) | マップ案（河口の塩沼、雲が東から西へ、大きさは這う速さから、スケール・増水・苔の壁） |
+| | [map_discussion_2.md](discussions/map_discussion_2.md) | マップ 2回目（広さ・人数・時間、共通の天気予報、晴れの日：乾きを湿り気に、動く影、ぬめり跡） |
 | `ideas/` | [base_ideas.md](ideas/base_ideas.md) | 拠点の設備の案出し |
 | `tech/` | [tool_craft_notes.md](tech/tool_craft_notes.md) | 作り方のメモ：ピッケル、銃3種、装備、当たり判定、縮んで伸びる、気をつけること |
 | | [sound_list.md](tech/sound_list.md) | 音（効果音・BGM）の置き場所、ファイル名、取り込みの設定、要る音のリスト、鳴らすときのつなぎ口 |
