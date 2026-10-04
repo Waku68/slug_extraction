@@ -128,6 +128,7 @@ namespace SlugMove
             GunHandling.Stage.Magazine => $"マガジン交換 {h.StageProgress * 100f:0}%",
             GunHandling.Stage.Open => "込める準備",
             GunHandling.Stage.Insert => "1 発ずつ込めている",
+            GunHandling.Stage.Pour => "上から塩を注いでいる",
             _ => "構え直し",
         };
     }

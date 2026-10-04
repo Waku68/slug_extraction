@@ -68,13 +68,14 @@ MonoBehaviour:
   minAimDistance: 2.5
   farAimDistance: 60
   equipTime: 0.35
-  reloadStyle: 0
+  reloadStyle: 2
+  pourRate: 30
   reloadTime: 1.5
-  reloadOpenTime: 0.3
+  reloadOpenTime: 0.35
   insertTime: 0.45
   reloadCloseTime: 0.3
-  reloadRoll: 28
-  reloadPitch: -10
+  reloadRoll: 12
+  reloadPitch: 0
   reloadButtOffset: {x: -0.02, y: -0.02, z: 0.03}
   magazineDrop: 0.09
   magazineAway: {x: 0.08, y: -0.14, z: -0.08}

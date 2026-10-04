@@ -522,6 +522,7 @@ namespace SlugMove
                 : h.Ammo == 0 ? "<color=#ff9080><b>0</b></color> / " + gun.magazineSize
                 : $"<b>{h.Ammo}</b> / {gun.magazineSize}";
             if (h.Reloading && gun.reloadStyle == ReloadStyle.OneByOne) ammo = "<size=16>込めている… </size>" + ammo;
+            if (h.Reloading && gun.reloadStyle == ReloadStyle.Pour) ammo = "<size=16>注いでいる… </size>" + ammo;
             GUI.Box(new Rect(w - 230, hgt - 70, 220, 56), GUIContent.none);
             GUI.Label(new Rect(w - 225, hgt - 68, 205, 30), ammo, _style);
             GUI.Label(new Rect(w - 225, hgt - 44, 205, 26), $"<size=14>{gun.displayName}・{gun.ammoName}　R リロード</size>", _style);

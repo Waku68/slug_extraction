@@ -10,14 +10,15 @@ namespace SlugMove
     ///  - every shot: the gun is pushed back into the shoulder, the muzzle flips up with a little random yaw and roll,
     ///    the soft upper body rocks back, the fists squeeze, the spread grows;
     ///  - the action: a pump or a bolt worked by hand after every shot (no shot until it is done);
-    ///  - reloading: a whole magazine (pulled out, taken away, brought back full) or one round at a time (open, insert
-    ///    rounds, close; pulling the trigger stops loading after the round in hand);
+    ///  - reloading: a whole magazine (pulled out, taken away, brought back full), one round at a time (open, insert
+    ///    rounds, close; pulling the trigger stops loading after the round in hand), or salt poured in from the top
+    ///    (open, pour, close; it fills at a steady rate and the trigger stops it at once);
     ///  - scope: eased in and out on the aim button; equip: taken in hand over a given time (longer from the back).
     /// Kicks are velocity impulses into damped springs, so a burst piles up and settles on its own.
     /// </summary>
     public class GunHandling
     {
-        public enum Stage { None, Magazine, Open, Insert, Close }
+        public enum Stage { None, Magazine, Open, Insert, Pour, Close }
 
         public GunSettings settings;
 
@@ -48,6 +49,7 @@ namespace SlugMove
                     case Stage.Magazine: return Mathf.Clamp01(_stageT / Mathf.Max(s.reloadTime, 0.05f));
                     case Stage.Open: return Mathf.Clamp01(_stageT / Mathf.Max(s.reloadOpenTime, 0.05f));
                     case Stage.Insert: return Mathf.Clamp01(_stageT / Mathf.Max(s.insertTime, 0.05f));
+                    case Stage.Pour: return Mathf.Repeat(_stageT / 0.45f, 1f);      // free-running: the pouring hand's little shake
                     case Stage.Close: return Mathf.Clamp01(_stageT / Mathf.Max(s.reloadCloseTime, 0.05f));
                     default: return 0f;
                 }
@@ -83,6 +85,7 @@ namespace SlugMove
         Stage _stage;
         float _stageT;
         bool _seated, _inserted, _stopLoading;
+        float _poured;
 
         public void Reset()
         {
@@ -142,7 +145,7 @@ namespace SlugMove
 
             // the trigger with an empty gun: reload. During a one-at-a-time reload: stop after the round in hand.
             if (pressed && Ammo <= 0 && !Reloading && _equip >= 1f) StartReload();
-            if (pressed && (_stage == Stage.Open || _stage == Stage.Insert) && Ammo > 0) _stopLoading = true;
+            if (pressed && (_stage == Stage.Open || _stage == Stage.Insert || _stage == Stage.Pour) && Ammo > 0) _stopLoading = true;
 
             bool scoped = aim && s.scopeFov > 0f && !Reloading && _equip >= 1f;
             bool up = !Reloading && _equip >= 1f && (trigger || scoped || _sinceShot < s.holdTime || _cycling);
@@ -221,6 +224,7 @@ namespace SlugMove
             _stage = settings.reloadStyle == ReloadStyle.Magazine ? Stage.Magazine : Stage.Open;
             _stageT = 0f;
             _seated = _inserted = _stopLoading = false;
+            _poured = 0f;
         }
 
         void StepReload(float dt)
@@ -236,7 +240,17 @@ namespace SlugMove
                     if (u >= 1f) Finish();
                     break;
                 case Stage.Open:
-                    if (u >= 1f) { Next(Stage.Insert); Cue?.Invoke("open"); }
+                    if (u >= 1f)
+                    {
+                        Next(s.reloadStyle == ReloadStyle.Pour ? (_stopLoading ? Stage.Close : Stage.Pour) : Stage.Insert);
+                        Cue?.Invoke("open");
+                    }
+                    break;
+                case Stage.Pour:
+                    // the salt runs in at a steady rate; the trigger stops it at once
+                    _poured += s.pourRate * dt;
+                    while (_poured >= 1f && Ammo < s.magazineSize) { Ammo++; _poured -= 1f; }
+                    if (Ammo >= s.magazineSize || _stopLoading) Next(Stage.Close);
                     break;
                 case Stage.Insert:
                     // stopping before the hand has reached the gun drops this round
@@ -293,7 +307,7 @@ namespace SlugMove
                 {
                     case Stage.Magazine: return Smooth(u / 0.15f) * (1f - Smooth((u - 0.82f) / 0.18f));
                     case Stage.Open: return Smooth(u / 0.6f);
-                    case Stage.Insert: return 1f;
+                    case Stage.Insert: case Stage.Pour: return 1f;
                     case Stage.Close: return 1f - Smooth((u - 0.3f) / 0.7f);
                     default: return 0f;
                 }

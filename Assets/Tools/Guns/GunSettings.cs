@@ -8,7 +8,7 @@ namespace SlugMove
     /// <summary>What has to be worked by hand after every shot.</summary>
     public enum GunAction { None, Pump, Bolt }
     /// <summary>How it is loaded: a whole magazine at once, or one round at a time.</summary>
-    public enum ReloadStyle { Magazine, OneByOne }
+    public enum ReloadStyle { Magazine, OneByOne, Pour }
 
     /// <summary>
     /// Tunables of one gun, in one asset per gun (read every frame, so they can be changed in play mode).
@@ -94,11 +94,12 @@ namespace SlugMove
 
         [Header("持ち替え・リロード")]
         [Tooltip("持ち替えて構えるまでの時間（秒）。持ち物の設定（LoadoutSettings）があれば、背中・腰から取る時間のほうを使う")] public float equipTime = 0.35f;
-        [Tooltip("Magazine = マガジンごと替える、OneByOne = 1 発ずつ込める")] public ReloadStyle reloadStyle = ReloadStyle.Magazine;
+        [Tooltip("Magazine = マガジンごと替える、OneByOne = 1 発ずつ込める、Pour = 上の注ぎ口から塩を注ぐ（ライフル）")] public ReloadStyle reloadStyle = ReloadStyle.Pour;
+        [Tooltip("注ぐとき：1 秒に注げる塩の粒の数")] public float pourRate = 30f;
         [Tooltip("マガジンを替える時間（秒）")] public float reloadTime = 1.5f;
-        [Tooltip("1 発ずつ込めるとき：構え直してから込め始めるまでの時間（秒）")] public float reloadOpenTime = 0.3f;
+        [Tooltip("1 発ずつ込める・注ぐとき：構え直してから込め始める（注ぎ始める）までの時間（秒）")] public float reloadOpenTime = 0.35f;
         [Tooltip("1 発ずつ込めるとき：1 発を込める時間（秒）")] public float insertTime = 0.45f;
-        [Tooltip("1 発ずつ込めるとき：込め終わってから構えに戻るまでの時間（秒）")] public float reloadCloseTime = 0.3f;
+        [Tooltip("1 発ずつ込める・注ぐとき：込め終わってから構えに戻るまでの時間（秒）")] public float reloadCloseTime = 0.3f;
         [Tooltip("リロードで銃を傾ける角度（度）。右手で作業しやすいように")] public float reloadRoll = 28f;
         [Tooltip("リロードで銃口を上げる角度（度）")] public float reloadPitch = -10f;
         [Tooltip("リロードで銃床をずらす量（体の向き基準, m）")] public Vector3 reloadButtOffset = new Vector3(-0.02f, -0.02f, 0.03f);
