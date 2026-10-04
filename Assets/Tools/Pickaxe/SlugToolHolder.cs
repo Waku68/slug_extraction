@@ -113,7 +113,7 @@ namespace SlugMove
 
             // the arms replace the short cone hands: they stretch from the same spots on the body
             _arms = SlugArmSet.Create("", slug, cameraRig.cam.transform, pickaxe.fpScale);
-            foreach (var c in _tool.GetComponentsInChildren<Transform>(true)) c.gameObject.layer = BodyToolLayer;
+            SlugBodyPart.Mark(_tool.gameObject, slug.transform);
             var views = new System.Collections.Generic.List<Renderer>(_viewTool.GetComponentsInChildren<Renderer>(true));
             views.AddRange(_arms.ViewRenderers);
             _viewRenderers = views.ToArray();

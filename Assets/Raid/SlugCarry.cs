@@ -74,7 +74,7 @@ namespace SlugExtract
             if (_view) Destroy(_view);
             _body = ItemPickup.Visual(bag.settings, kind, null, true);
             _body.name = "Carried_" + kind;
-            foreach (var c in _body.GetComponentsInChildren<Transform>(true)) c.gameObject.layer = SlugToolHolder.BodyToolLayer;
+            SlugBodyPart.Mark(_body, slug.transform);
             _view = ItemPickup.Visual(bag.settings, kind, cameraRig.cam.transform, false);
             _view.name = "ViewCarried_" + kind;
             _bodyRenderers = _body.GetComponentsInChildren<Renderer>(true);

@@ -101,7 +101,7 @@ namespace SlugMove
             _tool = SlugKnife.Create("Knife", null, true);
             _viewTool = SlugKnife.Create("ViewKnife", cameraRig.cam.transform, false);
             _arms = SlugArmSet.Create("Knife", slug, cameraRig.cam.transform, knife.fpScale);
-            foreach (var c in _tool.GetComponentsInChildren<Transform>(true)) c.gameObject.layer = SlugToolHolder.BodyToolLayer;
+            SlugBodyPart.Mark(_tool.gameObject, slug.transform);
             var views = new System.Collections.Generic.List<Renderer>(_viewTool.GetComponentsInChildren<Renderer>(true));
             views.AddRange(_arms.ViewRenderers);
             _viewRenderers = views.ToArray();

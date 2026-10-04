@@ -41,7 +41,7 @@ namespace SlugMove
                 a.FistRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             }
             foreach (var a in new[] { set.BodyL, set.BodyR })
-                foreach (var c in a.GetComponentsInChildren<Transform>(true)) c.gameObject.layer = SlugToolHolder.BodyToolLayer;
+                SlugBodyPart.Mark(a.gameObject, slug.transform);
             return set;
         }
 

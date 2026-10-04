@@ -5309,8 +5309,6 @@ MonoBehaviour:
   offset: {x: 0.7, y: 0.5, z: 1.3}
   lookAt: {x: 0, y: 0.3, z: -0.12}
   fieldOfView: 32
-  farClip: 3
-  background: {r: 0.17, g: 0.2, b: 0.22, a: 1}
 --- !u!1 &895090680
 GameObject:
   m_ObjectHideFlags: 0

@@ -135,7 +135,7 @@ namespace SlugMove
             _gun = SlugGunModel.Create(gun.kind, name, null, true);
             _viewGun = SlugGunModel.Create(gun.kind, "View" + name, cameraRig.cam.transform, false);
             _arms = SlugArmSet.Create(name, slug, cameraRig.cam.transform, gun.fpScale);
-            foreach (var c in _gun.GetComponentsInChildren<Transform>(true)) c.gameObject.layer = SlugToolHolder.BodyToolLayer;
+            SlugBodyPart.Mark(_gun.gameObject, slug.transform);
 
             var lightGo = new GameObject("MuzzleLight");
             lightGo.transform.SetParent(_gun.Muzzle, false);

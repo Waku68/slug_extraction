@@ -25,7 +25,7 @@ MonoBehaviour:
   hitDamage: 8
   ecoOpenTime: 3
   peekSpeed: 0.4
-  peekTwist: -90
+  peekTwist: 90
   pickupReach: 0.8
   grabTime: 0.3
   stowTime: 0.5

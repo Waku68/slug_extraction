@@ -65,7 +65,7 @@ namespace SlugMove
             }
             foreach (var go in Models())
             {
-                foreach (var c in go.GetComponentsInChildren<Transform>(true)) c.gameObject.layer = SlugToolHolder.BodyToolLayer;
+                SlugBodyPart.Mark(go, slug.transform);
                 _renderers.AddRange(go.GetComponentsInChildren<Renderer>(true));
                 go.SetActive(false);
             }

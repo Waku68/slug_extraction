@@ -51,7 +51,7 @@ namespace SlugDesign
         [System.NonSerialized] public float bagSwell = 1f;
         [Tooltip("背中を覗いたとき、自分の画面だけでバッグを大きくする倍率")] public float bagLookScale = 1.6f;
         [Range(0f, 1f), Tooltip("背中を覗いたとき、自分の画面だけでバッグの口を目のほうへ傾ける割合（1 = 真っすぐ目に向ける）")] public float bagLookTilt = 0.45f;
-        [Tooltip("ふたを開けきったときの角度（度）。ふたは頭側のふちを軸に開く")] public float bagLidAngle = 105f;
+        [Tooltip("ふたを開けきったときの角度（度）。ふたは背中から遠いほうのふちを軸に、外側へ開く")] public float bagLidAngle = 105f;
         [Range(0f, 1f), Tooltip("背中を覗いたとき、自分の画面でふたも大きくする割合（0 = 大きくしない、1 = バッグと同じだけ）")] public float bagLidGrow = 0.3f;
 
         readonly List<Object> _owned = new List<Object>();
@@ -139,7 +139,7 @@ namespace SlugDesign
 
         /// <summary>
         /// Poses the bag for the camera about to draw: the lid opened by <paramref name="open"/> (0..1) about its hinge
-        /// on the head side, and by <paramref name="look"/> (0..1) the whole bag grown out from the back and tipped with
+        /// (the edge away from the back, falling open outward), and by <paramref name="look"/> (0..1) the whole bag grown out from the back and tipped with
         /// its mouth toward <paramref name="eyeWorld"/> (for the owner's own eyes only: call it again with 0 for the
         /// others). Returns false when there is no bag.
         /// </summary>
@@ -169,9 +169,9 @@ namespace SlugDesign
             var mouthR = _bagMouth ? _bagMouth.GetComponent<Renderer>() : null;
             if (mouthR && mouthR.enabled != open > 0.02f) mouthR.enabled = open > 0.02f;
 
-            // the lid swings up about its hinge (the edge on the head side, against the back)
+            // the lid swings up about its hinge (its top edge away from the back) and falls open outward
             Vector3 hinge = slug.FollowerLocal(_bagHinge, _bagT, _bagP, _bagN);
-            Quaternion swing = Quaternion.AngleAxis(-bagLidAngle * open, bend * _bagX);
+            Quaternion swing = Quaternion.AngleAxis(bagLidAngle * open, bend * _bagX);
             // (in the own view the lid grows less than the bag, so it does not stand up across the mouth)
             float lid = Mathf.Lerp(1f, s, bagLidGrow) / s;
             Place(_bagLid, pos + rot * (s * (hinge - lid * (swing * hinge))), rot * swing, s * lid);
@@ -475,8 +475,8 @@ namespace SlugDesign
 
             var body = new GearMesh();
             body.RoundedBox(c, x, up, nOut, sz, 0.42f);
-            // the lid over the top (the end toward the head), a little bigger than the bag, hinged on its edge against
-            // the back; a pocket low on the outside; and the dark mouth under the lid
+            // the lid over the top (the end toward the head), a little bigger than the bag, hinged on its edge away
+            // from the back; a pocket low on the outside; and the dark mouth under the lid
             var lid = new GearMesh();
             lid.RoundedBox(c + up * (sz.y * 0.79f) + nOut * 0.004f, x, up, nOut, new Vector3(sz.x * 0.98f, sz.y * 0.25f, sz.z * 1.04f), 0.42f);
             var pocket = new GearMesh();
@@ -491,7 +491,7 @@ namespace SlugDesign
             _bagMouth = AddGo("BagMouth", Own(mouth.ToMesh("BagMouth")), slug.GearFollower(Own(slug.GearMaterial(new Color(0.07f, 0.055f, 0.045f))), th, p, nrm));
             if (_bagMouth) _bagMouth.GetComponent<Renderer>().enabled = false;
             _bagP = p; _bagN = nrm; _bagT = th; _bagC = c; _bagX = x; _bagUp = up; _bagOut = nOut; _bagSz = sz;
-            _bagHinge = c + up * (sz.y * 1.02f) - nOut * (sz.z * 1.04f);
+            _bagHinge = c + up * (sz.y * 1.02f) + nOut * (sz.z * 1.04f + 0.004f);
 
             // belts round the body, above the arms (and over the armour when worn)
             var belts = new GearMesh();
