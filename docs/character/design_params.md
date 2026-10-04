@@ -1,12 +1,12 @@
 # キャラデザイン パラメータ一覧（現在値）
 
-`SlugPop`（`Assets/Slug/Scripts/Runtime/SlugPop.cs`）の現在値。経緯は `docs/character_design.md`。
+`SlugPop`（`Assets/Slug/Scripts/Runtime/SlugPop.cs`）の現在値。経緯は `character_design.md`。
 スライダーはすべて 1.0 = ポップ側、0.0 = 本物のナメクジ寄り。一括スライダー `Pop` を動かすと全要素が同じ値に揃い、要素別を動かすとその要素だけが変わる。
 
-- シーン：`Assets/Scenes/SlugGalleryV7.unity`（雨の暗い背景）
-- スクリーンショット：`Screenshots/v7/`
+- シーン：`Assets/Scenes/SlugLookbook.unity`（雨の暗い背景）
+- スクリーンショット：`Screenshots/Character/`
 
-![current](../Screenshots/v7/00_overview.png)
+![current](../../Screenshots/Character/00_overview.png)
 
 ## 要素ごとの現在値
 
@@ -49,5 +49,5 @@
 - 立体の眼球（`eyeKind`）、平面の顔（マズル・鼻の穴・一本線の口）は `Dignified` / `eyeKind` 側に残してある（比較で使った）。
 
 ## 作り直す手順
-Unity メニュー `Slug` から：`V7 Build Scene` → `V7 Capture Screenshots`。
-値は `SlugGalleryV7.ApplyCurrent`、形・顔・触角・手は `SlugPop.cs`、シェーダーは `Assets/Slug/Shaders/`。
+Unity メニュー `Slug` から：`Lookbook Build Scene` → `Lookbook Capture Screenshots`。
+値は `SlugLookbook.ApplyCurrent`（`Assets/Slug/Scripts/Editor/SlugLookbook.cs`）、形・顔・触角・手は `SlugPop.cs`、シェーダーは `Assets/Slug/Shaders/`。
