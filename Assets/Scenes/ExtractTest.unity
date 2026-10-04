@@ -8156,6 +8156,14 @@ PrefabInstance:
       value: 0.55
       objectReference: {fileID: 0}
     - target: {fileID: 8084910285950271412, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      propertyPath: pronePivotT
+      value: 0.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 8084910285950271412, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      propertyPath: proneFaceAngle
+      value: 60
+      objectReference: {fileID: 0}
+    - target: {fileID: 8084910285950271412, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
       propertyPath: tentacleDirection
       value: 0.5
       objectReference: {fileID: 0}
@@ -8222,6 +8230,9 @@ MonoBehaviour:
   bagColor: {r: 0.52, g: 0.4, b: 0.26, a: 1}
   bagFlapColor: {r: 0.36, g: 0.26, b: 0.17, a: 1}
   bagSize: {x: 0.11, y: 0.12, z: 0.065}
+  bagLookScale: 1.6
+  bagLookTilt: 0.45
+  bagLidAngle: 150
 --- !u!1 &1316406820
 GameObject:
   m_ObjectHideFlags: 0

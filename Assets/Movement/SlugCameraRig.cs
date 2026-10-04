@@ -30,9 +30,12 @@ namespace SlugMove
         [System.NonSerialized] public bool handsBusy;
         /// <summary>The hands are not free for the tools (peeking, or busy).</summary>
         public bool HandsBusy => Peeking || handsBusy;
-        /// <summary>The own body's tools are in view (third person): draw them, not the first-person copies. Peeking keeps the
-        /// first-person copies, so nothing in hand swings across the look at the bag.</summary>
-        public bool ShowsBody => thirdPerson;
+        /// <summary>The own body is in view (third person, or the eyes bent round out of the head to look at the bag): draw
+        /// the body's tools and what is in the hands, not the first-person copies (those would follow the eyes round).</summary>
+        public bool ShowsBody => thirdPerson || peek > 0.35f;
+        /// <summary>The own camera does not draw the body's tools, arms and what is in the hands (only their shadows): in
+        /// first person (the copies are drawn instead), and while peeking (they would cover the bag).</summary>
+        public bool OwnToolsHidden => !ShowsBody || Peeking;
 
         /// <summary>Where the eyes look (degrees). The body follows it.</summary>
         public float Yaw { get; private set; }
@@ -160,12 +163,15 @@ namespace SlugMove
                 rot = look * Quaternion.Euler(0f, 0f, roll);
             }
 
-            // ---- peeking: the head bends round over the right shoulder and looks down at the bag on the back
+            // ---- peeking: the head bends round (the body twists) and the eyes look down from over it at the bag on the back
             if (peek > 0f)
             {
                 float w = peek * peek * (3f - 2f * peek);
-                Quaternion yawOnly = Quaternion.Euler(0f, Yaw, 0f);
-                Vector3 over = slug.FaceCenterWorld + Vector3.up * 0.2f + yawOnly * new Vector3(0.34f, 0f, -0.2f);
+                Vector3 face = slug.FaceCenterWorld;
+                Vector3 away = face - peekTarget;
+                away.y = 0f;
+                away = away.sqrMagnitude > 1e-6f ? away.normalized : Quaternion.Euler(0f, Yaw, 0f) * Vector3.forward;
+                Vector3 over = face + Vector3.up * s.peekHeight + away * s.peekBack;
                 Vector3 to = peekTarget - over;
                 Quaternion peekRot = to.sqrMagnitude > 1e-6f ? Quaternion.LookRotation(to, Vector3.up) : rot;
                 pos = Vector3.Lerp(pos, over, w);

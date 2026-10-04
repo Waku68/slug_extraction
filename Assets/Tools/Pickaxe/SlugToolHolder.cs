@@ -100,7 +100,7 @@ namespace SlugMove
             bool own = camera == cameraRig.cam;
             foreach (var r in _viewRenderers) if (r) r.enabled = own;
             // the body's pickaxe and arms only cast their shadow for the own camera in first person
-            var mode = own && !cameraRig.ShowsBody ? UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly : UnityEngine.Rendering.ShadowCastingMode.On;
+            var mode = own && cameraRig.OwnToolsHidden ? UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly : UnityEngine.Rendering.ShadowCastingMode.On;
             foreach (var r in _bodyRenderers) if (r) r.shadowCastingMode = mode;
         }
 

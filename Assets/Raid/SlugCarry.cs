@@ -54,7 +54,7 @@ namespace SlugExtract
             if (_arms == null) return;
             bool own = camera == cameraRig.cam;
             foreach (var r in _viewRenderers) if (r) r.enabled = own;
-            var mode = own && !cameraRig.ShowsBody ? UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly : UnityEngine.Rendering.ShadowCastingMode.On;
+            var mode = own && cameraRig.OwnToolsHidden ? UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly : UnityEngine.Rendering.ShadowCastingMode.On;
             foreach (var r in _bodyRenderers) if (r) r.shadowCastingMode = mode;
         }
 

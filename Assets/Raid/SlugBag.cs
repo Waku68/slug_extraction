@@ -21,9 +21,10 @@ namespace SlugExtract
     /// (a chunk just struck out of a rock, something dropped) in the hands, and with something in the hands E puts it in
     /// the bag (over the shoulder); G takes the top thing out of the bag into the hands, and with something in the hands
     /// G drops it (hold and let go to throw); X pushes what is in the hands into the body; Q (hold) twists the body round
-    /// to look at the back (everyone sees it straining to look), and in the own view only the bag comes up big, tipped
-    /// toward the eyes with its top open: the top two things in it, drawn chunky and easy to tell apart (three, spilling
-    /// over, when it is crammed), and the numbers. While the hands are full the tools are put away. Sorting is for the base.
+    /// to look at the back and flips the bag's lid open (everyone sees both); in the own view the bag on the back is
+    /// drawn big and tipped toward the eyes: in its mouth the top two things, drawn chunky and easy to tell apart
+    /// (three, spilling over, when it is crammed), and the numbers. While the hands are full the tools are put away.
+    /// Sorting is for the base.
     /// A bag without a <see cref="controller"/> (a practice slug) takes no input and shows nothing.
     /// </summary>
     public class SlugBag : MonoBehaviour
@@ -71,13 +72,12 @@ namespace SlugExtract
 
         readonly List<ItemKind> _items = new List<ItemKind>();
         SlugLoadout _loadout;
-        // the own view's bag while peeking (under the camera, drawn only for the own camera)
-        Transform _peekRoot;
-        Material _peekCloth, _peekRim;
+        // the things seen in the bag's mouth while peeking (drawn only for the own camera)
         readonly GameObject[] _shown = new GameObject[3];
         readonly ItemKind[] _shownKind = new ItemKind[3];
-        Renderer[] _peekRenderers = new Renderer[0];
-        static Mesh _peekBagMesh, _peekRimMesh, _peekHoleMesh;
+        readonly Renderer[][] _shownRenderers = { new Renderer[0], new Renderer[0], new Renderer[0] };
+        Vector3 _ownMouth;
+        bool _ownMouthValid;
         bool _ecoUsed;
         float _ecoOpening = -1f, _gHeld = -1f, _peek, _lastSwell = -1f;
         BagKind _lastLook = (BagKind)(-1);
@@ -101,15 +101,43 @@ namespace SlugExtract
         {
             if (hitboxes) hitboxes.Hit -= OnHit;
             UnityEngine.Rendering.RenderPipelineManager.beginCameraRendering -= OnBeginCamera;
+            foreach (var g in _shown) if (g) Destroy(g);
         }
 
-        /// <summary>The own view's bag is drawn only for the own camera.</summary>
+        /// <summary>
+        /// Poses the bag on the back for each camera: the lid open while peeking (for everyone), and for the own camera
+        /// only the bag grown and tipped toward the eyes, with the top things in its mouth.
+        /// </summary>
         void OnBeginCamera(UnityEngine.Rendering.ScriptableRenderContext context, Camera camera)
         {
-            if (!_peekRoot || !cameraRig) return;
+            if (!IsPlayer || !gear || !cameraRig) return;
+            float e = Ease(_peek);
             bool own = camera == cameraRig.cam;
-            foreach (var r in _peekRenderers) if (r) r.enabled = own;
+            bool posed = gear.PoseBag(e, own ? e : 0f, cameraRig.cam.transform.position);
+            bool show = own && posed;
+            if (own) { _ownMouthValid = posed; _ownMouth = gear.BagMouthPosition; }
+            Vector3 half = gear.BackItemHalf / 1.05f;
+            float s = gear.BagPoseScale;
+            bool crammed = Crammed;
+            for (int i = 0; i < _shown.Length; i++)
+            {
+                if (!_shown[i] || !_shown[i].activeSelf) continue;
+                foreach (var r in _shownRenderers[i]) if (r) r.enabled = show;
+                if (!show) continue;
+                // chunky, the same size whatever the thing (easy to tell apart), half sunk in the mouth
+                float size = half.x * (crammed ? 0.8f : 0.65f) * s;
+                Vector3 at = crammed
+                    ? (i == 0 ? new Vector3(0.05f, 0.45f, 0.1f) : i == 1 ? new Vector3(-0.42f, 0.25f, -0.05f) : new Vector3(0.48f, 0.2f, -0.12f))
+                    : (i == 0 ? new Vector3(0.12f, 0.25f, 0.12f) : new Vector3(-0.35f, 0.05f, -0.1f));
+                Vector3 local = new Vector3(at.x * half.x, at.y * size / s, at.z * half.z) * s;
+                var t = _shown[i].transform;
+                t.position = gear.BagMouthPosition + gear.BagMouthRotation * local;
+                t.rotation = gear.BagMouthRotation * Quaternion.Euler(15f + 40f * i, 25f - 70f * i, 10f * i);
+                t.localScale = Vector3.one * (size / (_shownKind[i] == ItemKind.RockSalt ? 0.06f : 0.065f));
+            }
         }
+
+        static float Ease(float x) => x * x * (3f - 2f * x);
 
         /// <summary>Puts on a bag of this kind, empty and whole (before setting out).</summary>
         public void SetKind(BagKind k)
@@ -315,7 +343,8 @@ namespace SlugExtract
             if (cameraRig)
             {
                 cameraRig.peek = _peek;
-                cameraRig.peekTarget = BagCenterWorld();
+                // the eyes look at the bag's mouth as the own view last drew it (grown and tipped up toward them)
+                cameraRig.peekTarget = _ownMouthValid ? Vector3.Lerp(BagCenterWorld(), _ownMouth, Ease(_peek)) : BagCenterWorld();
                 cameraRig.handsBusy = Opening;
             }
 
@@ -399,33 +428,18 @@ namespace SlugExtract
             return slug.FollowPointWorld(local, gear.BackItemT, gear.BackItemNormal);
         }
 
-        // ------------------------------------------------------------------ peeking: the own view's bag
+        // ------------------------------------------------------------------ peeking: the bag on the back, opened
         /// <summary>Crammed: three things show, spilling over (a bag with a limit nearly at it, or past the weight threshold).</summary>
         bool Crammed => HasBag && (Def.capacity > 0f ? Volume >= Def.capacity * 0.8f : Weight > settings.weightThreshold);
 
         void LateUpdate()
         {
             if (!IsPlayer) return;
-            // everyone sees the body strain round to look at its back
-            float e = _peek * _peek * (3f - 2f * _peek);
-            controller.twistDegrees = settings.peekTwist * e;
+            // everyone sees the body strain round to look at its back (and the lid flip open: OnBeginCamera)
+            controller.twistDegrees = settings.peekTwist * Ease(_peek);
 
-            // the own view: the bag comes up big in front of the eyes, tipped toward them, its top open
-            bool show = _peek > 0.05f && HasBag && cameraRig;
-            if (show && !_peekRoot) BuildPeekView();
-            if (_peekRoot && _peekRoot.gameObject.activeSelf != show) _peekRoot.gameObject.SetActive(show);
-            if (!show) return;
-            float swell = Mathf.Min(1f + Volume * settings.swellPerVolume * Def.swell, settings.swellVisualMax);
-            float grow = Mathf.Lerp(0.85f, 1.15f, Mathf.InverseLerp(1f, settings.swellVisualMax, swell));
-            // close in front of the eyes (in front of the tool in hand too), a little below the middle
-            _peekRoot.localPosition = Vector3.Lerp(new Vector3(0.04f, -0.22f, 0.3f), new Vector3(0.01f, -0.035f, 0.3f), e);
-            _peekRoot.localRotation = Quaternion.Euler(-38f, -12f, 6f);
-            _peekRoot.localScale = Vector3.one * (1.25f * grow * Mathf.Lerp(0.6f, 1f, e));
-            _peekCloth.SetColor("_BaseColor", Def.color);
-            _peekRim.SetColor("_BaseColor", Def.flapColor);
-
-            // the things in it: the top two (three when crammed), drawn chunky, sitting in its mouth
-            int n = Crammed ? 3 : 2;
+            // the top two things (three when crammed), placed in the mouth for the own camera (OnBeginCamera)
+            int n = _peek > 0.05f && HasBag ? (Crammed ? 3 : 2) : 0;
             for (int i = 0; i < _shown.Length; i++)
             {
                 int index = _items.Count - 1 - i;              // 0 = the top one
@@ -433,68 +447,13 @@ namespace SlugExtract
                 if (on && (_shown[i] == null || _shownKind[i] != _items[index]))
                 {
                     if (_shown[i]) Destroy(_shown[i]);
-                    _shown[i] = ItemPickup.Visual(settings, _items[index], _peekRoot, false);
+                    _shown[i] = ItemPickup.Visual(settings, _items[index], null, false);
+                    _shown[i].name = "Peek_" + _items[index];
                     _shownKind[i] = _items[index];
-                    RefreshPeekRenderers();
+                    _shownRenderers[i] = _shown[i].GetComponentsInChildren<Renderer>(true);
                 }
                 if (_shown[i] && _shown[i].activeSelf != on) _shown[i].SetActive(on);
-                if (!on) continue;
-                var t = _shown[i].transform;
-                float size = Crammed ? 0.085f : 0.07f;           // the same size whatever the thing: easy to tell apart
-                Vector3 at = Crammed
-                    ? (i == 0 ? new Vector3(0.012f, 0.052f, 0.005f) : i == 1 ? new Vector3(-0.045f, 0.032f, -0.012f) : new Vector3(0.05f, 0.03f, -0.02f))
-                    : (i == 0 ? new Vector3(0.012f, 0.03f, 0.008f) : new Vector3(-0.035f, 0.016f, -0.014f));
-                t.localPosition = at;
-                t.localRotation = Quaternion.Euler(15f + 40f * i, 25f - 70f * i, 10f * i);
-                t.localScale = Vector3.one * (size / (_shownKind[i] == ItemKind.RockSalt ? 0.06f : 0.065f));
             }
-        }
-
-        void RefreshPeekRenderers() => _peekRenderers = _peekRoot.GetComponentsInChildren<Renderer>(true);
-
-        /// <summary>The own view's bag: a soft, slightly squashed sack, open at the top (dark inside), with a rim.</summary>
-        void BuildPeekView()
-        {
-            if (_peekBagMesh == null)
-            {
-                _peekBagMesh = new ProfileMesh { uvScale = 1f }
-                    .Tube(new Vector3(0f, -0.085f, 0f), new Vector3(0f, -0.07f, 0f), 0.05f, 18, 0.068f)
-                    .Tube(new Vector3(0f, -0.07f, 0f), new Vector3(0f, -0.005f, 0f), 0.068f, 18, 0.072f)
-                    .Tube(new Vector3(0f, -0.005f, 0f), new Vector3(0f, 0.012f, 0f), 0.072f, 18, 0.066f)
-                    .ToMesh("PeekBag");
-                _peekRimMesh = new ProfileMesh { uvScale = 1f }
-                    .Tube(new Vector3(0f, 0.008f, 0f), new Vector3(0f, 0.018f, 0f), 0.07f, 18, 0.068f)
-                    .ToMesh("PeekBagRim");
-                _peekHoleMesh = new ProfileMesh { uvScale = 1f }
-                    .Tube(new Vector3(0f, 0.017f, 0f), new Vector3(0f, 0.0185f, 0f), 0.06f, 18)
-                    .ToMesh("PeekBagHole");
-            }
-            var lit = Shader.Find("Universal Render Pipeline/Lit");
-            _peekCloth = new Material(lit) { hideFlags = HideFlags.DontSave };
-            _peekCloth.SetFloat("_Smoothness", 0.15f);
-            _peekRim = new Material(_peekCloth) { hideFlags = HideFlags.DontSave };
-            var hole = new Material(Shader.Find("Universal Render Pipeline/Unlit")) { hideFlags = HideFlags.DontSave };
-            hole.SetColor("_BaseColor", new Color(0.08f, 0.06f, 0.05f));
-            _peekRoot = new GameObject("PeekBag").transform;
-            _peekRoot.SetParent(cameraRig.cam.transform, false);
-            var bagT = PeekPart(_peekRoot, _peekBagMesh, _peekCloth);
-            bagT.localScale = new Vector3(1.25f, 1f, 0.75f);           // wider than deep, like the bag on the back
-            var rimT = PeekPart(_peekRoot, _peekRimMesh, _peekRim);
-            rimT.localScale = bagT.localScale;
-            var holeT = PeekPart(_peekRoot, _peekHoleMesh, hole);
-            holeT.localScale = bagT.localScale;
-            RefreshPeekRenderers();
-        }
-
-        static Transform PeekPart(Transform parent, Mesh mesh, Material mat)
-        {
-            var go = new GameObject(mesh.name);
-            go.transform.SetParent(parent, false);
-            go.AddComponent<MeshFilter>().sharedMesh = mesh;
-            var r = go.AddComponent<MeshRenderer>();
-            r.sharedMaterial = mat;
-            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            return go.transform;
         }
 
         void Say(string text)

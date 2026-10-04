@@ -25,6 +25,11 @@ namespace SlugMove
         /// <summary>How far the front of the body is twisted round to the right (degrees; the rear stays put): looking
         /// back at the bag. Set by the bag.</summary>
         [System.NonSerialized] public float twistDegrees;
+        /// <summary>Lying flat (Z toggles it): the upper body down near the ground, the face and arms moved up to the front
+        /// of it. Slow, and no stretching or climbing meanwhile.</summary>
+        [System.NonSerialized] public bool prone;
+        /// <summary>0..1: how far down it is.</summary>
+        public float Prone01 { get; private set; }
 
         static readonly int FreezeId = Shader.PropertyToID("_SlugFreeze");
         static readonly int TimeId = Shader.PropertyToID("_SlugTimeValue");
@@ -92,6 +97,8 @@ namespace SlugMove
         {
             Vector2 input = _move != null && inputEnabled ? Vector2.ClampMagnitude(_move.ReadValue<Vector2>(), 1f) : Vector2.zero;
             bool jump = forceJumpHold || (inputEnabled && _jump != null && _jump.IsPressed());
+            var kb = Keyboard.current;
+            if (inputEnabled && kb != null && kb.zKey.wasPressedThisFrame && Cursor.lockState == CursorLockMode.Locked) prone = !prone;
             Simulate(Time.deltaTime, input, jump);
         }
 
@@ -104,6 +111,8 @@ namespace SlugMove
             _cc.stepOffset = Mathf.Clamp(s.stepHeight, 0f, _cc.height);
 
             ProbeGround();
+            Prone01 = Mathf.MoveTowards(Prone01, prone && !_climbing ? 1f : 0f, dt / Mathf.Max(s.proneTime, 0.01f));
+            if (Prone01 > 0f) jumpHeld = false;                  // lying down: no shrinking and stretching
 
             // ---- input, relative to where the eyes look
             float yaw = cameraRig ? cameraRig.Yaw : transform.eulerAngles.y;
@@ -114,9 +123,10 @@ namespace SlugMove
 
             StepLunge(dt, jumpHeld, dir, yaw);
             if (_charging) wishAmount *= s.lungeChargeMove;
+            wishAmount *= Mathf.Lerp(1f, s.proneSpeed, Prone01);
 
             Vector3 before = transform.position;
-            if (!_climbing && !_lunging && !_charging && OnGround && input.y > 0.1f) TryStartClimb(dir);
+            if (!_climbing && !_lunging && !_charging && Prone01 <= 0f && OnGround && input.y > 0.1f) TryStartClimb(dir);
             if (_climbing) Climb(dir, wishAmount, dt);
             else Crawl(dir, wishAmount, dt);
             Speed = Mathf.Lerp(Speed, (transform.position - before).magnitude / dt, 1f - Mathf.Exp(-10f * dt));
@@ -375,7 +385,10 @@ namespace SlugMove
             {
                 Vector3 f = _tilt * Vector3.forward;
                 float pitchUp = Mathf.Atan2(f.y, f.z) * Mathf.Rad2Deg;
-                _slug.SetUpright(pitchUp * settings.uprightAmount + leanDegrees);
+                // lying down: the front bends forward from the chest, flat to the ground
+                float down = Prone01 * Prone01 * (3f - 2f * Prone01);
+                _slug.SetProne(down);
+                _slug.SetUpright(pitchUp * settings.uprightAmount + leanDegrees + settings.proneLean * down);
                 _slug.SetTurn(_tailLag + twistDegrees, transform.position);     // the slug turns about this point
             }
         }

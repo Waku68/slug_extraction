@@ -54,6 +54,15 @@ namespace SlugMove
         [Tooltip("体の伸び縮みが戻るばねの速さ（Hz）と減衰。減衰が小さいほど、着地でぷるんと揺れる")] public float lungeSpringHz = 3f;
         public float lungeSpringDamping = 0.35f;
 
+        [Header("背中を覗く（Q）")]
+        [Tooltip("覗くときの目の高さ（顔の真ん中から上へ, m）")] public float peekHeight = 0.4f;
+        [Tooltip("覗くときに目をずらす量（顔からバッグと反対の向き, m）。負なら首の後ろの上から見下ろす")] public float peekBack = -0.12f;
+
+        [Header("伏せ（Z キーで切り替え）")]
+        [Tooltip("伏せたときに上半身を前へ倒す角度（度）。胸から先が地面すれすれまで下がる")] public float proneLean = 70f;
+        [Range(0.05f, 1f), Tooltip("伏せている間の速さの倍率")] public float proneSpeed = 0.35f;
+        [Tooltip("伏せる・起き上がるのにかかる時間（秒）")] public float proneTime = 0.4f;
+
         [Header("這う動き（体の波）")]
         [Tooltip("止まっているときの波の進み（1 = シェーダー本来の速さ）")] public float idleCrawlRate = 0.2f;
         [Tooltip("速度 1 m/s あたりに足す波の進み")] public float crawlRatePerSpeed = 1.1f;

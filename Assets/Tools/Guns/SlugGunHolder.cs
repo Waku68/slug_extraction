@@ -117,10 +117,10 @@ namespace SlugMove
             if (!_ready) return;
             bool own = camera == cameraRig.cam;
             foreach (var r in _viewRenderers) if (r) r.enabled = own;
-            var mode = own && !cameraRig.ShowsBody ? UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly : UnityEngine.Rendering.ShadowCastingMode.On;
+            var mode = own && cameraRig.OwnToolsHidden ? UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly : UnityEngine.Rendering.ShadowCastingMode.On;
             foreach (var r in _bodyRenderers) if (r) r.shadowCastingMode = mode;
             // parts that cast no shadow (the magazine windows, the flash) are simply not drawn for it
-            bool hide = own && !cameraRig.ShowsBody;
+            bool hide = own && cameraRig.OwnToolsHidden;
             foreach (var r in _bodyUnshadowed) if (r) r.enabled = !hide;
         }
 
