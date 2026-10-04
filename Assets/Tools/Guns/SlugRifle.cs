@@ -18,8 +18,10 @@ namespace SlugMove
         /// <summary>How much shorter the stock is than the AK's (m).</summary>
         const float StockCut = 0.065f;
         protected override float BodyScale => 0.75f;
+        protected override float WidthScale => 1.05f;      // short, but as thick as ever: a chunky little gun
+        protected override float HeightScale => 0.85f;
         protected override float BarrelSplit => 0.532f;      // just in front of the handguard
-        protected override float BarrelExtra => 0.2f;
+        protected override float BarrelExtra => 0.1f;
         /// <summary>The top of the magazine, where it turns when pulled out.</summary>
         public static readonly Vector3 MagPivotLocal = new Vector3(0f, 0.016f, 0.322f);
         /// <summary>The left hand: cupped under the front end of the handguard, close to the muzzle.</summary>

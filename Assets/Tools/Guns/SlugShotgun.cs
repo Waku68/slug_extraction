@@ -16,8 +16,10 @@ namespace SlugMove
         /// <summary>How much the stock is cut short (m).</summary>
         const float StockCut = 0.07f;
         protected override float BodyScale => 0.75f;
+        protected override float WidthScale => 1.05f;      // short, but as thick as ever: a chunky little gun
+        protected override float HeightScale => 0.85f;
         protected override float BarrelSplit => 0.52f;       // in front of the pump
-        protected override float BarrelExtra => 0.17f;
+        protected override float BarrelExtra => 0.08f;
         static readonly Vector3 LeftGripLocal = new Vector3(-0.004f, -0.013f, 0.44f);
         static readonly Vector3 WristLocal = new Vector3(0.004f, 0.02f, 0.178f);
         static readonly Vector3 WristAxis = new Vector3(0f, 0.25f, 1f).normalized;

@@ -14,8 +14,9 @@ namespace SlugMove
     /// dioxide, like a paintball marker, so the rain never stops them), and a puff of gas at the muzzle.
     ///
     /// Each gun is authored at full size ("raw" space) and drawn compact (<see cref="Warp"/>): everything up to
-    /// <see cref="BarrelSplit"/> (stock, grip, receiver, the hands' places) is scaled down by <see cref="BodyScale"/>,
-    /// and the barrel is run out <see cref="BarrelExtra"/> further. Small in the hands, so the arms stay short, and
+    /// <see cref="BarrelSplit"/> (stock, grip, receiver, the hands' places) is shortened by <see cref="BodyScale"/>
+    /// (its thickness and height by <see cref="WidthScale"/> and <see cref="HeightScale"/>, so it stays chunky), and the
+    /// barrel is run out <see cref="BarrelExtra"/> further. Small in the hands, so the arms stay short, and
     /// still long enough to read as a gun. The holder only ever sees the drawn space.
     /// </summary>
     public abstract class SlugGunModel : MonoBehaviour
@@ -40,6 +41,11 @@ namespace SlugMove
         // ---- how it is drawn: compact, with a long barrel
         /// <summary>How much the stock, grip and receiver are scaled down (1 = as authored).</summary>
         protected virtual float BodyScale => 1f;
+        /// <summary>The thickness (side to side) as drawn (1 = as authored).</summary>
+        protected virtual float WidthScale => BodyScale;
+        /// <summary>The height as drawn (1 = as authored).</summary>
+        protected virtual float HeightScale => BodyScale;
+        Vector3 Scale3 => new Vector3(WidthScale, HeightScale, BodyScale);
         /// <summary>Where the barrel is cut to be run out further (raw z): everything in front of it moves forward.</summary>
         protected virtual float BarrelSplit => float.PositiveInfinity;
         /// <summary>How much longer the barrel is drawn (m).</summary>
@@ -48,9 +54,9 @@ namespace SlugMove
         /// <summary>The scale of the stock, grip and receiver (1 = as authored).</summary>
         public float Scale => BodyScale;
         /// <summary>A raw point as drawn: scaled down, and pushed forward when it is past the barrel's cut.</summary>
-        public Vector3 Warp(Vector3 raw) => raw * BodyScale + (raw.z > BarrelSplit ? new Vector3(0f, 0f, BarrelExtra) : Vector3.zero);
+        public Vector3 Warp(Vector3 raw) => Vector3.Scale(raw, Scale3) + (raw.z > BarrelSplit ? new Vector3(0f, 0f, BarrelExtra) : Vector3.zero);
 
-        public float BoreY => RawBoreY * BodyScale;
+        public float BoreY => RawBoreY * HeightScale;
         public Vector3 MuzzleLocal => Warp(RawMuzzle);
         /// <summary>Where the right hand holds it when nothing else is going on; the carry is placed by this point.</summary>
         public Vector3 RestGripLocal => Warp(RawRestGrip);
@@ -114,7 +120,7 @@ namespace SlugMove
             // drawn compact: the fixed parts' meshes are warped once (they are shared), the moving parts are scaled as a whole
             foreach (Transform c in root.transform)
             {
-                if (gun._moving.Contains(c)) { c.localScale = Vector3.one * gun.BodyScale; continue; }
+                if (gun._moving.Contains(c)) { c.localScale = gun.Scale3; continue; }
                 foreach (var mf in c.GetComponentsInChildren<MeshFilter>(true)) gun.WarpMesh(mf.sharedMesh);
             }
             gun._muzzle = new GameObject("Muzzle").transform;
@@ -128,11 +134,12 @@ namespace SlugMove
 
         void WarpMesh(Mesh m)
         {
-            if (m == null || Warped.Contains(m) || (BodyScale == 1f && BarrelExtra == 0f)) return;
+            if (m == null || Warped.Contains(m) || (Scale3 == Vector3.one && BarrelExtra == 0f)) return;
             Warped.Add(m);
             var v = m.vertices;
             for (int i = 0; i < v.Length; i++) v[i] = Warp(v[i]);
             m.vertices = v;
+            m.RecalculateNormals();      // stretched unevenly: the faces turn (every flat face has its own vertices)
             m.RecalculateBounds();
         }
 
