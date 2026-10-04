@@ -87,7 +87,7 @@ MonoBehaviour:
   chips: 2
   flashTime: 0.03
   flashSize: 0.75
-  flashLight: 0.9
+  flashLight: 0
   fpShoulder: {x: 0.055, y: -0.085, z: 0.24}
   fpScale: 0.45
   fpLowAngles: 0.5

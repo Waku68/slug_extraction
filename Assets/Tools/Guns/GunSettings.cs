@@ -12,6 +12,7 @@ namespace SlugMove
 
     /// <summary>
     /// Tunables of one gun, in one asset per gun (read every frame, so they can be changed in play mode).
+    /// Every gun shoots on CO2, like a paintball marker (no powder, so the rain never stops it).
     /// Carried across the chest; the trigger shoulders it (the butt on the right shoulder) and it fires salt: grains of
     /// refined salt (rifle, pistol), a handful of coarse salt (shotgun) or a chunk of rock salt (sniper). Every shot pushes it
     /// back into the soft shoulder, flips the muzzle and rocks the upper body; the eyes climb and come partly back.
@@ -112,9 +113,9 @@ namespace SlugMove
         [Tooltip("粒の太さ（m）")] public float grainSize = 0.012f;
         [Tooltip("当たった跡の大きさの倍率")] public float markScale = 1f;
         [Tooltip("当たったときに跳ねる欠片の数（1 粒ごと）")] public int chips = 2;
-        [Tooltip("マズルフラッシュが出ている時間（秒）")] public float flashTime = 0.035f;
-        [Tooltip("マズルフラッシュの大きさの倍率")] public float flashSize = 1f;
-        [Tooltip("マズルフラッシュの光の強さ")] public float flashLight = 1.2f;
+        [Tooltip("撃ったときに銃口から炭酸ガスが吹いている時間（秒）")] public float flashTime = 0.035f;
+        [Tooltip("銃口から吹くガスの大きさの倍率")] public float flashSize = 1f;
+        [Tooltip("撃ったときの光の強さ。炭酸ガスは光らないので 0")] public float flashLight = 0f;
 
         [Header("一人称の見え方")]
         [Tooltip("一人称の銃床（右肩）の位置（カメラ基準, m, 縮める前）。本当の肩は目のすぐ下で、そのままだと機関部が画面を覆うので、右下に離して構える。銃口は照準の点に向く")] public Vector3 fpShoulder = new Vector3(0.13f, -0.15f, -0.01f);
@@ -154,7 +155,7 @@ namespace SlugMove
                     reloadRoll = 32f; reloadPitch = -6f; actionTravel = 0.075f;
                     magazineAway = new Vector3(0.09f, -0.12f, -0.1f);
                     roundColor = new Color(0.93f, 0.9f, 0.86f); grainSize = 0.009f; tracerLength = 0.22f; convergeDistance = 2.5f;
-                    markScale = 0.7f; chips = 1; flashTime = 0.05f; flashSize = 1.6f; flashLight = 1.8f;
+                    markScale = 0.7f; chips = 1; flashTime = 0.06f; flashSize = 1.6f; flashLight = 0f;
                     fpReloadFocus = new Vector3(0.05f, -0.11f, 0.3f); fpReloadTurn = new Vector3(-6f, -38f, 0f);
                     break;
                 case GunKind.Sniper:
@@ -174,7 +175,7 @@ namespace SlugMove
                     reloadRoll = 22f; reloadPitch = -8f; actionTravel = 0.075f;
                     magazineAway = new Vector3(0.09f, -0.06f, -0.12f);
                     roundColor = new Color(0.98f, 0.82f, 0.84f); grainSize = 0.02f; tracerLength = 1.4f; convergeDistance = 6f;
-                    markScale = 1.8f; chips = 5; flashTime = 0.05f; flashSize = 1.4f; flashLight = 2f;
+                    markScale = 1.8f; chips = 5; flashTime = 0.06f; flashSize = 1.4f; flashLight = 0f;
                     farAimDistance = 120f;
                     // the scope rides high above the bore: shoulder it lower in view, so its eyepiece stays out of the eye
                     fpShoulder = new Vector3(0.14f, -0.2f, 0f);
@@ -205,7 +206,7 @@ namespace SlugMove
                     reloadRoll = 26f; reloadPitch = -4f; reloadButtOffset = new Vector3(-0.01f, 0.005f, -0.03f);
                     magazineDrop = 0.07f; magazineAway = new Vector3(-0.07f, -0.1f, -0.02f);
                     roundColor = new Color(1f, 0.98f, 0.92f); grainSize = 0.01f; tracerLength = 0.35f; convergeDistance = 3f;
-                    markScale = 0.8f; chips = 2; flashTime = 0.03f; flashSize = 0.75f; flashLight = 0.9f;
+                    markScale = 0.8f; chips = 2; flashTime = 0.04f; flashSize = 0.75f; flashLight = 0f;
                     fpShoulder = new Vector3(0.055f, -0.085f, 0.24f);
                     fpScale = 0.45f; fpLowAngles = 0.5f; fpLowOffset = new Vector3(0.004f, -0.006f, 0f);
                     fpReloadFocus = new Vector3(0.035f, -0.075f, 0.25f); fpReloadTurn = new Vector3(-6f, -32f, 0f);

@@ -4,9 +4,11 @@ using UnityEngine;
 namespace SlugMove
 {
     /// <summary>
-    /// An assault rifle in the spirit of the AK: a wooden stock, pistol grip and handguard on a dark steel receiver and
-    /// barrel, and a curved magazine with a little window on each side that shows how much salt is left (it empties
-    /// from the bottom up, as the follower pushes the salt up). Slugs load it with refined salt.
+    /// An assault rifle in the spirit of the AK, on CO2: the stock is the gas bottle itself (a painted steel bottle
+    /// with a brass valve where it screws into the receiver, and a rubber pad on its end); wooden pistol grip and
+    /// handguard on a dark steel receiver and barrel, and a curved magazine with a little window on each side that shows
+    /// how much salt is left (it empties from the bottom up, as the follower pushes the salt up). Drawn compact with a
+    /// long barrel. Slugs load it with refined salt.
     /// The right hand holds the magazine (and pulls it out to reload); the left hand cups the handguard by the muzzle.
     /// The magazine is a child that turns about its top (<see cref="MagPivotLocal"/>).
     /// </summary>
@@ -15,6 +17,9 @@ namespace SlugMove
         public const float Bore = 0.046f, Length = 0.625f;
         /// <summary>How much shorter the stock is than the AK's (m).</summary>
         const float StockCut = 0.065f;
+        protected override float BodyScale => 0.75f;
+        protected override float BarrelSplit => 0.532f;      // just in front of the handguard
+        protected override float BarrelExtra => 0.2f;
         /// <summary>The top of the magazine, where it turns when pulled out.</summary>
         public static readonly Vector3 MagPivotLocal = new Vector3(0f, 0.016f, 0.322f);
         /// <summary>The left hand: cupped under the front end of the handguard, close to the muzzle.</summary>
@@ -28,11 +33,11 @@ namespace SlugMove
         /// <summary>The direction the magazine runs at the right hand (magazine space).</summary>
         public static Vector3 MagGripAxis => MagazineAxis(0.42f);
 
-        public override float BoreY => Bore;
-        public override Vector3 MuzzleLocal => new Vector3(0f, Bore, Length);
-        public override Vector3 RestGripLocal => MagPivotLocal + MagGripLocal;
-        public override Vector3 ReloadFocusLocal => MagPivotLocal;
-        public override float ButtZ => StockCut;
+        protected override float RawBoreY => Bore;
+        protected override Vector3 RawMuzzle => new Vector3(0f, Bore, Length);
+        protected override Vector3 RawRestGrip => MagPivotLocal + MagGripLocal;
+        protected override Vector3 RawReloadFocus => MagPivotLocal;
+        protected override float RawButtZ => StockCut;
 
         /// <summary>
         /// A point of the magazine in its own space: <paramref name="t"/> 0..1 from the top down its curve,
@@ -51,7 +56,7 @@ namespace SlugMove
             return new Vector3(0f, -Mathf.Cos(a), Mathf.Sin(a));
         }
 
-        static Mesh _woodMesh, _steelMesh, _coverMesh, _rubberMesh, _magMesh, _windowMesh;
+        static Mesh _woodMesh, _steelMesh, _coverMesh, _rubberMesh, _magMesh, _windowMesh, _bottleMesh, _brassMesh;
 
         Transform _mag;
         Mesh _fillMesh;
@@ -64,7 +69,9 @@ namespace SlugMove
             Part(transform, "Steel", _steelMesh, Steel, castShadows);
             Part(transform, "Cover", _coverMesh, Cover, castShadows);
             Part(transform, "Rubber", _rubberMesh, Rubber, castShadows);
-            _mag = Pivot(transform, "Magazine", MagPivotLocal);
+            Part(transform, "Bottle", _bottleMesh, Bottle, castShadows);
+            Part(transform, "Brass", _brassMesh, Brass, castShadows);
+            _mag = Moving(Pivot(transform, "Magazine", MagPivotLocal));
             Part(_mag, "MagBody", _magMesh, Steel, castShadows);
             Part(_mag, "MagWindow", _windowMesh, Glass, false);
             _fillMesh = new Mesh { name = "MagSalt", hideFlags = HideFlags.DontSave };
@@ -73,12 +80,12 @@ namespace SlugMove
         }
 
         /// <summary>The magazine: rocked out along its curve, then carried away by the right hand and brought back full.</summary>
-        public override void Pose(GunHandling h, GunSettings s, out Hand right, out Hand left)
+        protected override void RawPose(GunHandling h, GunSettings s, out Hand right, out Hand left)
         {
             Vector3 magPos = MagPivotLocal + new Vector3(0f, -0.95f, 0.3f) * (s.magazineDrop * h.MagazineOut)
                              + s.magazineAway * h.MagazineAway;
             Quaternion magRot = Quaternion.Euler(-12f * h.MagazineOut + 20f * h.MagazineAway, 0f, 35f * h.MagazineAway);
-            _mag.localPosition = magPos;
+            Place(_mag, magPos);
             _mag.localRotation = magRot;
             right = new Hand(magPos + magRot * MagGripLocal, magRot * MagGripAxis);
             left = new Hand(LeftGripLocal, Vector3.forward);
@@ -130,9 +137,23 @@ namespace SlugMove
             if (_woodMesh != null) return;
             const float BoreY = Bore;
 
-            // ---- wood: the stock, the pistol grip, the handguard below the barrel and the cover above it
+            // ---- the stock is the CO2 bottle: a round-ended painted bottle from the butt pad to a brass valve that
+            //      screws into the back of the receiver
+            //      (a fat, short bottle: its domed end is the butt, with a rubber ring round it)
+            const float BottleY = 0.01f, BottleR = 0.034f;
+            _bottleMesh = new ProfileMesh()
+                .Tube(new Vector3(0f, BottleY, StockCut + 0.004f), new Vector3(0f, BottleY, StockCut + 0.012f), BottleR * 0.6f, 16, BottleR * 0.88f)
+                .Tube(new Vector3(0f, BottleY, StockCut + 0.012f), new Vector3(0f, BottleY, StockCut + 0.024f), BottleR * 0.88f, 16, BottleR)
+                .Tube(new Vector3(0f, BottleY, StockCut + 0.024f), new Vector3(0f, BottleY, 0.122f), BottleR, 16)
+                .Tube(new Vector3(0f, BottleY, 0.122f), new Vector3(0f, BottleY, 0.142f), BottleR, 16, BottleR * 0.4f)
+                .ToMesh("RifleBottle");
+            _brassMesh = new ProfileMesh()
+                .Tube(new Vector3(0f, BottleY, 0.14f), new Vector3(0f, BottleY, 0.156f), 0.0115f, 10)
+                .Tube(new Vector3(0f, BottleY - 0.012f, 0.148f), new Vector3(0f, BottleY - 0.022f, 0.148f), 0.0055f, 8)   // the gauge port
+                .ToMesh("RifleValve");
+
+            // ---- wood: the pistol grip, the handguard below the barrel and the cover above it
             var wood = new ProfileMesh();
-            wood.Extrude(CutStock(Zy(0f, 0.035f, -0.004f, -0.044f, 0.045f, -0.031f, 0.1f, -0.008f, 0.158f, 0.018f, 0.158f, 0.057f), StockCut, 0.158f), 0.02f, 0.004f);
             wood.Extrude(Zy(0.206f, 0.014f, 0.244f, 0.014f, 0.226f, -0.066f, 0.19f, -0.066f), 0.016f, 0.004f);
             wood.Extrude(Zy(0.385f, 0.06f, 0.385f, 0.02f, 0.4f, 0.012f, 0.515f, 0.016f, 0.53f, 0.028f, 0.53f, 0.058f), 0.024f, 0.005f);
             wood.Extrude(Zy(0.398f, 0.058f, 0.505f, 0.058f, 0.505f, 0.07f, 0.497f, 0.08f, 0.41f, 0.08f, 0.398f, 0.072f), 0.016f, 0.004f);
@@ -144,7 +165,7 @@ namespace SlugMove
             steel.Extrude(Zy(0.36f, 0.056f, 0.398f, 0.056f, 0.398f, 0.072f, 0.36f, 0.079f), 0.014f, 0.002f);           // rear sight block
             steel.Extrude(Zy(0.364f, 0.079f, 0.39f, 0.074f, 0.39f, 0.078f, 0.366f, 0.083f), 0.009f, 0.001f);           // rear sight leaf
             steel.Tube(new Vector3(0f, BoreY, 0.36f), new Vector3(0f, BoreY, 0.59f), 0.0085f);                           // barrel
-            steel.Tube(new Vector3(0f, 0.068f, 0.5f), new Vector3(0f, 0.068f, 0.545f), 0.0075f);                        // gas tube
+            steel.Tube(new Vector3(0f, 0.068f, 0.5f), new Vector3(0f, 0.068f, 0.528f), 0.0075f);                        // gas tube (ends at the handguard, so it is not run out with the barrel)
             steel.Extrude(Zy(0.535f, 0.036f, 0.56f, 0.036f, 0.56f, 0.078f, 0.535f, 0.078f), 0.012f, 0.002f);           // gas block
             steel.Tube(new Vector3(0f, BoreY, 0.565f), new Vector3(0f, BoreY, 0.59f), 0.0125f);                          // front sight base
             steel.Extrude(Zy(0.568f, 0.05f, 0.588f, 0.05f, 0.585f, 0.086f, 0.571f, 0.086f), 0.007f, 0.0015f);           // front sight post
@@ -159,9 +180,10 @@ namespace SlugMove
             _coverMesh = new ProfileMesh()
                 .Extrude(Zy(0.165f, 0.064f, 0.356f, 0.064f, 0.356f, 0.074f, 0.348f, 0.081f, 0.19f, 0.081f, 0.165f, 0.07f), 0.017f, 0.004f)
                 .ToMesh("RifleCover");
+            // a rubber ring round the bottle's end, where it rests against the body
             _rubberMesh = new ProfileMesh()
-                .Extrude(Shift(Zy(-0.008f, 0.037f, -0.012f, -0.046f, -0.002f, -0.046f, 0.002f, 0.037f), StockCut, 0f), 0.021f, 0.003f)
-                .ToMesh("RifleButtPlate");
+                .Tube(new Vector3(0f, 0.01f, StockCut), new Vector3(0f, 0.01f, StockCut + 0.014f), 0.03f, 16, 0.0335f)
+                .ToMesh("RifleButtRing");
 
             // ---- the magazine (its own space: the top middle at the origin) with a floor plate and the side windows
             var mag = new ProfileMesh();

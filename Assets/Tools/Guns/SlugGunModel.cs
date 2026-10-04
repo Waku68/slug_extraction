@@ -10,7 +10,13 @@ namespace SlugMove
     ///
     /// Local space, the same for every gun: the bore runs along +Z at <see cref="BoreY"/>, up is +Y, and the origin is
     /// the middle of the butt plate, the point that rests on the shoulder. All guns share one look: wood with a faint
-    /// generated grain, matte dark steel, rubber, and a toy-like star for the muzzle flash.
+    /// generated grain, matte dark steel, rubber, a painted CO2 bottle with brass fittings (they shoot salt on carbon
+    /// dioxide, like a paintball marker, so the rain never stops them), and a puff of gas at the muzzle.
+    ///
+    /// Each gun is authored at full size ("raw" space) and drawn compact (<see cref="Warp"/>): everything up to
+    /// <see cref="BarrelSplit"/> (stock, grip, receiver, the hands' places) is scaled down by <see cref="BodyScale"/>,
+    /// and the barrel is run out <see cref="BarrelExtra"/> further. Small in the hands, so the arms stay short, and
+    /// still long enough to read as a gun. The holder only ever sees the drawn space.
     /// </summary>
     public abstract class SlugGunModel : MonoBehaviour
     {
@@ -21,31 +27,71 @@ namespace SlugMove
             public Hand(Vector3 point, Vector3 axis) { this.point = point; this.axis = axis; }
         }
 
-        public abstract float BoreY { get; }
-        public abstract Vector3 MuzzleLocal { get; }
+        // ---- the raw shape, as authored (full size)
+        protected abstract float RawBoreY { get; }
+        protected abstract Vector3 RawMuzzle { get; }
+        protected abstract Vector3 RawRestGrip { get; }
+        protected abstract Vector3 RawReloadFocus { get; }
+        protected virtual Vector3 RawScopeEye => new Vector3(0f, RawBoreY + 0.05f, 0.15f);
+        protected virtual float RawButtZ => 0f;
+        /// <summary>Moves the moving parts (with <see cref="Place"/>) and says where the hands go, in raw space.</summary>
+        protected abstract void RawPose(GunHandling h, GunSettings s, out Hand right, out Hand left);
+
+        // ---- how it is drawn: compact, with a long barrel
+        /// <summary>How much the stock, grip and receiver are scaled down (1 = as authored).</summary>
+        protected virtual float BodyScale => 1f;
+        /// <summary>Where the barrel is cut to be run out further (raw z): everything in front of it moves forward.</summary>
+        protected virtual float BarrelSplit => float.PositiveInfinity;
+        /// <summary>How much longer the barrel is drawn (m).</summary>
+        protected virtual float BarrelExtra => 0f;
+
+        /// <summary>The scale of the stock, grip and receiver (1 = as authored).</summary>
+        public float Scale => BodyScale;
+        /// <summary>A raw point as drawn: scaled down, and pushed forward when it is past the barrel's cut.</summary>
+        public Vector3 Warp(Vector3 raw) => raw * BodyScale + (raw.z > BarrelSplit ? new Vector3(0f, 0f, BarrelExtra) : Vector3.zero);
+
+        public float BoreY => RawBoreY * BodyScale;
+        public Vector3 MuzzleLocal => Warp(RawMuzzle);
         /// <summary>Where the right hand holds it when nothing else is going on; the carry is placed by this point.</summary>
-        public abstract Vector3 RestGripLocal { get; }
+        public Vector3 RestGripLocal => Warp(RawRestGrip);
         /// <summary>Where rounds go in: brought into the lower middle of the view in first person during a reload.</summary>
-        public abstract Vector3 ReloadFocusLocal { get; }
+        public Vector3 ReloadFocusLocal => Warp(RawReloadFocus);
         /// <summary>The scope's eyepiece, for guns with a scope.</summary>
-        public virtual Vector3 ScopeEyeLocal => new Vector3(0f, BoreY + 0.05f, 0.15f);
+        public Vector3 ScopeEyeLocal => Warp(RawScopeEye);
         /// <summary>
         /// How far forward of the origin the butt plate sits (m) when the stock is cut short. The holder puts the butt
         /// plate on the shoulder, so the whole gun, and the hands on it, come that much closer to the body.
         /// </summary>
-        public virtual float ButtZ => 0f;
+        public float ButtZ => RawButtZ * BodyScale;
 
-        /// <summary>Moves the moving parts for this state of the handling and says where the hands go (gun space).</summary>
-        public abstract void Pose(GunHandling h, GunSettings s, out Hand right, out Hand left);
+        /// <summary>Moves the moving parts for this state of the handling and says where the hands go (gun space, as drawn).</summary>
+        public void Pose(GunHandling h, GunSettings s, out Hand right, out Hand left)
+        {
+            RawPose(h, s, out right, out left);
+            right.point = Warp(right.point);
+            left.point = Warp(left.point);
+        }
+
+        /// <summary>Puts a moving part at a raw position (it is drawn at its warped place, scaled like the body).</summary>
+        protected void Place(Transform part, Vector3 raw) => part.localPosition = Warp(raw);
+
+        /// <summary>Marks a child as a moving part (a magazine, a pump, a bolt, a round in the hand).</summary>
+        protected Transform Moving(Transform part)
+        {
+            _moving.Add(part);
+            return part;
+        }
         /// <summary>How full it is (0..1), for guns that show it.</summary>
         public virtual void SetAmmo(float fraction) { }
 
         protected abstract void Build(bool castShadows);
 
-        protected static Material Wood, Steel, Cover, Rubber, Glass, Salt, FlashMat;
+        protected static Material Wood, Steel, Cover, Rubber, Glass, Salt, Bottle, Brass, FlashMat;
         static Mesh _flashMesh;
         static Texture2D _grain;
+        static readonly HashSet<Mesh> Warped = new HashSet<Mesh>();
 
+        readonly List<Transform> _moving = new List<Transform>();
         Transform _muzzle;
         GameObject _flash;
 
@@ -65,6 +111,12 @@ namespace SlugMove
                 _ => root.AddComponent<SlugRifle>(),
             };
             gun.Build(castShadows);
+            // drawn compact: the fixed parts' meshes are warped once (they are shared), the moving parts are scaled as a whole
+            foreach (Transform c in root.transform)
+            {
+                if (gun._moving.Contains(c)) { c.localScale = Vector3.one * gun.BodyScale; continue; }
+                foreach (var mf in c.GetComponentsInChildren<MeshFilter>(true)) gun.WarpMesh(mf.sharedMesh);
+            }
             gun._muzzle = new GameObject("Muzzle").transform;
             gun._muzzle.SetParent(root.transform, false);
             gun._muzzle.localPosition = gun.MuzzleLocal;
@@ -74,7 +126,17 @@ namespace SlugMove
             return gun;
         }
 
-        /// <summary>The muzzle flash: a toy-like star, turned and sized a little differently every shot.</summary>
+        void WarpMesh(Mesh m)
+        {
+            if (m == null || Warped.Contains(m) || (BodyScale == 1f && BarrelExtra == 0f)) return;
+            Warped.Add(m);
+            var v = m.vertices;
+            for (int i = 0; i < v.Length; i++) v[i] = Warp(v[i]);
+            m.vertices = v;
+            m.RecalculateBounds();
+        }
+
+        /// <summary>The gas puff at the muzzle: a soft white burst, turned and sized a little differently every shot.</summary>
         public void SetFlash(bool on, float roll, float scale)
         {
             if (_flash.activeSelf != on) _flash.SetActive(on);
@@ -160,22 +222,24 @@ namespace SlugMove
             Rubber = Mat(lit, new Color(0.11f, 0.1f, 0.1f), 0f, 0.15f);
             Glass = Mat(lit, new Color(0.08f, 0.09f, 0.11f), 0.2f, 0.85f);
             Salt = Mat(lit, new Color(0.97f, 0.96f, 0.93f), 0f, 0.55f);
+            Bottle = Mat(lit, new Color(0.3f, 0.41f, 0.39f), 0.3f, 0.5f);       // a painted CO2 bottle, muted teal
+            Brass = Mat(lit, new Color(0.74f, 0.57f, 0.3f), 0.6f, 0.5f);
             FlashMat = new Material(Shader.Find("Universal Render Pipeline/Unlit")) { hideFlags = HideFlags.DontSave };
-            FlashMat.SetColor("_BaseColor", new Color(1f, 0.93f, 0.7f));
+            FlashMat.SetColor("_BaseColor", new Color(0.93f, 0.96f, 1f));
 
-            // muzzle flash: a star facing forward and two crossed flames along the bore
+            // the gas puff: a soft, lumpy round burst facing forward and two crossed plumes along the bore
             var flash = new ProfileMesh { uvScale = 1f };
-            var star = new List<Vector2>();
-            for (int i = 0; i < 16; i++)
+            var puff = new List<Vector2>();
+            for (int i = 0; i < 14; i++)
             {
-                float a = i / 16f * Mathf.PI * 2f, r = i % 2 == 0 ? 0.042f : 0.014f;
-                star.Add(new Vector2(Mathf.Cos(a) * r, Mathf.Sin(a) * r));
+                float a = i / 14f * Mathf.PI * 2f, r = i % 2 == 0 ? 0.034f : 0.025f;
+                puff.Add(new Vector2(Mathf.Cos(a) * r, Mathf.Sin(a) * r));
             }
-            flash.Flat(star, new Vector3(0f, 0f, 0.004f), Vector3.right, Vector3.up, true);
-            var flame = Zy(0f, 0f, 0.025f, 0.016f, 0.075f, 0f, 0.025f, -0.016f);
-            flash.Flat(flame, Vector3.zero, Vector3.forward, Vector3.up, true);
-            flash.Flat(flame, Vector3.zero, Vector3.forward, Vector3.right, true);
-            _flashMesh = flash.ToMesh("GunFlash");
+            flash.Flat(puff, new Vector3(0f, 0f, 0.01f), Vector3.right, Vector3.up, true);
+            var plume = Zy(0f, 0f, 0.02f, 0.02f, 0.05f, 0.026f, 0.07f, 0.012f, 0.072f, -0.012f, 0.05f, -0.026f, 0.02f, -0.02f);
+            flash.Flat(plume, Vector3.zero, Vector3.forward, Vector3.up, true);
+            flash.Flat(plume, Vector3.zero, Vector3.forward, Vector3.right, true);
+            _flashMesh = flash.ToMesh("GunPuff");
         }
 
         protected static Material Mat(Shader s, Color c, float metallic, float smooth)

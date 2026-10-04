@@ -258,8 +258,8 @@ namespace SlugMove
             var t = model.transform;
             float scale = t.lossyScale.x;
             var shell = SlugShotgun.Shell(null, true, true);
-            shell.transform.SetPositionAndRotation(t.TransformPoint(SlugShotgun.EjectLocal), t.rotation * Quaternion.Euler(0f, 90f, 0f));
-            shell.transform.localScale = Vector3.one * scale;
+            shell.transform.SetPositionAndRotation(t.TransformPoint(model.Warp(SlugShotgun.EjectLocal)), t.rotation * Quaternion.Euler(0f, 90f, 0f));
+            shell.transform.localScale = Vector3.one * (scale * model.Scale);
             var cc = controller.GetComponent<Collider>();
             if (cc) Physics.IgnoreCollision(shell.GetComponent<Collider>(), cc);
             var rb = shell.GetComponent<Rigidbody>();
@@ -349,7 +349,7 @@ namespace SlugMove
             // ---- the body's gun and arms
             _gun.Pose(h, s, out var right, out var left);
             Place(_gun, pose.position, pose.rotation, Vector3.one, ammo, flash, false);
-            _flashLight.enabled = flash;
+            _flashLight.enabled = flash && s.flashLight > 0f;      // a puff of gas does not glow (0 = no light)
             _flashLight.intensity = s.flashLight;
             _bodyMuzzle = pose.Point(_gun.MuzzleLocal);
             Vector3 rightGrip = pose.Point(right.point), leftGrip = pose.Point(left.point);

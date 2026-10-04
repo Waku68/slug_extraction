@@ -5,7 +5,7 @@ namespace SlugMove
 {
     /// <summary>
     /// A small gun for the hip: a dark steel slide on a lighter frame, wooden grip panels and a magazine in the grip,
-    /// loaded with refined salt. It has no stock: held out in front of the chest in both hands, the right fist round the
+    /// loaded with refined salt; a small CO2 cartridge rides in the grip behind the magazine. It has no stock: held out in front of the chest in both hands, the right fist round the
     /// grip and the left one cupped under it. The slide jumps back on every shot and stays back when the salt runs out
     /// (until a full magazine is seated). Reloading, the left hand pulls the magazine down out of the grip, takes it
     /// away, and pushes a full one back in.
@@ -25,10 +25,10 @@ namespace SlugMove
         static readonly Vector3 LeftGripLocal = new Vector3(-0.012f, -0.058f, 0.014f);
         const float MagLength = 0.088f, SlideTravel = 0.022f;
 
-        public override float BoreY => Bore;
-        public override Vector3 MuzzleLocal => new Vector3(0f, Bore, Length);
-        public override Vector3 RestGripLocal => RightGripLocal;
-        public override Vector3 ReloadFocusLocal => MagPivotLocal + GripAxis * MagLength;
+        protected override float RawBoreY => Bore;
+        protected override Vector3 RawMuzzle => new Vector3(0f, Bore, Length);
+        protected override Vector3 RawRestGrip => RightGripLocal;
+        protected override Vector3 RawReloadFocus => MagPivotLocal + GripAxis * MagLength;
 
         static Mesh _slideMesh, _frameMesh, _gripMesh, _steelMesh, _magMesh, _magSaltMesh, _serrationMesh, _portMesh;
 
@@ -41,11 +41,11 @@ namespace SlugMove
             Part(transform, "Frame", _frameMesh, Cover, castShadows);
             Part(transform, "Grip", _gripMesh, Wood, castShadows);
             Part(transform, "Steel", _steelMesh, Steel, castShadows);
-            _slide = Pivot(transform, "Slide", Vector3.zero);
+            _slide = Moving(Pivot(transform, "Slide", Vector3.zero));
             Part(_slide, "SlideBody", _slideMesh, Steel, castShadows);
             Part(_slide, "Serrations", _serrationMesh, Rubber, castShadows);
             Part(_slide, "Port", _portMesh, Cover, castShadows);
-            _mag = Pivot(transform, "Magazine", MagPivotLocal);
+            _mag = Moving(Pivot(transform, "Magazine", MagPivotLocal));
             Part(_mag, "MagBody", _magMesh, Steel, castShadows);
             Part(_mag, "MagSalt", _magSaltMesh, Salt, false);
         }
@@ -54,7 +54,7 @@ namespace SlugMove
         /// The slide kicks back on every shot (and stays back on an empty magazine); the magazine is pulled down the grip,
         /// carried off by the left hand, and pushed back in full.
         /// </summary>
-        public override void Pose(GunHandling h, GunSettings s, out Hand right, out Hand left)
+        protected override void RawPose(GunHandling h, GunSettings s, out Hand right, out Hand left)
         {
             // an empty gun keeps its slide back until a full magazine is seated
             if (h.Reloading && !_wasReloading) _lockedForReload = h.Ammo == 0;
@@ -62,12 +62,12 @@ namespace SlugMove
             bool seated = h.ReloadStage != GunHandling.Stage.Magazine || h.StageProgress >= 0.78f;
             bool locked = (!h.Reloading && h.Ammo == 0) || (h.Reloading && _lockedForReload && !seated);
             float blow = Bump(h.SinceShot, 0f, 0.022f, 0.035f, 0.09f);
-            _slide.localPosition = new Vector3(0f, 0f, -SlideTravel * Mathf.Max(blow, locked ? 1f : 0f));
+            Place(_slide, new Vector3(0f, 0f, -SlideTravel * Mathf.Max(blow, locked ? 1f : 0f)));
 
             float outAmount = h.MagazineOut, away = h.MagazineAway;
             Vector3 magPos = MagPivotLocal + GripAxis * (s.magazineDrop * outAmount + 0.01f * away) + s.magazineAway * away;
             Quaternion magRot = Quaternion.Euler(15f * away, 0f, -30f * away);
-            _mag.localPosition = magPos;
+            Place(_mag, magPos);
             _mag.localRotation = magRot;
 
             right = new Hand(RightGripLocal, GripAxis);

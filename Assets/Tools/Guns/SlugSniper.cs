@@ -14,6 +14,9 @@ namespace SlugMove
         const float Bore = 0.05f, Length = 0.805f, ScopeY = 0.095f;
         /// <summary>How much the stock is cut short (m).</summary>
         const float StockCut = 0.07f;
+        protected override float BodyScale => 0.75f;
+        protected override float BarrelSplit => 0.6f;        // in front of the fore-end
+        protected override float BarrelExtra => 0.26f;
         static readonly Vector3 GripLocal = new Vector3(0.004f, -0.03f, 0.224f);
         static readonly Vector3 GripAxis = new Vector3(0f, -1f, -0.35f).normalized;
         static readonly Vector3 LeftGripLocal = new Vector3(-0.004f, -0.014f, 0.5f);
@@ -23,14 +26,14 @@ namespace SlugMove
         static readonly Vector3 ActionTop = new Vector3(0f, 0.09f, 0.3f), ActionIn = new Vector3(0f, 0.066f, 0.3f);
         const float BoltLift = 65f;
 
-        public override float BoreY => Bore;
-        public override Vector3 MuzzleLocal => new Vector3(0f, Bore, Length);
-        public override Vector3 RestGripLocal => GripLocal;
-        public override Vector3 ReloadFocusLocal => new Vector3(0f, 0.06f, 0.29f);
-        public override Vector3 ScopeEyeLocal => new Vector3(0f, ScopeY, 0.128f);
-        public override float ButtZ => StockCut;
+        protected override float RawBoreY => Bore;
+        protected override Vector3 RawMuzzle => new Vector3(0f, Bore, Length);
+        protected override Vector3 RawRestGrip => GripLocal;
+        protected override Vector3 RawReloadFocus => new Vector3(0f, 0.06f, 0.29f);
+        protected override Vector3 RawScopeEye => new Vector3(0f, ScopeY, 0.128f);
+        protected override float RawButtZ => StockCut;
 
-        static Mesh _woodMesh, _steelMesh, _rubberMesh, _boltMesh, _glassMesh, _chunkMesh;
+        static Mesh _woodMesh, _steelMesh, _rubberMesh, _boltMesh, _glassMesh, _chunkMesh, _bottleMesh, _brassMesh;
         static Material _rockSalt;
 
         Transform _bolt, _handChunk;
@@ -42,9 +45,11 @@ namespace SlugMove
             Part(transform, "Steel", _steelMesh, Steel, castShadows);
             Part(transform, "Rubber", _rubberMesh, Rubber, castShadows);
             Part(transform, "Lenses", _glassMesh, Glass, false);
-            _bolt = Pivot(transform, "Bolt", BoltPivot);
+            Part(transform, "Bottle", _bottleMesh, Bottle, castShadows);
+            Part(transform, "Brass", _brassMesh, Brass, castShadows);
+            _bolt = Moving(Pivot(transform, "Bolt", BoltPivot));
             Part(_bolt, "BoltSteel", _boltMesh, Cover, castShadows);
-            _handChunk = Part(transform, "HandChunk", _chunkMesh, _rockSalt, castShadows);
+            _handChunk = Moving(Part(transform, "HandChunk", _chunkMesh, _rockSalt, castShadows));
             _handChunk.gameObject.SetActive(false);
         }
 
@@ -55,7 +60,7 @@ namespace SlugMove
         /// the grip. Reloading: open the bolt, then fetch a chunk from the side and press it down into the action, again
         /// and again; close the bolt to finish.
         /// </summary>
-        public override void Pose(GunHandling h, GunSettings s, out Hand right, out Hand left)
+        protected override void RawPose(GunHandling h, GunSettings s, out Hand right, out Hand left)
         {
             float travel = s.actionTravel, angle = 0f, slide = 0f;
             Vector3 hand = GripLocal, axis = GripAxis;
@@ -104,11 +109,11 @@ namespace SlugMove
                     break;
                 }
             }
-            _bolt.localPosition = BoltPivot + new Vector3(0f, 0f, -slide);
+            Place(_bolt, BoltPivot + new Vector3(0f, 0f, -slide));
             _bolt.localRotation = Quaternion.Euler(0f, 0f, angle);
             if (_handChunk.gameObject.activeSelf != holding) _handChunk.gameObject.SetActive(holding);
             // the chunk peeks out under the fist as it is pressed down into the action
-            if (holding) _handChunk.localPosition = hand + new Vector3(0f, -0.016f, 0f);
+            if (holding) Place(_handChunk, hand + new Vector3(0f, -0.016f, 0f));
             right = new Hand(hand, axis);
             left = new Hand(LeftGripLocal, Vector3.forward);
         }
@@ -125,6 +130,18 @@ namespace SlugMove
                             0.33f, -0.006f, 0.29f, -0.012f, 0.255f, -0.016f, 0.242f, -0.052f, 0.204f, -0.054f, 0.198f, -0.018f,
                             0.15f, -0.024f, 0.07f, -0.036f, -0.004f, -0.054f), StockCut, 0.19f), 0.02f, 0.005f)
                 .ToMesh("SniperWood");
+
+            // ---- the CO2 bottle under the fore-end, along the barrel (an air rifle's reservoir), a brass gauge on its
+            //      front cap
+            const float BottleY = -0.032f, BottleR = 0.019f;
+            _bottleMesh = new ProfileMesh()
+                .Tube(new Vector3(0f, BottleY, 0.3f), new Vector3(0f, BottleY, 0.312f), BottleR * 0.6f, 12, BottleR)
+                .Tube(new Vector3(0f, BottleY, 0.312f), new Vector3(0f, BottleY, 0.55f), BottleR, 12)
+                .ToMesh("SniperBottle");
+            _brassMesh = new ProfileMesh()
+                .Tube(new Vector3(0f, BottleY, 0.55f), new Vector3(0f, BottleY, 0.566f), BottleR * 0.9f, 12)
+                .Tube(new Vector3(0f, BottleY, 0.566f), new Vector3(0f, BottleY, 0.571f), BottleR * 0.62f, 12)
+                .ToMesh("SniperGauge");
 
             // ---- steel: the round receiver, the tapered barrel and its crown, trigger and guard, the scope on two rings
             var steel = new ProfileMesh();

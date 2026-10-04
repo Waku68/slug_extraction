@@ -3,9 +3,10 @@ using UnityEngine;
 namespace SlugMove
 {
     /// <summary>
-    /// A pump shotgun: a straight wooden stock and a grooved wooden pump on a short steel receiver, a barrel with a
-    /// tube magazine under it, and a loading port underneath. It fires a handful of coarse salt from shells wrapped in
-    /// a leaf, with a dab of salt showing at the top.
+    /// A pump shotgun on CO2: a straight wooden stock with the gas bottle slung under it (a painted bottle on a brass
+    /// elbow into the receiver), a grooved wooden pump on a short steel receiver, a barrel with a tube magazine under
+    /// it, and a loading port underneath. Drawn compact with a long barrel. It fires a handful of coarse salt from
+    /// shells wrapped in a leaf, with a dab of salt showing at the top.
     /// The right hand holds the wrist of the stock and feeds shells into the port one at a time; the left hand rides the
     /// pump, racking it back and forth after every shot (out flies the spent shell).
     /// </summary>
@@ -14,20 +15,23 @@ namespace SlugMove
         const float Bore = 0.046f, Length = 0.6f;
         /// <summary>How much the stock is cut short (m).</summary>
         const float StockCut = 0.07f;
+        protected override float BodyScale => 0.75f;
+        protected override float BarrelSplit => 0.52f;       // in front of the pump
+        protected override float BarrelExtra => 0.17f;
         static readonly Vector3 LeftGripLocal = new Vector3(-0.004f, -0.013f, 0.44f);
         static readonly Vector3 WristLocal = new Vector3(0.004f, 0.02f, 0.178f);
         static readonly Vector3 WristAxis = new Vector3(0f, 0.25f, 1f).normalized;
         static readonly Vector3 PortLocal = new Vector3(0f, -0.018f, 0.266f), PushedLocal = new Vector3(0f, -0.002f, 0.286f);
-        /// <summary>The ejection port on the right side, where spent shells fly out.</summary>
+        /// <summary>The ejection port on the right side, where spent shells fly out (raw space: pass it through <see cref="SlugGunModel.Warp"/>).</summary>
         public static readonly Vector3 EjectLocal = new Vector3(0.024f, 0.042f, 0.272f);
 
-        public override float BoreY => Bore;
-        public override Vector3 MuzzleLocal => new Vector3(0f, Bore, Length);
-        public override Vector3 RestGripLocal => WristLocal;
-        public override Vector3 ReloadFocusLocal => new Vector3(0f, 0f, 0.275f);
-        public override float ButtZ => StockCut;
+        protected override float RawBoreY => Bore;
+        protected override Vector3 RawMuzzle => new Vector3(0f, Bore, Length);
+        protected override Vector3 RawRestGrip => WristLocal;
+        protected override Vector3 RawReloadFocus => new Vector3(0f, 0f, 0.275f);
+        protected override float RawButtZ => StockCut;
 
-        static Mesh _woodMesh, _steelMesh, _coverMesh, _rubberMesh, _pumpMesh, _grooveMesh;
+        static Mesh _woodMesh, _steelMesh, _coverMesh, _rubberMesh, _pumpMesh, _grooveMesh, _bottleMesh, _brassMesh;
         static Mesh _shellBody, _shellBase, _shellTop;
         static Material _leaf, _darkWood;
 
@@ -40,10 +44,12 @@ namespace SlugMove
             Part(transform, "Steel", _steelMesh, Steel, castShadows);
             Part(transform, "Cover", _coverMesh, Cover, castShadows);
             Part(transform, "Rubber", _rubberMesh, Rubber, castShadows);
-            _pump = Pivot(transform, "Pump", Vector3.zero);
+            Part(transform, "Bottle", _bottleMesh, Bottle, castShadows);
+            Part(transform, "Brass", _brassMesh, Brass, castShadows);
+            _pump = Moving(Pivot(transform, "Pump", Vector3.zero));
             Part(_pump, "PumpWood", _pumpMesh, Wood, castShadows);
             Part(_pump, "PumpGrooves", _grooveMesh, _darkWood, castShadows);
-            _handShell = Shell(transform, castShadows, false).transform;
+            _handShell = Moving(Shell(transform, castShadows, false).transform);
             _handShell.name = "HandShell";
             _handShell.gameObject.SetActive(false);
         }
@@ -52,11 +58,11 @@ namespace SlugMove
         /// The pump racks back and forth after a shot. Reloading, the right hand goes from the wrist down to the side for
         /// a shell, brings it up under the port, pushes it in, and goes back for the next.
         /// </summary>
-        public override void Pose(GunHandling h, GunSettings s, out Hand right, out Hand left)
+        protected override void RawPose(GunHandling h, GunSettings s, out Hand right, out Hand left)
         {
             float pump = h.Cycling ? Bump(h.Cycle, 0f, 0.4f, 0.5f, 0.85f) : 0f;
             Vector3 back = new Vector3(0f, 0f, -s.actionTravel * pump);
-            _pump.localPosition = back;
+            Place(_pump, back);
             left = new Hand(LeftGripLocal + back, Vector3.forward);
 
             Vector3 pouch = WristLocal + s.magazineAway;
@@ -84,7 +90,7 @@ namespace SlugMove
             }
             if (_handShell.gameObject.activeSelf != holding) _handShell.gameObject.SetActive(holding);
             // the shell pokes out of the front of the fist, pointing forward into the port
-            if (holding) _handShell.localPosition = hand + new Vector3(0f, 0.012f, -0.004f);
+            if (holding) Place(_handShell, hand + new Vector3(0f, 0.012f, -0.004f));
             right = new Hand(hand, axis);
         }
 
@@ -124,6 +130,18 @@ namespace SlugMove
             _woodMesh = new ProfileMesh()
                 .Extrude(CutStock(Zy(0f, 0.034f, -0.004f, -0.05f, 0.07f, -0.034f, 0.15f, -0.012f, 0.2f, 0f, 0.205f, 0.012f, 0.205f, 0.054f, 0.15f, 0.05f), StockCut, 0.2f), 0.021f, 0.005f)
                 .ToMesh("ShotgunWood");
+
+            // ---- the CO2 bottle under the stock, pointing back, on a brass elbow into the front of the trigger guard
+            const float BottleY = -0.072f, BottleR = 0.019f;
+            _bottleMesh = new ProfileMesh()
+                .Tube(new Vector3(0f, BottleY, 0.085f), new Vector3(0f, BottleY, 0.095f), BottleR * 0.7f, 12, BottleR)
+                .Tube(new Vector3(0f, BottleY, 0.095f), new Vector3(0f, BottleY, 0.19f), BottleR, 12)
+                .Tube(new Vector3(0f, BottleY, 0.19f), new Vector3(0f, BottleY, 0.2f), BottleR, 12, BottleR * 0.55f)
+                .ToMesh("ShotgunBottle");
+            _brassMesh = new ProfileMesh()
+                .Tube(new Vector3(0f, BottleY, 0.198f), new Vector3(0f, BottleY, 0.214f), 0.009f, 10)
+                .Tube(new Vector3(0f, BottleY, 0.21f), new Vector3(0f, -0.036f, 0.226f), 0.0065f, 8)
+                .ToMesh("ShotgunElbow");
 
             // ---- steel: receiver, barrel with its bead, the tube magazine and its clamp, trigger and guard
             var steel = new ProfileMesh();
