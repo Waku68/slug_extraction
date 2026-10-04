@@ -29,7 +29,9 @@ namespace SlugMove
         /// <summary>Busy with something else (opening the eco bag): the tools cannot be used.</summary>
         [System.NonSerialized] public bool handsBusy;
         /// <summary>The hands are not free for the tools (peeking, or busy).</summary>
-        public bool HandsBusy => Peeking || handsBusy;
+        /// <summary>Using something on the belt (a moss ball of water): the tools cannot be used meanwhile.</summary>
+        [System.NonSerialized] public bool beltBusy;
+        public bool HandsBusy => Peeking || handsBusy || beltBusy;
         /// <summary>The own body is in view (third person, or the eyes bent round out of the head to look at the bag): draw
         /// the body's tools and what is in the hands, not the first-person copies (those would follow the eyes round).</summary>
         public bool ShowsBody => thirdPerson || peek > 0.35f;

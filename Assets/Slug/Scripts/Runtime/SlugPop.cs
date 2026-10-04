@@ -200,6 +200,38 @@ namespace SlugDesign
         /// <summary>How a <see cref="GearFollower"/> part at <paramref name="t"/> is turned right now (visual space).</summary>
         public Quaternion FollowerRotation(float t) => Quaternion.LookRotation(BendDir(Vector3.forward, t), BendDir(Vector3.up, t));
 
+        // ------------------------------------------------------------------ drying (set by the slug's moisture)
+        readonly Dictionary<Material, Color> _dryBase = new Dictionary<Material, Color>();
+        float _dry, _soak;
+
+        /// <summary>
+        /// How dry the skin looks: 0 = as built, 1 = parched (dull, greyed, darker). <paramref name="soaked"/> (0..1) gives a
+        /// little extra sheen when it is wetter than full. Only the skin (body, tentacles, hands, feet), not the gear.
+        /// </summary>
+        public void SetDryness(float dry, float soaked = 0f)
+        {
+            dry = Mathf.Clamp01(dry);
+            soaked = Mathf.Clamp01(soaked);
+            if (Mathf.Abs(dry - _dry) < 0.004f && Mathf.Abs(soaked - _soak) < 0.004f) return;
+            _dry = dry;
+            _soak = soaked;
+            foreach (var r in _renderers)
+            {
+                if (r == null) continue;
+                string n = r.gameObject.name;
+                if (!(n == "Body" || n.StartsWith("Ear_") || n.StartsWith("Hand_") || n.StartsWith("Foot_"))) continue;
+                var m = r.sharedMaterial;
+                if (m == null || !m.HasProperty("_BaseColor")) continue;
+                if (!_dryBase.TryGetValue(m, out var c)) { c = m.GetColor("_BaseColor"); _dryBase[m] = c; }
+                float g = c.grayscale;
+                Color dull = Color.Lerp(c, new Color(g, g, g * 0.95f), 0.6f) * 0.78f;
+                Color wet = c * (1f + 0.12f * soaked);
+                Color result = Color.Lerp(wet, dull, dry);
+                result.a = c.a;
+                m.SetColor("_BaseColor", result);
+            }
+        }
+
         /// <summary>The hands' material (colour, toon shading, outline), to dress arms made elsewhere.</summary>
         public Material HandMaterial => _hand;
 
@@ -666,6 +698,11 @@ namespace SlugDesign
             ApplyHands();
             _renderers = _visual.GetComponentsInChildren<Renderer>(true);
             SetUpright(_uprightDeg);
+            // the skin's colours were made anew: dry them again as they were
+            _dryBase.Clear();
+            float dryWas = _dry, soakWas = _soak;
+            _dry = _soak = -1f;
+            SetDryness(Mathf.Max(dryWas, 0f), Mathf.Max(soakWas, 0f));
             _turnDeg = 0f;
             SetTurn(0f, transform.position);
             Rebuilt?.Invoke();

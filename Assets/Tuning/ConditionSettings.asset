@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45bd153092e3a694eabe8bdf42d6aba8, type: 3}
+  m_Name: ConditionSettings
+  m_EditorClassIdentifier: Assembly-CSharp::SlugWorld.ConditionSettings
+  moistureMax: 100
+  moistureOverfill: 120
+  overfillDrain: 5
+  sunnyInSun: -20
+  sunnyInShade: -4
+  cloudy: -5
+  night: 0
+  lightRain: 20
+  heavyRain: 50
+  waterPerSecond: 10
+  saltDrainMultiplier: 2
+  saltRainMultiplier: 0.5
+  saltNight: -4
+  looksDryBelow: 30
+  zeroSpeed: 0.8
+  zeroSecondsToFall: 90
+  warnBelow: 12
+  mossBalls: 2
+  mossAmount: 40
+  mossUseSeconds: 2
+  mossRefillSeconds: 3
+  healthMax: 100
+  regenAbove: 60
+  regenPerMinute: 6
+  regenMoistureCost: 3

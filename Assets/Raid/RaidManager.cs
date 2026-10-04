@@ -7,10 +7,10 @@ using UnityEngine.SceneManagement;
 namespace SlugExtract
 {
     /// <summary>
-    /// One solo raid: choose what to carry, harvest, carry, and reach the exit before the rain stops. Running out of
-    /// time means drying up and losing everything carried. Shows the timer, the bag and the result; R starts over.
-    /// The clock starts once the loadout is chosen (<see cref="picker"/>).
-    /// The stash (everything brought home) lasts until play mode ends.
+    /// One solo raid: choose what to carry, harvest, carry, and reach the exit. The island's clock and weather
+    /// (<see cref="SlugWorld.WeatherPresenter"/>) and the body's moisture set the pace: drying out to nothing brings the
+    /// slug down (<see cref="health"/>), and everything carried is lost. The old time limit ("before the rain stops") can
+    /// still be switched on. Shows the result; R starts over. The stash (everything brought home) lasts until play mode ends.
     /// </summary>
     public class RaidManager : MonoBehaviour
     {
@@ -23,10 +23,12 @@ namespace SlugExtract
         public SlugLoadout loadout;
         [Tooltip("出撃前に持ち物を選ぶ画面（選び終わるまで時間は進まない）")] public LoadoutPicker picker;
         public SlugBag bag;
+        [Tooltip("体力（乾いて倒れたら失敗）")] public SlugHealth health;
+        [Tooltip("昔の「雨が止むまで」の制限時間を使う（島の時計に置き換えたので、ふだんは使わない）")] public bool useTimeLimit;
         [Tooltip("脱出口の中心")] public Transform exitPoint;
 
         static int _stashValue, _stashSalt, _stashCrop, _runs;
-        string _savedText;
+        string _savedText, _cause;
 
         State _state = State.Playing;
         float _timeLeft, _extractProgress;
@@ -36,7 +38,11 @@ namespace SlugExtract
         void OnEnable() { Harvestable.Harvested += OnHarvested; }
         void OnDisable() { Harvestable.Harvested -= OnHarvested; }
 
-        void Start() { _timeLeft = settings.timeLimit; }
+        void Start()
+        {
+            _timeLeft = settings.timeLimit;
+            if (health) health.Died += cause => { if (_state == State.Playing) { _cause = cause; End(State.Failed); } };
+        }
 
         void OnHarvested(ItemKind kind, int added, bool full)
         {
@@ -60,8 +66,11 @@ namespace SlugExtract
             }
 
             if (picker && picker.IsOpen) return;     // still choosing what to carry
-            _timeLeft -= Time.deltaTime;
-            if (_timeLeft <= 0f) { _timeLeft = 0f; End(State.Failed); return; }
+            if (useTimeLimit)
+            {
+                _timeLeft -= Time.deltaTime;
+                if (_timeLeft <= 0f) { _timeLeft = 0f; _cause = "time"; End(State.Failed); return; }
+            }
 
             // stay inside the exit for a moment to get out
             Vector3 d = controller.transform.position - exitPoint.position; d.y = 0f;
@@ -117,12 +126,15 @@ namespace SlugExtract
             Styles();
             float w = Screen.width, h = Screen.height;
 
-            // ---- top right: the rain timer (the bag shows its own shape top left; its numbers only when peeking)
-            int sec = Mathf.CeilToInt(_timeLeft);
-            string timeColor = _timeLeft <= 30f ? "#ff8080" : "#a0d8ff";
+            // ---- top right: the old rain timer, only when it is switched on (the island's clock shows no numbers)
             var salt = settings.rockSalt; var crop = settings.crop;
-            GUI.Box(new Rect(w - 300, 10, 290, 40), GUIContent.none);
-            GUI.Label(new Rect(w - 290, 16, 280, 30), $"雨が止むまで  <color={timeColor}><b>{sec / 60}:{sec % 60:00}</b></color>", _mid);
+            if (useTimeLimit)
+            {
+                int sec = Mathf.CeilToInt(_timeLeft);
+                string timeColor = _timeLeft <= 30f ? "#ff8080" : "#a0d8ff";
+                GUI.Box(new Rect(w - 300, 10, 290, 40), GUIContent.none);
+                GUI.Label(new Rect(w - 290, 16, 280, 30), $"雨が止むまで  <color={timeColor}><b>{sec / 60}:{sec % 60:00}</b></color>", _mid);
+            }
 
             // ---- pickup log and the crosshair
             float y = h * 0.5f + 30f;
@@ -138,13 +150,16 @@ namespace SlugExtract
             {
                 if (_extractProgress > 0f)
                     GUI.Label(new Rect(0, h * 0.3f, w, 50), $"脱出中… {Mathf.Clamp01(_extractProgress / settings.extractTime) * 100f:0}%", _big);
-                GUI.Label(new Rect(0, h - 40, w, 30), "左クリック 叩く・撃つ・突く（1 ピッケル / 2 背中の銃 / 3 腰の道具）／ E つかむ・バッグに入れる / G バッグから出す・落とす / Q 覗く / X 体に突っ込む / Z 伏せ ／ 光の柱が脱出口", _small);
+                GUI.Label(new Rect(0, h - 40, w, 30), "左クリック 叩く・撃つ・突く（1 ピッケル / 2 背中の銃 / 3 腰の道具）／ E つかむ・バッグに入れる / G バッグから出す・落とす / Q 覗く / X 体に突っ込む / Z 伏せ / F 水の苔玉 ／ 光の柱が脱出口", _small);
                 return;
             }
 
             // ---- result
             GUI.Box(new Rect(w * 0.5f - 300, h * 0.25f, 600, 300), GUIContent.none);
-            string title = _state == State.Extracted ? "<color=#a0ffa0>脱出成功</color>" : "<color=#ff9090>雨が止んで、乾いてしまった</color>";
+            string title = _state == State.Extracted ? "<color=#a0ffa0>脱出成功</color>"
+                : _cause == "time" ? "<color=#ff9090>雨が止んで、乾いてしまった</color>"
+                : _cause == "dried" ? "<color=#ff9090>乾ききって、倒れてしまった</color>"
+                : "<color=#ff9090>倒れてしまった</color>";
             string body = _state == State.Extracted
                 ? $"持ち帰り：{salt.displayName} ×{bag.Count(ItemKind.RockSalt)}、{crop.displayName} ×{bag.Count(ItemKind.Crop)}（{bag.Value} 塩）"
                 : _savedText != null ? $"持ち物はすべて失った（体の中の{_savedText}だけは持ち帰った）" : "持ち物はすべて失った";

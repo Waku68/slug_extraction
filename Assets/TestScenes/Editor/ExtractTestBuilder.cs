@@ -97,6 +97,8 @@ namespace SlugExtract
             raid.bag = bag;
             raid.exitPoint = exit;
 
+            // the island's clock and weather, moisture zones, giant shade, the body's moisture and health
+            WeatherSceneSetup.Fit();
             EditorSceneManager.SaveScene(scene, ScenePath);
             MoveTestBuilder.AddToBuildSettings(ScenePath);
             AssetDatabase.SaveAssets();

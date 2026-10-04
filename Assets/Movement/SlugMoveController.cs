@@ -20,6 +20,11 @@ namespace SlugMove
         public SlugCameraRig cameraRig;
         [Tooltip("SlugPop の付いた見た目。傾きはこのコンポーネントが回す")] public Transform body;
         [Tooltip("速度の倍率（荷物の重さなど、ほかのコンポーネントが変える）")] public float speedMultiplier = 1f;
+        /// <summary>A second speed factor for the body's condition (dried out: slower). Set by the moisture.</summary>
+        [System.NonSerialized] public float conditionSpeed = 1f;
+        /// <summary>How big the body looks (dried out: a little shrunk). Set by the moisture.</summary>
+        [System.NonSerialized] public float bodyScale = 1f;
+        float SpeedFactor => speedMultiplier * conditionSpeed;
         [Tooltip("false の間は入力を受け付けない（試合の終了後など）")] public bool inputEnabled = true;
         [Tooltip("上半身の前後の傾き（度、+ = 前）。ピッケルを振る動きなど、ほかのコンポーネントが変える")] public float leanDegrees;
         /// <summary>How far the head is turned round on the neck to the right (degrees; the body stays put): looking
@@ -163,7 +168,7 @@ namespace SlugMove
             {
                 Vector3 d = dir != Vector3.zero ? dir : Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
                 float c = Mathf.SmoothStep(0f, 1f, _charge);
-                _velocity = d * (Mathf.Lerp(s.lungeSpeedMin, s.lungeSpeedMax, c) * speedMultiplier);
+                _velocity = d * (Mathf.Lerp(s.lungeSpeedMin, s.lungeSpeedMax, c) * SpeedFactor);
                 // the head keeps facing the way the eyes look (the eyes sit in it): a stretch along the body makes it
                 // long; a stretch to the side flings the tail out the other way instead, trailing behind
                 _lungeAlong = Mathf.Abs(Vector3.Dot(d, transform.forward));
@@ -199,16 +204,16 @@ namespace SlugMove
                 // carried by the stretch: no speed limit; it keeps its speed in the air and glides out on the ground
                 if (!_airborne)
                 {
-                    float sp = _velocity.magnitude, floor = s.maxSpeed * speedMultiplier * wishAmount;
+                    float sp = _velocity.magnitude, floor = s.maxSpeed * SpeedFactor * wishAmount;
                     float next = Mathf.Max(floor, sp * Mathf.Exp(-dt / Mathf.Max(s.lungeSlideTime, 1e-3f)));
                     _velocity = sp > 1e-5f ? _velocity * (next / sp) : Vector3.zero;
-                    if (next <= s.maxSpeed * speedMultiplier * 1.02f) _lunging = false;
+                    if (next <= s.maxSpeed * SpeedFactor * 1.02f) _lunging = false;
                 }
             }
             // speed: slow to build up, and a slippery stop (exponential glide + a small constant brake)
             else if (wishAmount > 1e-4f)
             {
-                float target = s.maxSpeed * speedMultiplier * wishAmount * SlopeFactor(dir);
+                float target = s.maxSpeed * SpeedFactor * wishAmount * SlopeFactor(dir);
                 _velocity = Vector3.MoveTowards(_velocity, dir * target, s.acceleration * dt);
             }
             else
@@ -304,8 +309,8 @@ namespace SlugMove
 
             Vector3 feet = transform.position;
             Vector3 motion = feet.y < _climbTopY + 0.02f
-                ? Vector3.up * (s.climbSpeed * speedMultiplier * push) + _climbDir * 0.05f     // up, hugging the wall
-                : _climbDir * (s.climbSpeed * speedMultiplier * push);                          // over the edge
+                ? Vector3.up * (s.climbSpeed * SpeedFactor * push) + _climbDir * 0.05f     // up, hugging the wall
+                : _climbDir * (s.climbSpeed * SpeedFactor * push);                          // over the edge
             _cc.Move(motion * dt);
 
             _climbProgress = Mathf.InverseLerp(_climbStartY, _climbTopY, transform.position.y);
@@ -374,7 +379,7 @@ namespace SlugMove
             float e = 1f + _stretch;
             var sc = _stretch < 0f ? new Vector3(Mathf.Pow(e, -0.55f), Mathf.Pow(e, 0.4f), e)
                                    : new Vector3(Mathf.Pow(e, -0.45f), Mathf.Pow(e, -0.45f), e);
-            body.localScale = Vector3.Scale(_bodyBaseScale, sc);
+            body.localScale = Vector3.Scale(_bodyBaseScale, sc) * bodyScale;
 
             // bend the lifted front back by the nose-up pitch, so the upper body stays upright
             if (!_slug) _slug = body.GetComponent<SlugDesign.SlugPop>();
