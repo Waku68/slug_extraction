@@ -13,6 +13,8 @@ namespace SlugMove
     public class SlugRifle : SlugGunModel
     {
         public const float Bore = 0.046f, Length = 0.625f;
+        /// <summary>How much shorter the stock is than the AK's (m).</summary>
+        const float StockCut = 0.065f;
         /// <summary>The top of the magazine, where it turns when pulled out.</summary>
         public static readonly Vector3 MagPivotLocal = new Vector3(0f, 0.016f, 0.322f);
         /// <summary>The left hand: cupped under the front end of the handguard, close to the muzzle.</summary>
@@ -30,6 +32,7 @@ namespace SlugMove
         public override Vector3 MuzzleLocal => new Vector3(0f, Bore, Length);
         public override Vector3 RestGripLocal => MagPivotLocal + MagGripLocal;
         public override Vector3 ReloadFocusLocal => MagPivotLocal;
+        public override float ButtZ => StockCut;
 
         /// <summary>
         /// A point of the magazine in its own space: <paramref name="t"/> 0..1 from the top down its curve,
@@ -129,7 +132,7 @@ namespace SlugMove
 
             // ---- wood: the stock, the pistol grip, the handguard below the barrel and the cover above it
             var wood = new ProfileMesh();
-            wood.Extrude(Zy(0f, 0.035f, -0.004f, -0.044f, 0.045f, -0.031f, 0.1f, -0.008f, 0.158f, 0.018f, 0.158f, 0.057f), 0.02f, 0.004f);
+            wood.Extrude(CutStock(Zy(0f, 0.035f, -0.004f, -0.044f, 0.045f, -0.031f, 0.1f, -0.008f, 0.158f, 0.018f, 0.158f, 0.057f), StockCut, 0.158f), 0.02f, 0.004f);
             wood.Extrude(Zy(0.206f, 0.014f, 0.244f, 0.014f, 0.226f, -0.066f, 0.19f, -0.066f), 0.016f, 0.004f);
             wood.Extrude(Zy(0.385f, 0.06f, 0.385f, 0.02f, 0.4f, 0.012f, 0.515f, 0.016f, 0.53f, 0.028f, 0.53f, 0.058f), 0.024f, 0.005f);
             wood.Extrude(Zy(0.398f, 0.058f, 0.505f, 0.058f, 0.505f, 0.07f, 0.497f, 0.08f, 0.41f, 0.08f, 0.398f, 0.072f), 0.016f, 0.004f);
@@ -157,7 +160,7 @@ namespace SlugMove
                 .Extrude(Zy(0.165f, 0.064f, 0.356f, 0.064f, 0.356f, 0.074f, 0.348f, 0.081f, 0.19f, 0.081f, 0.165f, 0.07f), 0.017f, 0.004f)
                 .ToMesh("RifleCover");
             _rubberMesh = new ProfileMesh()
-                .Extrude(Zy(-0.008f, 0.037f, -0.012f, -0.046f, -0.002f, -0.046f, 0.002f, 0.037f), 0.021f, 0.003f)
+                .Extrude(Shift(Zy(-0.008f, 0.037f, -0.012f, -0.046f, -0.002f, -0.046f, 0.002f, 0.037f), StockCut, 0f), 0.021f, 0.003f)
                 .ToMesh("RifleButtPlate");
 
             // ---- the magazine (its own space: the top middle at the origin) with a floor plate and the side windows

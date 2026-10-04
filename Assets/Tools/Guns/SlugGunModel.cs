@@ -29,6 +29,11 @@ namespace SlugMove
         public abstract Vector3 ReloadFocusLocal { get; }
         /// <summary>The scope's eyepiece, for guns with a scope.</summary>
         public virtual Vector3 ScopeEyeLocal => new Vector3(0f, BoreY + 0.05f, 0.15f);
+        /// <summary>
+        /// How far forward of the origin the butt plate sits (m) when the stock is cut short. The holder puts the butt
+        /// plate on the shoulder, so the whole gun, and the hands on it, come that much closer to the body.
+        /// </summary>
+        public virtual float ButtZ => 0f;
 
         /// <summary>Moves the moving parts for this state of the handling and says where the hands go (gun space).</summary>
         public abstract void Pose(GunHandling h, GunSettings s, out Hand right, out Hand left);
@@ -119,6 +124,18 @@ namespace SlugMove
             steel.Extrude(Shift(Zy(0f, 0f, 0f, -0.029f, 0.008f, -0.037f, 0.052f, -0.037f, 0.056f, 0f,
                                    0.05f, 0f, 0.047f, -0.031f, 0.011f, -0.031f, 0.006f, -0.025f, 0.006f, 0f), z, y), 0.005f, 0.001f);
             steel.Extrude(Shift(Zy(0.017f, 0f, 0.024f, 0f, 0.022f, -0.017f, 0.015f, -0.024f, 0.013f, -0.02f, 0.018f, -0.014f), z, y), 0.003f, 0f);
+        }
+
+        /// <summary>
+        /// A stock's side profile cut short: the part behind <paramref name="join"/> (where the stock meets the receiver
+        /// or the grip) is squeezed so its back end moves forward by <paramref name="cut"/>; the rest is unchanged.
+        /// </summary>
+        protected static List<Vector2> CutStock(List<Vector2> p, float cut, float join)
+        {
+            var r = new List<Vector2>(p.Count);
+            float k = (join - cut) / join;
+            foreach (var q in p) r.Add(q.x < join ? new Vector2(cut + q.x * k, q.y) : q);
+            return r;
         }
 
         protected static float Smooth(float x)

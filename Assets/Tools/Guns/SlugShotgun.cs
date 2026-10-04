@@ -12,6 +12,8 @@ namespace SlugMove
     public class SlugShotgun : SlugGunModel
     {
         const float Bore = 0.046f, Length = 0.6f;
+        /// <summary>How much the stock is cut short (m).</summary>
+        const float StockCut = 0.07f;
         static readonly Vector3 LeftGripLocal = new Vector3(-0.004f, -0.013f, 0.44f);
         static readonly Vector3 WristLocal = new Vector3(0.004f, 0.02f, 0.178f);
         static readonly Vector3 WristAxis = new Vector3(0f, 0.25f, 1f).normalized;
@@ -23,6 +25,7 @@ namespace SlugMove
         public override Vector3 MuzzleLocal => new Vector3(0f, Bore, Length);
         public override Vector3 RestGripLocal => WristLocal;
         public override Vector3 ReloadFocusLocal => new Vector3(0f, 0f, 0.275f);
+        public override float ButtZ => StockCut;
 
         static Mesh _woodMesh, _steelMesh, _coverMesh, _rubberMesh, _pumpMesh, _grooveMesh;
         static Mesh _shellBody, _shellBase, _shellTop;
@@ -119,7 +122,7 @@ namespace SlugMove
 
             // ---- wood: a straight stock with a slim wrist
             _woodMesh = new ProfileMesh()
-                .Extrude(Zy(0f, 0.034f, -0.004f, -0.05f, 0.07f, -0.034f, 0.15f, -0.012f, 0.2f, 0f, 0.205f, 0.012f, 0.205f, 0.054f, 0.15f, 0.05f), 0.021f, 0.005f)
+                .Extrude(CutStock(Zy(0f, 0.034f, -0.004f, -0.05f, 0.07f, -0.034f, 0.15f, -0.012f, 0.2f, 0f, 0.205f, 0.012f, 0.205f, 0.054f, 0.15f, 0.05f), StockCut, 0.2f), 0.021f, 0.005f)
                 .ToMesh("ShotgunWood");
 
             // ---- steel: receiver, barrel with its bead, the tube magazine and its clamp, trigger and guard
@@ -139,7 +142,7 @@ namespace SlugMove
 
             // ---- dark: the butt pad, the loading port underneath and the ejection port on the right
             var rubber = new ProfileMesh();
-            rubber.Extrude(Zy(-0.01f, 0.036f, -0.014f, -0.052f, -0.003f, -0.052f, 0.001f, 0.036f), 0.022f, 0.003f);
+            rubber.Extrude(Shift(Zy(-0.01f, 0.036f, -0.014f, -0.052f, -0.003f, -0.052f, 0.001f, 0.036f), StockCut, 0f), 0.022f, 0.003f);
             rubber.Extrude(Zy(0.24f, -0.003f, 0.31f, -0.003f, 0.31f, 0.003f, 0.24f, 0.003f), 0.012f, 0f);
             rubber.Extrude(Zy(0.245f, 0.028f, 0.3f, 0.028f, 0.3f, 0.055f, 0.245f, 0.055f), 0.001f, 0f, 0.0195f);
             _rubberMesh = rubber.ToMesh("ShotgunDark");

@@ -329,7 +329,8 @@ namespace SlugMove
             Vector3 buttShift = s.lowButtOffset * low + s.reloadButtOffset * tilt + StowOffset * stow;   // body space (first person)
             // the body's gun: at the shoulder, blended into the carry across the chest while low
             Quaternion rot = Quaternion.Euler(_aimPitch, _aimYaw, 0f) * HoldTurn(0f);
-            Vector3 pos = shoulder + body * (s.reloadButtOffset * tilt) - rot * Vector3.forward * h.Kick;
+            // the butt plate on the shoulder (a short stock brings the gun closer), pushed back by the kick
+            Vector3 pos = shoulder + body * (s.reloadButtOffset * tilt) - rot * Vector3.forward * (h.Kick + _gun.ButtZ);
             if (low > 0f)
             {
                 var carry = Carry(body);
@@ -385,7 +386,7 @@ namespace SlugMove
             Quaternion wantV = Quaternion.LookRotation(aimV - (s.fpShoulder + upV * boreY), upV);
             Quaternion lag = Quaternion.Euler(_aimPitch, _aimYaw, 0f) * Quaternion.Inverse(Quaternion.Euler(wantPitch, wantYaw, 0f));
             Quaternion rotV = toCam * lag * cam.transform.rotation * wantV * HoldTurn(low * s.fpLowAngles);
-            var poseV = new ToolPose { position = shoulderV - rotV * Vector3.forward * h.Kick, rotation = rotV };
+            var poseV = new ToolPose { position = shoulderV - rotV * Vector3.forward * (h.Kick + _viewGun.ButtZ), rotation = rotV };
             if (tilt > 0f)
             {
                 // a reload brings where the rounds go in to the lower middle of the view and turns the gun about it,

@@ -12,6 +12,8 @@ namespace SlugMove
     public class SlugSniper : SlugGunModel
     {
         const float Bore = 0.05f, Length = 0.805f, ScopeY = 0.095f;
+        /// <summary>How much the stock is cut short (m).</summary>
+        const float StockCut = 0.07f;
         static readonly Vector3 GripLocal = new Vector3(0.004f, -0.03f, 0.224f);
         static readonly Vector3 GripAxis = new Vector3(0f, -1f, -0.35f).normalized;
         static readonly Vector3 LeftGripLocal = new Vector3(-0.004f, -0.014f, 0.5f);
@@ -26,6 +28,7 @@ namespace SlugMove
         public override Vector3 RestGripLocal => GripLocal;
         public override Vector3 ReloadFocusLocal => new Vector3(0f, 0.06f, 0.29f);
         public override Vector3 ScopeEyeLocal => new Vector3(0f, ScopeY, 0.128f);
+        public override float ButtZ => StockCut;
 
         static Mesh _woodMesh, _steelMesh, _rubberMesh, _boltMesh, _glassMesh, _chunkMesh;
         static Material _rockSalt;
@@ -118,9 +121,9 @@ namespace SlugMove
 
             // ---- wood: one piece from the butt to under the barrel, with a comb, a pistol grip and a long fore-end
             _woodMesh = new ProfileMesh()
-                .Extrude(Zy(0f, 0.036f, 0.16f, 0.048f, 0.2f, 0.036f, 0.52f, 0.036f, 0.585f, 0.031f, 0.59f, 0.016f, 0.56f, 0.002f,
+                .Extrude(CutStock(Zy(0f, 0.036f, 0.16f, 0.048f, 0.2f, 0.036f, 0.52f, 0.036f, 0.585f, 0.031f, 0.59f, 0.016f, 0.56f, 0.002f,
                             0.33f, -0.006f, 0.29f, -0.012f, 0.255f, -0.016f, 0.242f, -0.052f, 0.204f, -0.054f, 0.198f, -0.018f,
-                            0.15f, -0.024f, 0.07f, -0.036f, -0.004f, -0.054f), 0.02f, 0.005f)
+                            0.15f, -0.024f, 0.07f, -0.036f, -0.004f, -0.054f), StockCut, 0.19f), 0.02f, 0.005f)
                 .ToMesh("SniperWood");
 
             // ---- steel: the round receiver, the tapered barrel and its crown, trigger and guard, the scope on two rings
@@ -138,7 +141,7 @@ namespace SlugMove
                 steel.Extrude(Zy(z, BoreY + 0.01f, z + 0.016f, BoreY + 0.01f, z + 0.016f, ScopeY + 0.004f, z, ScopeY + 0.004f), 0.009f, 0.002f);
             _steelMesh = steel.ToMesh("SniperSteel");
             _rubberMesh = new ProfileMesh()
-                .Extrude(Zy(-0.012f, 0.038f, -0.016f, -0.056f, -0.004f, -0.056f, 0f, 0.038f), 0.021f, 0.003f)
+                .Extrude(Shift(Zy(-0.012f, 0.038f, -0.016f, -0.056f, -0.004f, -0.056f, 0f, 0.038f), StockCut, 0f), 0.021f, 0.003f)
                 .ToMesh("SniperButtPad");
             var glass = new ProfileMesh();
             glass.Tube(new Vector3(0f, ScopeY, 0.468f), new Vector3(0f, ScopeY, 0.4715f), 0.0185f, 12);
