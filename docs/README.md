@@ -38,6 +38,7 @@ Oct 4, 2026
 | | [persistent_island_discussion.md](discussions/persistent_island_discussion.md) | 島がずっと続く世界（試合なし）：サーバーの節約、人が必ずいて落ち着かないか、巣穴に帰る、抜けると眠る。いつもの4人＋サーバー屋・Rust勢・探索好きの社会人 |
 | `ideas/` | [base_ideas.md](ideas/base_ideas.md) | 拠点の設備の案出し |
 | `tech/` | [tool_craft_notes.md](tech/tool_craft_notes.md) | 作り方のメモ：ピッケル、銃3種、装備、当たり判定、縮んで伸びる、気をつけること |
+| | [weather_notes.md](tech/weather_notes.md) | 島の時計・天気・湿り気の作り方、開発用のキー、撮り方 |
 | | [sound_list.md](tech/sound_list.md) | 音（効果音・BGM）の置き場所、ファイル名、取り込みの設定、要る音のリスト、鳴らすときのつなぎ口 |
 
 話し合い（`discussions/`）は「Claude といつもの4人」の記録。廃人・スプラ好き・辛口インディーの3人は固定で、話題ごとにほかの人を足す（例：サーバー屋、Rust勢、看護師、生物系の院生、レベルデザイナー）。進め方は、まずそれぞれが意見を出す → 少し話し合う → 暗黙の了解をひっくり返した案（3つ）→ 極端案（2つ）→ まとめ。結論は spec.md に反映してある。
@@ -53,8 +54,9 @@ Oct 4, 2026
 | `Tools/Guns/` | 銃4種（挙動 `GunHandling`、持ち方 `SlugGunHolder`、形 `SlugRifle`・`SlugShotgun`・`SlugSniper`・`SlugPistol`、弾 `SaltRound`、設定 `GunSettings`） |
 | `Tools/Knife/` | ナイフ（突く `SlugKnifeHolder`、形 `SlugKnife`、設定 `KnifeSettings`） |
 | `Combat/` | 部位ごとの当たり判定とダメージ倍率（`SlugHitboxes`・`SlugHitbox`） |
-| `Raid/` | 採って逃げる（採取場 `Harvestable`、バッグ `SlugBag`、試合 `RaidManager`、ルール `ExtractSettings`） |
-| `Tuning/` | **調整用のアセットはすべてここ**：`SlugMoveSettings`、`PickaxeSettings`、`RifleSettings`・`ShotgunSettings`・`SniperSettings`・`PistolSettings`、`KnifeSettings`、`LoadoutSettings`（持ち替えの時間、体に付ける位置）、`ExtractSettings`。再生中に変えてもすぐ反映され、止めても残る |
+| `Raid/` | 採って逃げる（採取場 `Harvestable`、バッグ `SlugBag`、試合 `RaidManager`、ルール `ExtractSettings`、湿り気 `SlugMoisture`、体力 `SlugHealth`、左上の自分 `SelfPortrait`） |
+| `World/` | 島の時計と天気（`IslandClock`・`IslandWeather`、見せ方 `WeatherPresenter`、湿らせる・乾かす場所 `MoistureZone`、設定 `IslandSettings`・`ConditionSettings`）。`tech/weather_notes.md` |
+| `Tuning/` | **調整用のアセットはすべてここ**：`SlugMoveSettings`、`PickaxeSettings`、`RifleSettings`・`ShotgunSettings`・`SniperSettings`・`PistolSettings`、`KnifeSettings`、`LoadoutSettings`（持ち替えの時間、体に付ける位置）、`ExtractSettings`、`IslandSettings`（島の時計と天気）、`ConditionSettings`（湿り気と体力）。再生中に変えてもすぐ反映され、止めても残る |
 | `TestScenes/` | 試す専用シーンの部品。`Editor/`（シーンを作るビルダー、コマ撮り `SwingFilmStrip`・`GunFilmStrip`・`MoveFilmStrip`、`HitboxShot`）、`Debug/`（画面のデバッグ表示、的）、`Generated/`（ビルダーが作る地形・マテリアル） |
 | `Scenes/` | シーン（下の表） |
 | `Audio/` | 音。`BGM/`、`Ambience/`（環境音）、`SE/`（効果音：体・ピッケル・銃・ナイフ・当たる・採取・バッグ・試合・画面）、`Mixer/`。決まりは [sound_list.md](tech/sound_list.md) |
