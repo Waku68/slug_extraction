@@ -81,6 +81,11 @@ namespace SlugExtract
             dummyGear.slug = dummySlug;
             dummyGear.bag = true;
             dummy.AddComponent<SlugHitboxes>().slug = dummySlug;
+            // a bag with things in it, to shoot until it bursts
+            var dummyBag = dummy.AddComponent<SlugBag>();
+            dummyBag.settings = AssetDatabase.LoadAssetAtPath<ExtractSettings>(MoveTestBuilder.TuningDir + "/ExtractSettings.asset");
+            dummyBag.startItems = new[] { ItemKind.Crop, ItemKind.RockSalt, ItemKind.Crop, ItemKind.RockSalt, ItemKind.RockSalt, ItemKind.Crop };
+            ExtractTestBuilder.FitBag(dummy, dummyBag);
             dummySlug.Rebuild();
             MoveTestBuilder.Label("練習用ナメクジ（当たった部位が出る）", new Vector3(2.2f, 0.95f, 4f), 1.4f);
 

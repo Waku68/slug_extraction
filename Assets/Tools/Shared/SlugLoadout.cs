@@ -46,6 +46,8 @@ namespace SlugMove
         public MonoBehaviour CurrentTool => Tool(Current);
 
         GUIStyle _style, _small;
+        SlugCameraRig _rig;
+        SlugCameraRig Rig => _rig ? _rig : (_rig = GetComponent<SlugCameraRig>());
 
         SlugGunHolder Find(GunKind kind, bool small)
         {
@@ -89,7 +91,7 @@ namespace SlugMove
 
         void Update()
         {
-            if (!inputEnabled || Cursor.lockState != CursorLockMode.Locked) return;
+            if (!inputEnabled || Cursor.lockState != CursorLockMode.Locked || (Rig && Rig.HandsBusy)) return;
             var kb = Keyboard.current;
             if (kb != null)
             {

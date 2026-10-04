@@ -46,6 +46,9 @@ namespace SlugDesign
         [Tooltip("布の色")] public Color bagColor = new Color(0.52f, 0.4f, 0.26f);
         [Tooltip("ふたとポケットの色")] public Color bagFlapColor = new Color(0.36f, 0.26f, 0.17f);
         [Tooltip("大きさ（幅、高さ、厚み の半分, m）")] public Vector3 bagSize = new Vector3(0.11f, 0.12f, 0.065f);
+        /// <summary>How swollen the bag is with what is in it (1 = empty; set at run time by the bag, then <see cref="Build"/>).
+        /// It grows out from the back most, taller a little less, wider least.</summary>
+        [System.NonSerialized] public float bagSwell = 1f;
 
         readonly List<Object> _owned = new List<Object>();
         readonly List<Renderer> _helmetRenderers = new List<Renderer>();
@@ -393,7 +396,8 @@ namespace SlugDesign
             Vector3 up = Vector3.ProjectOnPlane(f.forward, nOut).normalized;
             Vector3 x = Vector3.Cross(up, nOut).normalized;
             float standOff = armor == Armor.ShellPlate ? ShieldStandOff : 0.008f;   // on top of the shield when worn
-            Vector3 sz = bagSize;
+            float sw = Mathf.Max(0.5f, bagSwell) - 1f;
+            Vector3 sz = Vector3.Scale(bagSize, new Vector3(1f + 0.3f * sw, 1f + 0.55f * sw, 1f + sw));
             Vector3 c = p + nOut * (standOff + sz.z);
 
             var body = new GearMesh();

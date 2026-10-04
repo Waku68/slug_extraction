@@ -83,6 +83,7 @@ namespace SlugExtract
             var bag = player.AddComponent<SlugBag>();
             bag.settings = _settings;
             bag.controller = player.GetComponent<SlugMoveController>();
+            FitBag(player, bag);
             var raid = new GameObject("Raid").AddComponent<RaidManager>();
             raid.settings = _settings;
             raid.controller = bag.controller;
@@ -100,6 +101,59 @@ namespace SlugExtract
             MoveTestBuilder.AddToBuildSettings(ScenePath);
             AssetDatabase.SaveAssets();
             Debug.Log("[ExtractTest] scene saved: " + ScenePath);
+        }
+
+        /// <summary>
+        /// Wires a bag to the slug it rides on: the bag on its back (gear; added, bag only, when the slug wears none), its
+        /// hitboxes (rounds in the back wear the bag), and for the player the camera (peeking at the back).
+        /// </summary>
+        internal static void FitBag(GameObject root, SlugBag bag)
+        {
+            var slug = root.GetComponentInChildren<SlugDesign.SlugPop>();
+            var gear = slug.GetComponent<SlugDesign.SlugEquipment>();
+            if (!gear)
+            {
+                gear = slug.gameObject.AddComponent<SlugDesign.SlugEquipment>();
+                gear.slug = slug;
+                gear.helmet = false;
+                gear.armor = SlugDesign.SlugEquipment.Armor.None;
+            }
+            gear.bag = true;
+            bag.slug = slug;
+            bag.gear = gear;
+            bag.hitboxes = root.GetComponent<SlugHitboxes>();
+            bag.cameraRig = root.GetComponent<SlugCameraRig>();
+            EditorUtility.SetDirty(bag);
+            EditorUtility.SetDirty(gear);
+        }
+
+        /// <summary>
+        /// Brings the open scene's bags up to date: the player's bag is wired to its gear, hitboxes and camera; the practice
+        /// slug (GunTest) gets a bag with things in it, to shoot until it bursts.
+        /// </summary>
+        [MenuItem("Slug/Update Bag (open scene)")]
+        public static void UpdateOpenScene()
+        {
+            var settings = AssetDatabase.LoadAssetAtPath<ExtractSettings>(SettingsPath);
+            foreach (var bag in Object.FindObjectsByType<SlugBag>(FindObjectsInactive.Include))
+            {
+                if (!bag.settings) bag.settings = settings;
+                FitBag(bag.gameObject, bag);
+            }
+            var dummy = GameObject.Find("練習用ナメクジ");
+            if (dummy && settings)
+            {
+                var bag = dummy.GetComponent<SlugBag>();
+                if (!bag)
+                {
+                    bag = dummy.AddComponent<SlugBag>();
+                    bag.settings = settings;
+                    bag.startItems = new[] { ItemKind.Crop, ItemKind.RockSalt, ItemKind.Crop, ItemKind.RockSalt, ItemKind.RockSalt, ItemKind.Crop };
+                }
+                FitBag(dummy, bag);
+            }
+            EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+            EditorSceneManager.SaveOpenScenes();
         }
 
         /// <summary>Loads (or creates once) the raid settings and the materials of the nodes. Call after MoveTestBuilder.NewScene.</summary>

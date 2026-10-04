@@ -7841,6 +7841,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 12861209379557547, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1957832318}
+    - targetCorrespondingSourceObject: {fileID: 12861209379557547, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1957832320}
   m_SourcePrefab: {fileID: 100100000, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
 --- !u!1 &1957832316 stripped
 GameObject:
@@ -7907,6 +7910,27 @@ MonoBehaviour:
   bagColor: {r: 0.52, g: 0.4, b: 0.26, a: 1}
   bagFlapColor: {r: 0.36, g: 0.26, b: 0.17, a: 1}
   bagSize: {x: 0.11, y: 0.12, z: 0.065}
+--- !u!114 &1957832320
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1957832316}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f3ca344289998043a9b889ea419b4de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SlugExtract.SlugBag
+  settings: {fileID: 11400000, guid: 28a2b988b3a0e2b44ad287abe376f8f8, type: 2}
+  controller: {fileID: 0}
+  cameraRig: {fileID: 0}
+  slug: {fileID: 1957832317}
+  gear: {fileID: 1957832319}
+  hitboxes: {fileID: 1957832318}
+  kind: 0
+  startItems: 010000000000000001000000000000000000000001000000
+  showHud: 1
 --- !u!1 &1964380403
 GameObject:
   m_ObjectHideFlags: 0

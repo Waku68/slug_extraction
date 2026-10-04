@@ -117,10 +117,10 @@ namespace SlugMove
             if (!_ready) return;
             bool own = camera == cameraRig.cam;
             foreach (var r in _viewRenderers) if (r) r.enabled = own;
-            var mode = own && !cameraRig.thirdPerson ? UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly : UnityEngine.Rendering.ShadowCastingMode.On;
+            var mode = own && !cameraRig.ShowsBody ? UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly : UnityEngine.Rendering.ShadowCastingMode.On;
             foreach (var r in _bodyRenderers) if (r) r.shadowCastingMode = mode;
             // parts that cast no shadow (the magazine windows, the flash) are simply not drawn for it
-            bool hide = own && !cameraRig.thirdPerson;
+            bool hide = own && !cameraRig.ShowsBody;
             foreach (var r in _bodyUnshadowed) if (r) r.enabled = !hide;
         }
 
@@ -171,7 +171,7 @@ namespace SlugMove
         void Update()
         {
             if (!_ready) return;
-            bool canUse = inputEnabled && !controller.Climbing && (Cursor.lockState == CursorLockMode.Locked || forceTrigger || forceAim);
+            bool canUse = inputEnabled && !cameraRig.HandsBusy && !controller.Climbing && (Cursor.lockState == CursorLockMode.Locked || forceTrigger || forceAim);
             bool trigger = canUse && (forceTrigger || (_attack != null && _attack.IsPressed()));
             var mouse = Mouse.current;
             bool aim = canUse && (forceAim || (mouse != null && mouse.rightButton.isPressed));
@@ -222,7 +222,7 @@ namespace SlugMove
         void FireRound()
         {
             var s = gun;
-            bool firstPerson = !cameraRig.thirdPerson;
+            bool firstPerson = !cameraRig.ShowsBody;
             Vector3 eye = firstPerson ? cameraRig.cam.transform.position : slug.FaceCenterWorld;
             Quaternion look = Quaternion.Euler(cameraRig.Pitch, cameraRig.Yaw, 0f);
             // the whole shot strays by the spread; a shotgun's grains also scatter within their own cone
@@ -253,7 +253,7 @@ namespace SlugMove
         void OnCue(string cue)
         {
             if (cue != "eject" || gun.kind != GunKind.Shotgun || !_ready) return;
-            var model = cameraRig.thirdPerson ? _gun : _viewGun;
+            var model = cameraRig.ShowsBody ? _gun : _viewGun;
             if (!model || !model.gameObject.activeInHierarchy) return;
             var t = model.transform;
             float scale = t.lossyScale.x;
@@ -288,7 +288,7 @@ namespace SlugMove
             var s = gun;
             var h = _handling;
             var cam = cameraRig.cam;
-            bool firstPerson = !cameraRig.thirdPerson;
+            bool firstPerson = !cameraRig.ShowsBody;
             float dt = Time.deltaTime;
             float boreY = _gun.BoreY;
 
@@ -503,8 +503,8 @@ namespace SlugMove
             var h = _handling;
             float w = Screen.width, hgt = Screen.height, cx = w * 0.5f, cy = hgt * 0.5f;
             var old = GUI.color;
-            if (!cameraRig.thirdPerson && h.Scope > 0.97f) DrawScope(w, hgt, cx, cy - h.Pitch * hgt * 0.01f);
-            else if (!cameraRig.thirdPerson)
+            if (!cameraRig.ShowsBody && h.Scope > 0.97f) DrawScope(w, hgt, cx, cy - h.Pitch * hgt * 0.01f);
+            else if (!cameraRig.ShowsBody)
             {
                 // a shotgun shows where its grains will scatter, the others how far a round may stray
                 float spread = CurrentSpread + (gun.pellets > 1 ? gun.pelletSpread : 0f);

@@ -4987,6 +4987,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SlugExtract.SlugBag
   settings: {fileID: 11400000, guid: 28a2b988b3a0e2b44ad287abe376f8f8, type: 2}
   controller: {fileID: 838981250}
+  cameraRig: {fileID: 838981246}
+  slug: {fileID: 1315264688}
+  gear: {fileID: 1315264691}
+  hitboxes: {fileID: 838981251}
+  kind: 0
+  startItems: 
+  showHud: 1
 --- !u!114 &838981243
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8091,14 +8098,17 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 12861209379557547, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1315264691}
   m_SourcePrefab: {fileID: 100100000, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
 --- !u!114 &1315264688 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8084910285950271412, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
   m_PrefabInstance: {fileID: 1315264687}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1315264690}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 70d225259e10a764a9f66e3a5d5c2c4b, type: 3}
@@ -8109,6 +8119,41 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4876064916965609892, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
   m_PrefabInstance: {fileID: 1315264687}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1315264690 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 12861209379557547, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+  m_PrefabInstance: {fileID: 1315264687}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1315264691
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1315264690}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 44328698912f01548b6c2964924e5246, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SlugDesign.SlugEquipment
+  slug: {fileID: 1315264688}
+  helmet: 0
+  armor: 0
+  bag: 1
+  helmetColor: {r: 0.3, g: 0.32, b: 0.24, a: 1}
+  helmetCamo: 0
+  helmetGap: 0.016
+  brimFront: 0.035
+  brimSide: 0.014
+  camoBase: {r: 0.62, g: 0.57, b: 0.38, a: 1}
+  camo1: {r: 0.43, g: 0.28, b: 0.15, a: 1}
+  camo2: {r: 0.15, g: 0.13, b: 0.1, a: 1}
+  camo3: {r: 0.31, g: 0.38, b: 0.19, a: 1}
+  camoScale: 19
+  strapColor: {r: 0.22, g: 0.16, b: 0.11, a: 1}
+  bagColor: {r: 0.52, g: 0.4, b: 0.26, a: 1}
+  bagFlapColor: {r: 0.36, g: 0.26, b: 0.17, a: 1}
+  bagSize: {x: 0.11, y: 0.12, z: 0.065}
 --- !u!1 &1316406820
 GameObject:
   m_ObjectHideFlags: 0

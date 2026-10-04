@@ -87,7 +87,7 @@ namespace SlugMove
         void OnBeginCamera(UnityEngine.Rendering.ScriptableRenderContext context, Camera camera)
         {
             if (!_ready || !cameraRig) return;
-            var mode = camera == cameraRig.cam && !cameraRig.thirdPerson
+            var mode = camera == cameraRig.cam && !cameraRig.ShowsBody
                 ? UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly : UnityEngine.Rendering.ShadowCastingMode.On;
             foreach (var r in _renderers) if (r) r.shadowCastingMode = mode;
         }

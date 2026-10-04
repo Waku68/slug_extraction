@@ -26,6 +26,7 @@ namespace SlugExtract
         [Tooltip("脱出口の中心")] public Transform exitPoint;
 
         static int _stashValue, _stashSalt, _stashCrop, _runs;
+        string _savedText;
 
         State _state = State.Playing;
         float _timeLeft, _extractProgress;
@@ -85,6 +86,15 @@ namespace SlugExtract
                 _stashSalt += bag.Count(ItemKind.RockSalt);
                 _stashCrop += bag.Count(ItemKind.Crop);
             }
+            // what was pushed into the body always comes home
+            _savedText = null;
+            if (bag.HasHidden)
+            {
+                var d = settings.Def(bag.Hidden);
+                _stashValue += d.value;
+                if (bag.Hidden == ItemKind.RockSalt) _stashSalt++; else _stashCrop++;
+                _savedText = d.displayName;
+            }
         }
 
         void Styles()
@@ -101,23 +111,12 @@ namespace SlugExtract
             Styles();
             float w = Screen.width, h = Screen.height;
 
-            // ---- top right: rain timer and bag
+            // ---- top right: the rain timer (the bag shows its own shape top left; its numbers only when peeking)
             int sec = Mathf.CeilToInt(_timeLeft);
             string timeColor = _timeLeft <= 30f ? "#ff8080" : "#a0d8ff";
             var salt = settings.rockSalt; var crop = settings.crop;
-            string bagText =
-                $"雨が止むまで  <color={timeColor}><b>{sec / 60}:{sec % 60:00}</b></color>\n" +
-                $"バッグ  {bag.Weight:0.0} / {settings.bagCapacity:0}  （速さ ×{controller.speedMultiplier:0.00}）\n" +
-                $"{salt.displayName} ×{bag.Count(ItemKind.RockSalt)}   {crop.displayName} ×{bag.Count(ItemKind.Crop)}\n" +
-                $"価値  {bag.Value} 塩";
-            GUI.Box(new Rect(w - 380, 10, 370, 120), GUIContent.none);
-            GUI.Label(new Rect(w - 370, 16, 360, 120), bagText, _mid);
-            // bag gauge
-            GUI.Box(new Rect(w - 370, 136, 350, 10), GUIContent.none);
-            var old = GUI.color;
-            GUI.color = Color.Lerp(new Color(0.5f, 0.9f, 0.5f), new Color(1f, 0.5f, 0.4f), bag.Fill01);
-            GUI.DrawTexture(new Rect(w - 370, 136, 350 * bag.Fill01, 10), Texture2D.whiteTexture);
-            GUI.color = old;
+            GUI.Box(new Rect(w - 300, 10, 290, 40), GUIContent.none);
+            GUI.Label(new Rect(w - 290, 16, 280, 30), $"雨が止むまで  <color={timeColor}><b>{sec / 60}:{sec % 60:00}</b></color>", _mid);
 
             // ---- pickup log and the crosshair
             float y = h * 0.5f + 30f;
@@ -133,7 +132,7 @@ namespace SlugExtract
             {
                 if (_extractProgress > 0f)
                     GUI.Label(new Rect(0, h * 0.3f, w, 50), $"脱出中… {Mathf.Clamp01(_extractProgress / settings.extractTime) * 100f:0}%", _big);
-                GUI.Label(new Rect(0, h - 40, w, 30), "左クリック：ピッケルで叩く・銃で撃つ・ナイフで突く（1 ピッケル / 2 背中の銃 / 3 腰の道具）／ 光の柱が脱出口", _small);
+                GUI.Label(new Rect(0, h - 40, w, 30), "左クリック 叩く・撃つ・突く（1 ピッケル / 2 背中の銃 / 3 腰の道具）／ E 拾う / G 落とす（長押しで投げる）/ Q 覗く / X 体にしまう ／ 光の柱が脱出口", _small);
                 return;
             }
 
@@ -142,7 +141,7 @@ namespace SlugExtract
             string title = _state == State.Extracted ? "<color=#a0ffa0>脱出成功</color>" : "<color=#ff9090>雨が止んで、乾いてしまった</color>";
             string body = _state == State.Extracted
                 ? $"持ち帰り：{salt.displayName} ×{bag.Count(ItemKind.RockSalt)}、{crop.displayName} ×{bag.Count(ItemKind.Crop)}（{bag.Value} 塩）"
-                : "持ち物はすべて失った";
+                : _savedText != null ? $"持ち物はすべて失った（体の中の{_savedText}だけは持ち帰った）" : "持ち物はすべて失った";
             GUI.Label(new Rect(w * 0.5f - 300, h * 0.25f + 20, 600, 60), title, _big);
             GUI.Label(new Rect(w * 0.5f - 300, h * 0.25f + 100, 600, 30), body, _small);
             GUI.Label(new Rect(w * 0.5f - 300, h * 0.25f + 150, 600, 60),

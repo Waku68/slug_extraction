@@ -15,15 +15,82 @@ MonoBehaviour:
   timeLimit: 240
   extractTime: 3
   extractRadius: 1.5
-  bagCapacity: 20
-  speedAtFull: 0.55
+  weightThreshold: 10
+  lightSlowdown: 0.15
+  overSpeed: 0.75
+  heaviestSpeed: 0.6
+  heavyRange: 10
+  swellPerVolume: 0.05
+  swellVisualMax: 2.6
+  hitDamage: 8
+  ecoOpenTime: 3
+  peekSpeed: 0.4
+  pickupReach: 0.75
+  cloth:
+    displayName: "\u5E03\u306E\u888B"
+    durability: 60
+    bodyDamage: 1
+    capacity: 0
+    swell: 1
+    weight: 0.3
+    color: {r: 0.52, g: 0.4, b: 0.26, a: 1}
+    flapColor: {r: 0.36, g: 0.26, b: 0.17, a: 1}
+  leather:
+    displayName: "\u9769\u306E\u888B"
+    durability: 120
+    bodyDamage: 0.5
+    capacity: 0
+    swell: 0.8
+    weight: 0.8
+    color: {r: 0.4, g: 0.25, b: 0.15, a: 1}
+    flapColor: {r: 0.27, g: 0.16, b: 0.1, a: 1}
+  shellBox:
+    displayName: "\u6BBB\u306E\u7BB1"
+    durability: 220
+    bodyDamage: 0
+    capacity: 10
+    swell: 0.3
+    weight: 2
+    color: {r: 0.62, g: 0.57, b: 0.46, a: 1}
+    flapColor: {r: 0.43, g: 0.4, b: 0.32, a: 1}
+  net:
+    displayName: "\u7DB2\u30D0\u30C3\u30B0"
+    durability: 40
+    bodyDamage: 1
+    capacity: 8
+    swell: 1.1
+    weight: 0.1
+    color: {r: 0.55, g: 0.6, b: 0.45, a: 1}
+    flapColor: {r: 0.4, g: 0.45, b: 0.32, a: 1}
+  eco:
+    displayName: "\u30A8\u30B3\u30D0\u30C3\u30B0"
+    durability: 15
+    bodyDamage: 1
+    capacity: 1.8
+    swell: 1.2
+    weight: 0.05
+    color: {r: 0.78, g: 0.8, b: 0.72, a: 1}
+    flapColor: {r: 0.62, g: 0.66, b: 0.56, a: 1}
+  snailShell:
+    displayName: "\u30AB\u30BF\u30C4\u30E0\u30EA\u306E\u6BBB"
+    durability: 200
+    bodyDamage: 0.3
+    capacity: 6
+    swell: 0
+    weight: 0
+    color: {r: 0.52, g: 0.4, b: 0.26, a: 1}
+    flapColor: {r: 0.36, g: 0.26, b: 0.17, a: 1}
   rockSalt:
     displayName: "\u5CA9\u5869"
     weight: 1.5
+    volume: 0.6
     value: 25
+    canHide: 0
     chipColor: {r: 0.95, g: 0.88, b: 0.9, a: 1}
   crop:
     displayName: "\u96E8\u30AB\u30D6"
     weight: 0.5
+    volume: 1.2
     value: 8
+    canHide: 1
     chipColor: {r: 0.55, g: 0.75, b: 0.3, a: 1}

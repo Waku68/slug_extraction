@@ -20,6 +20,18 @@ namespace SlugMove
         [System.NonSerialized] public float zoom = 1f;
         /// <summary>A menu is open (the loadout picker): the cursor stays free, a click does not lock it, the eyes do not turn.</summary>
         [System.NonSerialized] public bool cursorFree;
+        /// <summary>0..1: how far the slug has bent round to look at its own back (set by the bag; eased here).</summary>
+        [System.NonSerialized] public float peek;
+        /// <summary>What the eyes look at while peeking (world): the middle of the bag.</summary>
+        [System.NonSerialized] public Vector3 peekTarget;
+        /// <summary>Looking at its own back: the tools cannot be used.</summary>
+        public bool Peeking => peek > 0.02f;
+        /// <summary>Busy with something else (opening the eco bag): the tools cannot be used.</summary>
+        [System.NonSerialized] public bool handsBusy;
+        /// <summary>The hands are not free for the tools (peeking, or busy).</summary>
+        public bool HandsBusy => Peeking || handsBusy;
+        /// <summary>The own body is in view (third person, or peeking at the back): draw it, not the first-person copies.</summary>
+        public bool ShowsBody => thirdPerson || Peeking;
 
         /// <summary>Where the eyes look (degrees). The body follows it.</summary>
         public float Yaw { get; private set; }
@@ -44,7 +56,7 @@ namespace SlugMove
             LockCursor(true);
             // the helmet only casts its shadow for this camera while it sits in the head
             var gear = slug ? slug.GetComponent<SlugDesign.SlugEquipment>() : null;
-            if (gear) gear.SetOwnCamera(cam, () => !thirdPerson);
+            if (gear) gear.SetOwnCamera(cam, () => !ShowsBody);
             cam.cullingMask |= 1 << SlugToolHolder.BodyToolLayer;
         }
 
@@ -145,6 +157,18 @@ namespace SlugMove
                 float roll = Mathf.Sin(ph * 0.5f + 0.6f) * s.bobRoll * b;
                 pos = eye;
                 rot = look * Quaternion.Euler(0f, 0f, roll);
+            }
+
+            // ---- peeking: the head bends round over the right shoulder and looks down at the bag on the back
+            if (peek > 0f)
+            {
+                float w = peek * peek * (3f - 2f * peek);
+                Quaternion yawOnly = Quaternion.Euler(0f, Yaw, 0f);
+                Vector3 over = slug.FaceCenterWorld + Vector3.up * 0.2f + yawOnly * new Vector3(0.34f, 0f, -0.2f);
+                Vector3 to = peekTarget - over;
+                Quaternion peekRot = to.sqrMagnitude > 1e-6f ? Quaternion.LookRotation(to, Vector3.up) : rot;
+                pos = Vector3.Lerp(pos, over, w);
+                rot = Quaternion.Slerp(rot, peekRot, w);
             }
 
             // ---- shake: a few millimetres and a degree at most, fading out quickly

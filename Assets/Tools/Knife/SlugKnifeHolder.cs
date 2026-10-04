@@ -91,7 +91,7 @@ namespace SlugMove
             if (!_ready) return;
             bool own = camera == cameraRig.cam;
             foreach (var r in _viewRenderers) if (r) r.enabled = own;
-            var mode = own && !cameraRig.thirdPerson ? UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly : UnityEngine.Rendering.ShadowCastingMode.On;
+            var mode = own && !cameraRig.ShowsBody ? UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly : UnityEngine.Rendering.ShadowCastingMode.On;
             foreach (var r in _bodyRenderers) if (r) r.shadowCastingMode = mode;
         }
 
@@ -123,7 +123,7 @@ namespace SlugMove
         {
             if (!_ready) return;
             if (_draw < 1f) _draw = Mathf.MoveTowards(_draw, 1f, Time.deltaTime / Mathf.Max(drawTime, 1e-3f));
-            bool canUse = inputEnabled && _draw >= 1f && !controller.Climbing && (Cursor.lockState == CursorLockMode.Locked || forceAttack);
+            bool canUse = inputEnabled && _draw >= 1f && !cameraRig.HandsBusy && !controller.Climbing && (Cursor.lockState == CursorLockMode.Locked || forceAttack);
             bool held = canUse && (forceAttack || (_attack != null && _attack.IsPressed()));
             if (held && (_phase == Phase.Ready || (_phase == Phase.Recover && _t / Mathf.Max(knife.recoverTime, 1e-3f) >= knife.chainAt)))
                 BeginStab();
@@ -133,7 +133,7 @@ namespace SlugMove
         void BeginStab()
         {
             var s = knife;
-            Vector3 eye = cameraRig.thirdPerson ? slug.FaceCenterWorld : cameraRig.cam.transform.position;
+            Vector3 eye = cameraRig.ShowsBody ? slug.FaceCenterWorld : cameraRig.cam.transform.position;
             Vector3 dir = Quaternion.Euler(cameraRig.Pitch, cameraRig.Yaw, 0f) * Vector3.forward;
             Vector3 shoulder = slug.HandRootWorld(1f);
             float range = Vector3.Distance(eye, shoulder) + s.reach;
@@ -329,7 +329,7 @@ namespace SlugMove
             // ---- first person: ready low and right; the stab goes out along the line from there to the target as it
             //      is seen (shrunk toward the eye, so the drawn point lands on the target on screen)
             var cam = cameraRig.cam;
-            bool firstPerson = !cameraRig.thirdPerson;
+            bool firstPerson = !cameraRig.ShowsBody;
             _viewTool.gameObject.SetActive(firstPerson);
             _arms.ViewR.gameObject.SetActive(firstPerson);
             _arms.ViewL.gameObject.SetActive(false);         // the empty left hand stays out of view

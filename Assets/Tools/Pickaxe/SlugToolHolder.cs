@@ -100,7 +100,7 @@ namespace SlugMove
             bool own = camera == cameraRig.cam;
             foreach (var r in _viewRenderers) if (r) r.enabled = own;
             // the body's pickaxe and arms only cast their shadow for the own camera in first person
-            var mode = own && !cameraRig.thirdPerson ? UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly : UnityEngine.Rendering.ShadowCastingMode.On;
+            var mode = own && !cameraRig.ShowsBody ? UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly : UnityEngine.Rendering.ShadowCastingMode.On;
             foreach (var r in _bodyRenderers) if (r) r.shadowCastingMode = mode;
         }
 
@@ -135,7 +135,7 @@ namespace SlugMove
             if (!_ready) return;
             _swing.settings = pickaxe;
             if (_draw < 1f) _draw = Mathf.MoveTowards(_draw, 1f, Time.deltaTime / Mathf.Max(drawTime, 1e-3f));
-            bool canSwing = inputEnabled && _draw >= 1f && !controller.Climbing && Cursor.lockState == CursorLockMode.Locked;
+            bool canSwing = inputEnabled && _draw >= 1f && !cameraRig.HandsBusy && !controller.Climbing && Cursor.lockState == CursorLockMode.Locked;
             bool held = canSwing && _attack != null && _attack.IsPressed();
             if (held && (_swing.Phase == SwingPhase.Idle || (_swing.Phase == SwingPhase.Recover && _swing.Blend < pickaxe.chainAt)))
                 BeginSwing();
@@ -164,7 +164,7 @@ namespace SlugMove
         void BeginSwing()
         {
             var cam = cameraRig.cam.transform;
-            Vector3 eye = cameraRig.thirdPerson ? slug.FaceCenterWorld : cam.position;
+            Vector3 eye = cameraRig.ShowsBody ? slug.FaceCenterWorld : cam.position;
             // where the eyes look now (the camera transform is from the last frame and carries bob and shake)
             Vector3 dir = Quaternion.Euler(cameraRig.Pitch, cameraRig.Yaw, 0f) * Vector3.forward;
             Vector3 pivot = ShoulderMid() + Root.rotation * pickaxe.pivotOffset;
@@ -349,7 +349,7 @@ namespace SlugMove
         {
             if (!_ready) return;
             var s = pickaxe;
-            bool firstPerson = !cameraRig.thirdPerson;
+            bool firstPerson = !cameraRig.ShowsBody;
             float together = SlugPickaxe.GripLow + s.handsTogetherGap;
 
             // ---- the body's pickaxe and arms: always the third-person ready pose, seen by every camera except the
