@@ -26055,6 +26055,7 @@ GameObject:
   - component: {fileID: 1719233771}
   - component: {fileID: 1719233756}
   - component: {fileID: 1719233770}
+  - component: {fileID: 1719233776}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -26427,6 +26428,19 @@ CharacterController:
   m_SkinWidth: 0.03
   m_MinMoveDistance: 0
   m_Center: {x: 0, y: 0.28, z: 0}
+--- !u!114 &1719233776
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1719233755}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 49a1fdaecbf15c546b82f87cbaa3396a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SlugExtract.SlugSounds
+  bank: {fileID: 11400000, guid: 63ec2995dc81bad459d72e379d6a94a1, type: 2}
 --- !u!1001 &1730126935
 PrefabInstance:
   m_ObjectHideFlags: 0

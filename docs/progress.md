@@ -48,6 +48,7 @@ Oct 5, 2026
 | 岩塩（塩のきのこ） | **シーンに入った**（ExtractTest、RegionTest）。叩く6回で岩塩3個（2回ごとに1個）、出るたびに形が満タン → 掘りかけ → 切り株と変わり、掘りきると切り株が残る（育ち直しはまだ）。手がかりは全部入りの M5。岩塩の欠片も新しいモデル。質感はリアル度 0.2。どの手がかりを残すかは見比べ中 | `Assets/Art/Models/RockSalt/Mushroom/`、`Blender/rocksalt_mushroom_gen.py`、`Harvestable`（stages、hitsPerYield） |
 | 雨カブ | **シーンに入った**。畑は手に持つ大きさの 1.8 倍（土の小山から葉と青い頭）、抜いた1個は約 17 cm。手・バッグの中・地面のどれも新しいモデル | `Assets/Art/Models/RainTurnip/`、`Blender/rainturnip_gen.py` |
 | 手で摘む＋ウゴタケ | E で摘む（0.5秒、近くに落ちている物がないとき）。ピッケルで叩くと「潰れたウゴタケ」（値打ちが低い）が出る。ExtractTest の畑の奥に、ウゴタケの生えた倒木が3本（3〜4本ずつ、1本ずつ摘める）。生える・消える（雨のあと）はまだ | `Pickable`、`Assets/Art/Models/UgoTake/`、`Blender/ugotake_gen.py` |
+| 効果音（仮） | 波形の計算で作った仮の音（31種類）を、ピッケル・採取・摘む・潰す・バッグ・銃・ナイフ・被弾・持ち替えで鳴らす。わくさんの音は SoundBank で差し替えるだけ | `SlugSounds`、`Assets/Tuning/SoundBank.asset`、`Assets/Audio/Placeholder/`、`SoundGen/placeholder_sfx.py`、`tech/sound_list.md` |
 | 見た目の差し替え | 物の設定（`ExtractSettings`）にモデルを入れると、地面・手・バッグの見た目がそれになる。シーンの採る場所はメニュー `Slug/Update Harvest Visuals (open scene)` で差し替え（ビルダーも同じものを使う） | `Assets/Art/Editor/HarvestVisuals.cs`、`WorldLook.cs` |
 | 調整の道具 | 試す専用シーン、デバッグ表示、スロー、コマ撮り（Swing / Gun / Weather）、設定はすべて日本語ツールチップ付きのアセット（`Assets/Tuning/`） | — |
 

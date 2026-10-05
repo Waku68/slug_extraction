@@ -3258,6 +3258,7 @@ GameObject:
   - component: {fileID: 838981259}
   - component: {fileID: 838981260}
   - component: {fileID: 838981261}
+  - component: {fileID: 838981262}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -3630,6 +3631,19 @@ MonoBehaviour:
   slug: {fileID: 1315264688}
   health: {fileID: 838981260}
   portrait: {fileID: 838981259}
+--- !u!114 &838981262
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 838981241}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 49a1fdaecbf15c546b82f87cbaa3396a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SlugExtract.SlugSounds
+  bank: {fileID: 11400000, guid: 63ec2995dc81bad459d72e379d6a94a1, type: 2}
 --- !u!1001 &895896250
 PrefabInstance:
   m_ObjectHideFlags: 0

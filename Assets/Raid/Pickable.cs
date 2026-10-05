@@ -22,6 +22,9 @@ namespace SlugExtract
         /// <summary>Every plant that can still be picked (to find the nearest without a physics query).</summary>
         public static readonly List<Pickable> All = new List<Pickable>();
 
+        /// <summary>One was crushed by a pickaxe (where), for sounds.</summary>
+        public static event System.Action<Vector3> Crushed;
+
         float _punch;
         Vector3 _baseScale;
 
@@ -66,6 +69,7 @@ namespace SlugExtract
             PickaxeEffects.Chips(hit.point, hit.normal, settings.Def(kind).chipColor, 8);
             Vector3 from = NextPoint + Vector3.up * 0.05f;
             Take();
+            Crushed?.Invoke(from);
             Vector3 toward = Vector3.ProjectOnPlane(hitter.transform.position - transform.position, Vector3.up).normalized;
             Vector3 v = toward * Random.Range(0.6f, 1f) + Vector3.up * Random.Range(1f, 1.4f);
             ItemPickup.Spawn(settings, crushedKind, from, v, hitter.GetComponent<Collider>());

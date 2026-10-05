@@ -2,7 +2,10 @@
 
 Oct 4, 2026
 
-音のファイルは `Assets/Audio/` に置く。まだ鳴らす仕組みはない（銃のリロードの「鳴らすタイミング」だけある）。
+音のファイルは `Assets/Audio/` に置く。
+
+**鳴らす仕組み（Oct 5）**：プレイヤーのナメクジの `SlugSounds` が、下の「つなぎ口」のイベントを聞いて、`Assets/Tuning/SoundBank.asset` に書いた音を鳴らす。音は出来事の名前（キー）ごとに入れる（`pickaxe_hit_salt`、`bag_stow` など。`bag_stow_RockSalt` のように物ごとの版があれば先に使う）。**わくさんの音に替えるときは、SoundBank の該当のキーの音を差し替えるだけ**（コードは触らない）。
+**仮の音**：`Assets/Audio/Placeholder/` に、波形の計算で作ったつなぎの音（31種類、43個）。作り方は `SoundGen/placeholder_sfx.py`（`uv run --no-project --with numpy python SoundGen/placeholder_sfx.py`）。メニュー `Slug/Set Up Placeholder Sounds (open scene)` で、SoundBank の空いているキーに仮の音を入れ、開いているシーンのプレイヤーに `SlugSounds` を付ける（手で入れた音は消さない）。わくさんの `SE/Bag/bag_push_salt.wav` は `bag_stow_RockSalt`（岩塩をバッグに入れる）に入れてある。
 柱1「ゲットした高揚感」に直結するので、どの段階でも並行して足せる（`progress.md`）。
 
 ## フォルダ
@@ -57,5 +60,8 @@ Oct 4, 2026
 | `Harvestable.Harvested` | `Raid/Harvestable.cs` | 採れた |
 | `SlugHitboxes.Hit` / `AnyHit` | `Combat/SlugHitboxes.cs` | ナメクジに当たる（部位別） |
 | `SlugLoadout.Changed` | `Tools/Shared/SlugLoadout.cs` | 持ち替え |
+| `SlugGunHolder.Cue` | `Tools/Guns/SlugGunHolder.cs` | リロードの各段階（`GunHandling.Cue` をそのまま外へ） |
+| `SlugBag.Did`（grab, pick, takeout, stow, drop, throw, hide, unhide, burst, eco, peek） | `Raid/SlugBag.cs` | つかむ・摘む・出す・入れる・落とす・投げる・体に突っ込む・取り出す・破れる・エコバッグ・覗く |
+| `Pickable.Crushed` | `Raid/Pickable.cs` | 植物がピッケルで潰れた |
 
-バッグ（つかむ・入れる・出す・破れる）、移動（這う・縮む・伸びる・伏せる）、試合（脱出・時間切れ）にはまだイベントがないので、音を入れるときに足す。
+移動（這う・縮む・伸びる・伏せる）、試合（脱出・時間切れ）、天気（雨・風）にはまだイベントがないので、音を入れるときに足す。

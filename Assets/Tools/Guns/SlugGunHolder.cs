@@ -41,6 +41,8 @@ namespace SlugMove
         public event System.Action<Vector3, Vector3> Fired;
         /// <summary>Every round that lands on something.</summary>
         public event System.Action<RaycastHit> RoundHit;
+        /// <summary>A step of the reload (open, eject, insert, seat), for sounds.</summary>
+        public event System.Action<string> Cue;
 
         /// <summary>Holds the trigger without the mouse (tests and tools; works with a free cursor too).</summary>
         [System.NonSerialized] public bool forceTrigger;
@@ -255,6 +257,7 @@ namespace SlugMove
         /// <summary>The pump racked back: the spent shell flies out of the port of the gun this player sees.</summary>
         void OnCue(string cue)
         {
+            Cue?.Invoke(cue);
             if (cue != "eject" || gun.kind != GunKind.Shotgun || !_ready) return;
             var model = cameraRig.ShowsBody ? _gun : _viewGun;
             if (!model || !model.gameObject.activeInHierarchy) return;

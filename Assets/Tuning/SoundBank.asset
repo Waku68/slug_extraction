@@ -1,0 +1,188 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96243f247a9e2284891bc609cdc289d9, type: 3}
+  m_Name: SoundBank
+  m_EditorClassIdentifier: Assembly-CSharp::SlugExtract.SoundBank
+  masterVolume: 0.8
+  entries:
+  - key: bag_burst
+    clips:
+    - {fileID: 8300000, guid: 4b483ee84f072f349932e850126cbb2c, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: bag_drop
+    clips:
+    - {fileID: 8300000, guid: dd9fa0b56182505429e8b84ea9a54cdc, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: bag_eco_open
+    clips:
+    - {fileID: 8300000, guid: e7c0eb334298af04b88ce191fb5c4c35, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: bag_grab
+    clips:
+    - {fileID: 8300000, guid: 7aad0d1e730142d4cbfb16aeae8dc1c4, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: bag_hide
+    clips:
+    - {fileID: 8300000, guid: c67bfa6b21e5c8e409263a7cddee66a7, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: bag_peek
+    clips:
+    - {fileID: 8300000, guid: 4c19ebd95d616c241b78e117dc24203b, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: bag_stow
+    clips:
+    - {fileID: 8300000, guid: 990434be9f7d2394cb361c9ff5dbfe36, type: 3}
+    - {fileID: 8300000, guid: 2c30ec9ff254aaa4c8316611675429c4, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: bag_takeout
+    clips:
+    - {fileID: 8300000, guid: 576e5b107985bf044a448bcb949ae688, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: bag_throw
+    clips:
+    - {fileID: 8300000, guid: 9c2465d548d57694c8480b16d879afb3, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: bag_unhide
+    clips:
+    - {fileID: 8300000, guid: b3b05d1f3b6f09c4aa2b24fb3fbd9318, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: crush_squish
+    clips:
+    - {fileID: 8300000, guid: 5173a62e7ec2dc8468a5009a76c6c7cd, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: gun_fire_pistol
+    clips:
+    - {fileID: 8300000, guid: 13773026e05627b47bbc626d3d770fdc, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: gun_fire_rifle
+    clips:
+    - {fileID: 8300000, guid: 734799d6e090f79489bbdd15873ad1fb, type: 3}
+    - {fileID: 8300000, guid: d0ef39a95d646c04e9c5ee4fba2908d7, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: gun_fire_shotgun
+    clips:
+    - {fileID: 8300000, guid: 833e80a794309254ba8a4443895419de, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: gun_fire_sniper
+    clips:
+    - {fileID: 8300000, guid: 979dce7baef506e4d988bd8c88754d25, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: gun_reload_eject
+    clips:
+    - {fileID: 8300000, guid: deda14d7a6ead714abe22f4e8c0180ca, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: gun_reload_insert
+    clips:
+    - {fileID: 8300000, guid: 135ae3746289eb542b1212740cdd816b, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: gun_reload_open
+    clips:
+    - {fileID: 8300000, guid: bddb4dc02c6639947a6251a95ab0cbe5, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: gun_reload_seat
+    clips:
+    - {fileID: 8300000, guid: 62cb1d68538b0fb40918e7f26414950c, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: harvest_pop
+    clips:
+    - {fileID: 8300000, guid: 05ffd44cc5ee7e54491b84403f6cf3a6, type: 3}
+    - {fileID: 8300000, guid: 7ff27047c0a7a754fb982d1afc15521f, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: harvest_stage
+    clips:
+    - {fileID: 8300000, guid: 84f268a21664a8744aeb0b8d79275657, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: knife_stab
+    clips:
+    - {fileID: 8300000, guid: 5f28607f524d2ac46bb54fb28bdc1e76, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: pick_pluck
+    clips:
+    - {fileID: 8300000, guid: 9db38a9f605847042beeee4616605e51, type: 3}
+    - {fileID: 8300000, guid: 1096d3374f871d346872776c4c59631d, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: pickaxe_hit_default
+    clips:
+    - {fileID: 8300000, guid: 381e04f5fbb1a9e4cbaf62c9b1eb70ad, type: 3}
+    - {fileID: 8300000, guid: b196fb747f7c52142910e6e09d23d163, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: pickaxe_hit_salt
+    clips:
+    - {fileID: 8300000, guid: a9a4f85ec02062a4f845091bfea3c46d, type: 3}
+    - {fileID: 8300000, guid: 7760d2fde8688774eb27351ee5901fa3, type: 3}
+    - {fileID: 8300000, guid: 290803cca8d154d439bed72b4d9e05e7, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: pickaxe_hit_soft
+    clips:
+    - {fileID: 8300000, guid: 11efb5646edaab940b9770efb65ef35b, type: 3}
+    - {fileID: 8300000, guid: 09313f605c8d5584eba1d5585f55eb88, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: pickaxe_swing
+    clips:
+    - {fileID: 8300000, guid: ad50458b0857a474792e068cd5c804aa, type: 3}
+    - {fileID: 8300000, guid: 62ada0971d7b6f945b1180d8093526f1, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: round_hit_slug
+    clips:
+    - {fileID: 8300000, guid: 588d37750bf6dd149afa0b205e366bec, type: 3}
+    - {fileID: 8300000, guid: ad973d4df8dde0248924c023c563567d, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: round_hit_world
+    clips:
+    - {fileID: 8300000, guid: fd39a143762370d4a81160c8791ca05f, type: 3}
+    - {fileID: 8300000, guid: 58d4a4da4a7e2fb4c87e49290c44128f, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: slug_hurt
+    clips:
+    - {fileID: 8300000, guid: 84db2f5ff98be5942bc461032611a786, type: 3}
+    - {fileID: 8300000, guid: cf223df60edee9e4eb487bf4f2ae77d7, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: tool_switch
+    clips:
+    - {fileID: 8300000, guid: d136c68b5bbb2954688d1fe5c7f0c801, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: bag_stow_RockSalt
+    clips:
+    - {fileID: 8300000, guid: fdc999f67efa5bc4f9c8ad265cc55421, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06

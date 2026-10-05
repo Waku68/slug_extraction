@@ -86,7 +86,7 @@ namespace SlugExtract
         float _messageUntil;
         GUIStyle _big, _mid, _small;
 
-        bool IsPlayer => controller != null;
+        public bool IsPlayer => controller != null;
         Collider OwnCollider => controller ? controller.GetComponent<Collider>() : null;
 
         void Start()
@@ -239,10 +239,15 @@ namespace SlugExtract
             if (Holding || !p) return;
             GrabFrom = p.transform.position;
             StartCarry(CarryPhase.Grab, p.kind);
+            Did?.Invoke("grab", p.kind);
             Destroy(p.gameObject);
         }
 
         bool _picking;      // the hands are picking a soft plant (slower than taking something lying there)
+
+        /// <summary>Something done with the hands or the bag, for sounds: (what, which item). What: grab, pick, takeout,
+        /// stow, drop, throw, hide, unhide, burst, eco, peek.</summary>
+        public event System.Action<string, ItemKind> Did;
 
         /// <summary>Picks one off a soft plant (a flower, a mushroom) into the hands.</summary>
         public void Pick(Pickable plant)
@@ -253,6 +258,7 @@ namespace SlugExtract
             if (!plant.Take()) return;
             StartCarry(CarryPhase.Grab, k);
             _picking = true;
+            Did?.Invoke("pick", k);
         }
 
         /// <summary>Reaches over the shoulder and takes the top thing out of the bag into the hands.</summary>
@@ -261,6 +267,7 @@ namespace SlugExtract
             if (Holding) return;
             if (_items.Count == 0) { Say(HasBag ? "バッグは空" : NoBagHint()); return; }
             StartCarry(CarryPhase.TakeOut, TakeTop());
+            Did?.Invoke("takeout", HeldKind);
         }
 
         /// <summary>Puts what is in the hands in the bag, over the shoulder (if it fits; else it stays in the hands).</summary>
@@ -282,6 +289,7 @@ namespace SlugExtract
             Vector3 vel = power <= 0f ? flat * 0.5f + Vector3.up * 0.3f : look * Mathf.Lerp(2.5f, 6.5f, power) + Vector3.up * 1.6f;
             ItemPickup.Spawn(settings, k, heldWorld, vel, OwnCollider);
             EndCarry();
+            Did?.Invoke(power <= 0f ? "drop" : "throw", k);
             Say(power <= 0f ? $"{settings.Def(k).displayName}を落とした" : $"{settings.Def(k).displayName}を投げた");
         }
 
@@ -303,6 +311,7 @@ namespace SlugExtract
             var k = Hidden;
             HasHidden = false;
             StartCarry(CarryPhase.Unhide, k);
+            Did?.Invoke("unhide", k);
         }
 
         void StepCarry(float dt)
@@ -316,7 +325,7 @@ namespace SlugExtract
             {
                 var k = HeldKind;
                 Carry = CarryPhase.None;            // out of the hands first (so the weight is not counted twice)
-                if (TryAdd(k, 1) == 1) { EndCarry(); Say($"{settings.Def(k).displayName}をバッグに入れた"); }
+                if (TryAdd(k, 1) == 1) { EndCarry(); Did?.Invoke("stow", k); Say($"{settings.Def(k).displayName}をバッグに入れた"); }
                 else { HeldKind = k; Carry = CarryPhase.Hold; Recount(); }   // it no longer fits (the bag burst meanwhile): still in hand
                 return;
             }
@@ -325,6 +334,7 @@ namespace SlugExtract
                 Hidden = HeldKind;
                 HasHidden = true;
                 EndCarry();
+                Did?.Invoke("hide", Hidden);
                 Say($"{settings.Def(Hidden).displayName}を体の中に突っ込んだ。もう失わない");
                 return;
             }
@@ -353,6 +363,7 @@ namespace SlugExtract
                 ItemPickup.Spawn(settings, k, center + Random.insideUnitSphere * 0.06f, v, ignore);
             }
             int n = _items.Count;
+            Did?.Invoke("burst", n > 0 ? _items[0] : ItemKind.RockSalt);
             _items.Clear();
             string name = Def.displayName;
             Worn = BagKind.None;
@@ -371,6 +382,7 @@ namespace SlugExtract
 
             // peek: bend round to look at the back while Q is held
             bool peeking = forcePeek || (locked && kb != null && kb.qKey.isPressed && !Opening);
+            if (peeking && _peek <= 0f) Did?.Invoke("peek", ItemKind.RockSalt);
             _peek = Mathf.MoveTowards(_peek, peeking ? 1f : 0f, dt / 0.22f);
             if (cameraRig)
             {
@@ -435,6 +447,7 @@ namespace SlugExtract
                     _ecoUsed = true;
                     Worn = BagKind.Eco;
                     Durability = settings.eco.durability;
+                    Did?.Invoke("eco", ItemKind.RockSalt);
                     Recount();
                     Say("エコバッグを広げた");
                 }
