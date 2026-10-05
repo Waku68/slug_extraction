@@ -34,6 +34,7 @@ Oct 4, 2026
 | | [health_damage_discussion.md](discussions/health_damage_discussion.md) | 体力とダメージ（何発で倒れるか、塩の希少性と弾の値段、ダウン、回復） |
 | | [regions_discussion.md](discussions/regions_discussion.md) | 島の5区画（候補12、組み合わせ案、巣穴を掘れる場所、天気でつながる区画） |
 | | [no_numbers_discussion.md](discussions/no_numbers_discussion.md) | 数字を出さない世界（バッグの数字を島でも拠点でもなくしたら：天秤、秤、体で感じる重さ、色に頼らない） |
+| | [map_size_discussion.md](discussions/map_size_discussion.md) | 区画の広さ（数字つき：一辺ごとの作る量・這う時間・人や巣穴までの距離、区画ごとに広さを変える、名所だけ作り込む、友達と作る） |
 | | [no_numbers_discussion_2.md](discussions/no_numbers_discussion_2.md) | 数字 2回目：お金の塩だけは数字（人が作った物にだけ数字、天秤と分銅、塩の板、秤の解放）。学芸員を足した |
 | | [persistent_island_discussion.md](discussions/persistent_island_discussion.md) | 島がずっと続く世界（試合なし）：サーバーの節約、人が必ずいて落ち着かないか、巣穴に帰る、抜けると眠る。いつもの4人＋サーバー屋・Rust勢・探索好きの社会人 |
 | `ideas/` | [base_ideas.md](ideas/base_ideas.md) | 拠点の設備の案出し |
