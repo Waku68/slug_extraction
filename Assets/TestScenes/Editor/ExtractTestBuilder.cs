@@ -42,6 +42,7 @@ namespace SlugExtract
             for (int row = 0; row < 3; row++)
             for (int i = 0; i < 4; i++)
                 Crop(map, new Vector3(9f + i * 2.6f + (row % 2) * 1.2f, 0f, -4.5f + row * 4f));
+            SlugDesign.HarvestVisuals.UgoTakeLogs(map, _settings, SlugDesign.HarvestVisuals.UgoTakeSpots);   // ウゴタケ on fallen logs, picked by hand
             MoveTestBuilder.Label("雨カブの畑", new Vector3(13f, 2f, -8f), 3f);
 
             // ---- things in the way: a low wall to climb, rocks, bumpy ground on the road to the exit
@@ -227,6 +228,7 @@ namespace SlugExtract
             Part(root.transform, PrimitiveType.Cube, _salt, new Vector3(0.02f, 0.14f, -0.2f), new Vector3(0.12f, 0.22f, 0.12f), new Vector3(-20f, 10f, 4f), true);
             var h = root.AddComponent<Harvestable>();
             h.settings = _settings; h.kind = ItemKind.RockSalt; h.hits = 6; h.yieldPerHit = 1; h.breakBonus = 2;
+            SlugDesign.HarvestVisuals.ApplyTo(h);     // the salt mushroom, when its models are there
             return h;
         }
 
@@ -250,6 +252,7 @@ namespace SlugExtract
             }
             var h = root.AddComponent<Harvestable>();
             h.settings = _settings; h.kind = ItemKind.Crop; h.hits = 3; h.yieldPerHit = 1; h.breakBonus = 1;
+            SlugDesign.HarvestVisuals.ApplyTo(h);     // the rain turnip field, when its models are there
             return h;
         }
 

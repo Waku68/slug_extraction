@@ -46,7 +46,8 @@ namespace SlugMove
         SlugArmSet _arms;
         SlugToolRack _rack;
         Renderer[] _viewRenderers = new Renderer[0], _bodyRenderers = new Renderer[0];
-        bool _ready;
+        // not kept across a script reload in play mode (_arms comes back null), so the holder stays idle until play restarts
+        [System.NonSerialized] bool _ready;
         float _draw = 1f;
 
         Phase _phase;

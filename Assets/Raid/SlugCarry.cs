@@ -183,6 +183,6 @@ namespace SlugExtract
         }
 
         /// <summary>How <see cref="ItemPickup.Visual"/> scales its mesh up to 1 m (its root's scale divided by the size).</summary>
-        static float ScaleOf(ItemKind kind) => kind == ItemKind.RockSalt ? 1f / 0.06f : 1f / 0.065f;
+        static float ScaleOf(ItemKind kind) => ItemPickup.Scale(kind);
     }
 }

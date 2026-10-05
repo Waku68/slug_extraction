@@ -66,7 +66,10 @@ namespace SlugMove
         SlugToolRack _rack;
         Light _flashLight;
         Renderer[] _viewRenderers = new Renderer[0], _bodyRenderers = new Renderer[0], _bodyUnshadowed = new Renderer[0];
-        bool _ready, _aimInit;
+        // not kept across a script reload in play mode: _arms (a plain class) comes back null, so the holder stays idle
+        // until play is restarted instead of throwing every frame
+        [System.NonSerialized] bool _ready;
+        bool _aimInit;
         float _aimYaw, _aimPitch;
         float _recoverPitch, _recoverYaw, _expectedPitch;
         float _flashRoll, _flashScale = 1f, _wallPull;

@@ -2,7 +2,8 @@ using UnityEngine;
 
 namespace SlugExtract
 {
-    public enum ItemKind { RockSalt, Crop }
+    /// <summary>What can be carried. New kinds go at the end (the number is saved in scenes and bags).</summary>
+    public enum ItemKind { RockSalt, Crop, UgoTake, UgoTakeCrushed }
 
     /// <summary>The kinds of bag (what is carried on the back), plus the folding eco bag and a snail's shell.</summary>
     public enum BagKind { Cloth, Leather, ShellBox, Net, Eco, SnailShell, None }
@@ -18,6 +19,8 @@ namespace SlugExtract
         [Tooltip("手に持ったときに見える大きさ（m）。持っている感じが出るように、実物より大きく見せてよい")] public float heldSize = 0.1f;
         [Tooltip("体の中の隠し場所にしまえるか（塩はしまえない：ナメクジが溶ける）")] public bool canHide = true;
         [Tooltip("叩いて採るときの欠片の色")] public Color chipColor = Color.white;
+        [Tooltip("見た目のモデル（Blender で作った物）。なければ仮の形。大きさは size に合わせて縮める")] public GameObject model;
+        [Tooltip("モデルの縦横の倍率（潰れた物を平たく見せるなど）")] public Vector3 modelScale = Vector3.one;
     }
 
     /// <summary>One kind of bag: how much it takes, how long it holds out, how it takes a round in the back.</summary>
@@ -62,6 +65,7 @@ namespace SlugExtract
         [Tooltip("落ちている物をつかめる距離（m）")] public float pickupReach = 0.8f;
         [Tooltip("つかむ・バッグに入れる・バッグから出す時間（秒）")] public float grabTime = 0.3f, stowTime = 0.5f, takeOutTime = 0.5f;
         [Tooltip("体の中に突っ込む・体から取り出す時間（秒）")] public float hideTime = 0.8f;
+        [Tooltip("柔らかい植物（花、キノコ）を手で摘む時間（秒）")] public float pickTime = 0.5f;
 
         [Header("バッグの種類")]
         public BagDef cloth = new BagDef { displayName = "布の袋", durability = 60f, bodyDamage = 1f, capacity = 0f, swell = 1f, weight = 0.3f };
@@ -79,7 +83,16 @@ namespace SlugExtract
         public ItemDef rockSalt = new ItemDef { displayName = "岩塩", weight = 1.5f, volume = 0.6f, value = 25, size = 0.2f, heldSize = 0.3f, canHide = false, chipColor = new Color(0.95f, 0.88f, 0.9f) };
         public ItemDef crop = new ItemDef { displayName = "雨カブ", weight = 0.5f, volume = 1.2f, value = 8, size = 0.15f, heldSize = 0.15f, canHide = true, chipColor = new Color(0.55f, 0.75f, 0.3f) };
 
-        public ItemDef Def(ItemKind k) => k == ItemKind.RockSalt ? rockSalt : crop;
+        public ItemDef ugoTake = new ItemDef { displayName = "ウゴタケ", weight = 0.15f, volume = 0.5f, value = 12, size = 0.12f, heldSize = 0.16f, canHide = true, chipColor = new Color(0.85f, 0.78f, 0.66f) };
+        public ItemDef ugoTakeCrushed = new ItemDef { displayName = "潰れたウゴタケ", weight = 0.15f, volume = 0.4f, value = 4, size = 0.12f, heldSize = 0.16f, canHide = true, chipColor = new Color(0.85f, 0.78f, 0.66f), modelScale = new Vector3(1.25f, 0.45f, 1.25f) };
+
+        public ItemDef Def(ItemKind k) => k switch
+        {
+            ItemKind.RockSalt => rockSalt,
+            ItemKind.UgoTake => ugoTake,
+            ItemKind.UgoTakeCrushed => ugoTakeCrushed,
+            _ => crop,
+        };
 
         public BagDef Bag(BagKind k) => k switch
         {

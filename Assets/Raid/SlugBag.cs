@@ -135,7 +135,7 @@ namespace SlugExtract
                 var t = _shown[i].transform;
                 t.position = gear.BagMouthPosition + gear.BagMouthRotation * local;
                 t.rotation = gear.BagMouthRotation * Quaternion.Euler(15f + 40f * i, 25f - 70f * i, 10f * i);
-                t.localScale = Vector3.one * (size / (_shownKind[i] == ItemKind.RockSalt ? 0.06f : 0.065f));
+                t.localScale = Vector3.one * (size * ItemPickup.Scale(_shownKind[i]));
             }
         }
 
@@ -217,6 +217,7 @@ namespace SlugExtract
         // ------------------------------------------------------------------ the hands
         void StartCarry(CarryPhase phase, ItemKind k)
         {
+            _picking = false;
             HeldKind = k;
             Carry = phase;
             CarryProgress = 0f;
@@ -239,6 +240,19 @@ namespace SlugExtract
             GrabFrom = p.transform.position;
             StartCarry(CarryPhase.Grab, p.kind);
             Destroy(p.gameObject);
+        }
+
+        bool _picking;      // the hands are picking a soft plant (slower than taking something lying there)
+
+        /// <summary>Picks one off a soft plant (a flower, a mushroom) into the hands.</summary>
+        public void Pick(Pickable plant)
+        {
+            if (Holding || !plant || !plant.HasAny) return;
+            GrabFrom = plant.NextPoint;
+            var k = plant.kind;
+            if (!plant.Take()) return;
+            StartCarry(CarryPhase.Grab, k);
+            _picking = true;
         }
 
         /// <summary>Reaches over the shoulder and takes the top thing out of the bag into the hands.</summary>
@@ -294,7 +308,7 @@ namespace SlugExtract
         void StepCarry(float dt)
         {
             if (!Holding || Carry == CarryPhase.Hold) return;
-            float time = Carry == CarryPhase.Grab ? settings.grabTime : Carry == CarryPhase.Stow ? settings.stowTime
+            float time = Carry == CarryPhase.Grab ? (_picking ? settings.pickTime : settings.grabTime) : Carry == CarryPhase.Stow ? settings.stowTime
                 : Carry == CarryPhase.Hide || Carry == CarryPhase.Unhide ? settings.hideTime : settings.takeOutTime;
             CarryProgress = Mathf.MoveTowards(CarryProgress, 1f, dt / Mathf.Max(time, 0.05f));
             if (CarryProgress < 1f) return;
@@ -393,6 +407,11 @@ namespace SlugExtract
                     {
                         var p = ItemPickup.Nearest(PickupPoint(), settings.pickupReach);
                         if (p) Grab(p);
+                        else
+                        {
+                            var plant = Pickable.Nearest(PickupPoint(), settings.pickupReach);
+                            if (plant) Pick(plant);
+                        }
                     }
                 }
                 // X: with a thing in the hands, push it into the body; with empty hands, pull the hidden thing out
@@ -568,6 +587,11 @@ namespace SlugExtract
             {
                 var p = ItemPickup.Nearest(PickupPoint(), settings.pickupReach);
                 if (p) { GUI.Label(new Rect(0, y, w, 26), $"E  つかむ：{settings.Def(p.kind).displayName}", _small); y += 26f; }
+                else
+                {
+                    var plant = Pickable.Nearest(PickupPoint(), settings.pickupReach);
+                    if (plant) { GUI.Label(new Rect(0, y, w, 26), $"E  摘む：{settings.Def(plant.kind).displayName}", _small); y += 26f; }
+                }
                 if (HasHidden) { GUI.Label(new Rect(0, y, w, 26), $"X  体から取り出す：{settings.Def(Hidden).displayName}", _small); y += 26f; }
             }
             if (!HasBag && !_ecoUsed)

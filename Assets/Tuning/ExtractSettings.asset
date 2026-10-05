@@ -31,6 +31,7 @@ MonoBehaviour:
   stowTime: 0.5
   takeOutTime: 0.5
   hideTime: 0.8
+  pickTime: 0.5
   cloth:
     displayName: "\u5E03\u306E\u888B"
     durability: 60
@@ -94,6 +95,8 @@ MonoBehaviour:
     heldSize: 0.3
     canHide: 0
     chipColor: {r: 0.95, g: 0.88, b: 0.9, a: 1}
+    model: {fileID: 919132149155446097, guid: 76b525e56cd95b4438feabd6bba2a841, type: 3}
+    modelScale: {x: 1, y: 1, z: 1}
   crop:
     displayName: "\u96E8\u30AB\u30D6"
     weight: 0.5
@@ -103,3 +106,27 @@ MonoBehaviour:
     heldSize: 0.15
     canHide: 1
     chipColor: {r: 0.55, g: 0.75, b: 0.3, a: 1}
+    model: {fileID: 919132149155446097, guid: 1acee663db8d00d42b2882cfe13ed767, type: 3}
+    modelScale: {x: 1, y: 1, z: 1}
+  ugoTake:
+    displayName: "\u30A6\u30B4\u30BF\u30B1"
+    weight: 0.15
+    volume: 0.5
+    value: 12
+    size: 0.12
+    heldSize: 0.16
+    canHide: 1
+    chipColor: {r: 0.85, g: 0.78, b: 0.66, a: 1}
+    model: {fileID: 919132149155446097, guid: 111bfb2b9ef167f46aae63e2099edb0d, type: 3}
+    modelScale: {x: 1, y: 1, z: 1}
+  ugoTakeCrushed:
+    displayName: "\u6F70\u308C\u305F\u30A6\u30B4\u30BF\u30B1"
+    weight: 0.15
+    volume: 0.4
+    value: 4
+    size: 0.12
+    heldSize: 0.16
+    canHide: 1
+    chipColor: {r: 0.85, g: 0.78, b: 0.66, a: 1}
+    model: {fileID: 919132149155446097, guid: 111bfb2b9ef167f46aae63e2099edb0d, type: 3}
+    modelScale: {x: 1.25, y: 0.45, z: 1.25}

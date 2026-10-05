@@ -7,6 +7,8 @@ namespace SlugExtract
     /// A node that is struck with the pickaxe (Fortnite-style): every hit knocks one thing out of it (a chunk of rock
     /// salt about 30 cm across, a turnip) that pops out toward the one who struck it and lands on the ground, to be taken
     /// in the hands and put in the bag; the node jolts and sheds chips, and the last hit gives a bonus and breaks it.
+    /// With <see cref="stages"/> (the salt mushroom: full, half-mined, stump) it changes shape each time something comes
+    /// out instead, and the last stage stays behind when it is mined out.
     /// </summary>
     public class Harvestable : MonoBehaviour, IPickaxeTarget, IPickaxeSurface
     {
@@ -18,6 +20,9 @@ namespace SlugExtract
         [Tooltip("壊れるまでに叩く回数")] public int hits = 4;
         [Tooltip("1 回叩くごとに採れる数")] public int yieldPerHit = 1;
         [Tooltip("最後の一撃で追加で採れる数")] public int breakBonus = 1;
+        [Tooltip("何回叩くごとに出てくるか（塩のきのこは 2：6回で3個）")] public int hitsPerYield = 1;
+        [Tooltip("形の段階（満タン、掘りかけ、切り株…）。出てくるたびに次へ。最後の段階は掘りきっても残る。空なら壊れて消える")]
+        public GameObject[] stages = new GameObject[0];
 
         int _left;
         float _punch;           // 0..1, decays: the jolt of the last hit
@@ -32,6 +37,44 @@ namespace SlugExtract
         {
             _left = hits;
             _baseScale = transform.localScale;
+            ShowStage(0);
+        }
+
+        bool HasStages => stages != null && stages.Length > 0;
+
+        /// <summary>Shows one stage and fits the box collider (if any) round it, so the pickaxe meets what is there.</summary>
+        void ShowStage(int index)
+        {
+            if (!HasStages) return;
+            index = Mathf.Clamp(index, 0, stages.Length - 1);
+            for (int i = 0; i < stages.Length; i++) if (stages[i]) stages[i].SetActive(i == index);
+            var box = GetComponent<BoxCollider>();
+            if (box && stages[index]) FitBox(box, stages[index], transform);
+        }
+
+        /// <summary>
+        /// Fits a box collider round the meshes under <paramref name="shown"/>, in <paramref name="space"/>'s own units
+        /// (the corners of every mesh are carried into that space, so a turned node still gets a box that hugs it).
+        /// </summary>
+        public static void FitBox(BoxCollider box, GameObject shown, Transform space, float shrink = 0.85f)
+        {
+            bool any = false;
+            var b = new Bounds();
+            foreach (var mf in shown.GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (!mf.sharedMesh) continue;
+                var mb = mf.sharedMesh.bounds;
+                var m = space.worldToLocalMatrix * mf.transform.localToWorldMatrix;
+                for (int i = 0; i < 8; i++)
+                {
+                    var corner = mb.center + Vector3.Scale(mb.extents, new Vector3((i & 1) == 0 ? -1 : 1, (i & 2) == 0 ? -1 : 1, (i & 4) == 0 ? -1 : 1));
+                    var p = m.MultiplyPoint3x4(corner);
+                    if (!any) { b = new Bounds(p, Vector3.zero); any = true; } else b.Encapsulate(p);
+                }
+            }
+            if (!any) return;
+            box.center = b.center;
+            box.size = b.size * shrink;
         }
 
         public void OnPickaxeHit(GameObject hitter, RaycastHit hit)
@@ -40,19 +83,22 @@ namespace SlugExtract
             Chips(hit.point, hit.normal, 6);
             _punch = 1f;
             _left--;
-            int amount = yieldPerHit + (_left == 0 ? breakBonus : 0);
+            int done = hits - _left;
+            int step = Mathf.Max(1, hitsPerYield);
+            int amount = (done % step == 0 ? yieldPerHit : 0) + (_left == 0 ? breakBonus : 0);
+            if (HasStages) ShowStage(done / step);
             // it pops out of the struck face toward the one who struck it, and falls to the ground
             Vector3 toward = Vector3.ProjectOnPlane(hitter.transform.position - transform.position, Vector3.up).normalized;
             var ignore = hitter.GetComponent<Collider>();
             float size = settings.Def(kind).size;
+            Harvested?.Invoke(kind, amount, false);
+            if (_left == 0 && !HasStages) _breaking = true;
             for (int i = 0; i < amount; i++)
             {
                 Vector3 from = hit.point + hit.normal * (size * 0.6f) + Vector3.up * (size * 0.3f);
                 Vector3 v = (toward * Random.Range(1f, 1.6f) + Vector3.up * Random.Range(1.6f, 2.2f) + Random.insideUnitSphere * 0.4f);
                 ItemPickup.Spawn(settings, kind, from, v, ignore);
             }
-            Harvested?.Invoke(kind, amount, false);
-            if (_left == 0) _breaking = true;
         }
 
         void Update()

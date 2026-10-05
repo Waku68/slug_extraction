@@ -55,7 +55,8 @@ namespace SlugExtract
             var go = new GameObject(kind.ToString());
             go.transform.SetParent(parent, false);
             go.transform.localScale = Vector3.one * (def.size * Scale(kind));
-            if (kind == ItemKind.RockSalt) Part(go.transform, _chunkMesh, Mat(def.chipColor), Vector3.zero, Vector3.one, castShadows);
+            if (def.model) Model(go.transform, def, kind, castShadows);
+            else if (kind == ItemKind.RockSalt) Part(go.transform, _chunkMesh, Mat(def.chipColor), Vector3.zero, Vector3.one, castShadows);
             else
             {
                 Part(go.transform, _turnipMesh, Mat(new Color(0.86f, 0.8f, 0.9f)), Vector3.zero, Vector3.one, castShadows);
@@ -64,8 +65,34 @@ namespace SlugExtract
             return go;
         }
 
+        /// <summary>
+        /// The Blender model in place of the stand-in shape: centred on the root and shrunk so its longest side is 1 in
+        /// the root's units (the root is scaled by size × <see cref="Scale"/>, like the stand-in meshes, so every caller
+        /// that sizes the root keeps working).
+        /// </summary>
+        static void Model(Transform root, ItemDef def, ItemKind kind, bool castShadows)
+        {
+            var m = Object.Instantiate(def.model);
+            m.name = def.model.name;
+            m.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+            m.transform.localScale = Vector3.one;
+            var renderers = m.GetComponentsInChildren<Renderer>();
+            var b = new Bounds();
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                if (i == 0) b = renderers[i].bounds; else b.Encapsulate(renderers[i].bounds);
+                renderers[i].shadowCastingMode = castShadows ? UnityEngine.Rendering.ShadowCastingMode.On : UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+            foreach (var c in m.GetComponentsInChildren<Collider>()) Object.Destroy(c);
+            float k = 1f / (Scale(kind) * Mathf.Max(b.size.x, b.size.y, b.size.z, 1e-3f));
+            Vector3 s = Vector3.Scale(Vector3.one * k, def.modelScale);
+            m.transform.SetParent(root, false);
+            m.transform.localScale = s;
+            m.transform.localPosition = -Vector3.Scale(b.center, s);
+        }
+
         /// <summary>How the authored mesh (a few centimetres) is scaled up to 1 m across.</summary>
-        static float Scale(ItemKind kind) => kind == ItemKind.RockSalt ? 1f / 0.06f : 1f / 0.065f;
+        public static float Scale(ItemKind kind) => kind == ItemKind.RockSalt ? 1f / 0.06f : 1f / 0.065f;
 
         /// <summary>The nearest pickup within <paramref name="reach"/> of <paramref name="from"/>, or null.</summary>
         public static ItemPickup Nearest(Vector3 from, float reach)
