@@ -120,7 +120,7 @@ namespace SlugExtract
                     away = 1f - u;
                     break;
                 case SlugBag.CarryPhase.Stow:
-                    pos = Bezier(hold, over, bag.BagMouthWorld(), u);
+                    pos = bag.GroundTransfer ? Bezier(hold, Low(hold, bag.BagMouthWorld()), bag.BagMouthWorld(), u) : Bezier(hold, over, bag.BagMouthWorld(), u);
                     scale = 1f - 0.6f * Ease((bag.CarryProgress - 0.7f) / 0.3f);      // into the bag
                     away = u;
                     break;
@@ -136,7 +136,7 @@ namespace SlugExtract
                     away = 1f - u;
                     break;
                 case SlugBag.CarryPhase.TakeOut:
-                    pos = Bezier(bag.BagMouthWorld(), over, hold, u);
+                    pos = bag.GroundTransfer ? Bezier(bag.BagMouthWorld(), Low(hold, bag.BagMouthWorld()), hold, u) : Bezier(bag.BagMouthWorld(), over, hold, u);
                     scale = 0.4f + 0.6f * Ease(bag.CarryProgress / 0.3f);             // out of the bag
                     away = 1f - u;
                     break;
@@ -184,5 +184,8 @@ namespace SlugExtract
 
         /// <summary>How <see cref="ItemPickup.Visual"/> scales its mesh up to 1 m (its root's scale divided by the size).</summary>
         static float ScaleOf(ItemKind kind) => ItemPickup.Scale(kind);
+
+        /// <summary>The middle of a short low arc between the hands and a bag on the ground.</summary>
+        static Vector3 Low(Vector3 a, Vector3 b) => (a + b) * 0.5f + Vector3.up * 0.12f;
     }
 }

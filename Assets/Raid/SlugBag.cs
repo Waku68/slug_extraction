@@ -24,6 +24,9 @@ namespace SlugExtract
     /// to look at the back and flips the bag's lid open (everyone sees both); in the own view the bag on the back is
     /// drawn big and tipped toward the eyes: in its mouth the top two things, drawn chunky and easy to tell apart
     /// (three, spilling over, when it is crammed), and the numbers. While the hands are full the tools are put away.
+    /// C (hold) sets the bag down on the ground, mouth open, or shoulders one lying there: things go into and come out
+    /// of a bag on the ground much faster (<see cref="GroundBag"/>), for anyone, so a fallen slug's bag (dropped where
+    /// it fell) can be emptied into one's own quickly by setting one's own down beside it.
     /// Sorting is for the base.
     /// A bag without a <see cref="controller"/> (a practice slug) takes no input and shows nothing.
     /// </summary>
@@ -97,11 +100,14 @@ namespace SlugExtract
             SetKind(kind);
             foreach (var k in startItems) TryAdd(k, 1);
             if (hitboxes) hitboxes.Hit += OnHit;
+            _health = GetComponent<SlugHealth>() ?? GetComponentInParent<SlugHealth>();
+            if (_health) _health.Died += OnDied;
         }
 
         void OnDestroy()
         {
             if (hitboxes) hitboxes.Hit -= OnHit;
+            if (_health) _health.Died -= OnDied;
             UnityEngine.Rendering.RenderPipelineManager.beginCameraRendering -= OnBeginCamera;
             foreach (var g in _shown) if (g) Destroy(g);
         }
@@ -218,6 +224,7 @@ namespace SlugExtract
         void StartCarry(CarryPhase phase, ItemKind k)
         {
             _picking = false;
+            _ground = null;
             HeldKind = k;
             Carry = phase;
             CarryProgress = 0f;
@@ -244,6 +251,15 @@ namespace SlugExtract
         }
 
         bool _picking;      // the hands are picking a soft plant (slower than taking something lying there)
+        GroundBag _ground;  // the bag on the ground being filled or emptied (null: the one on the back)
+        float _bagAction = -1f;     // 0..1 through setting the bag down or shouldering one (C held)
+        SlugHealth _health;
+
+        /// <summary>Things go into or come out of a bag on the ground (quick and low, not over the shoulder).</summary>
+        public bool GroundTransfer => _ground && (Carry == CarryPhase.Stow || Carry == CarryPhase.TakeOut);
+        /// <summary>Setting the bag down or shouldering one (slow meanwhile).</summary>
+        public bool BagAction => _bagAction >= 0f;
+        bool CanSetDown => HasBag && Worn != BagKind.SnailShell;
 
         /// <summary>Something done with the hands or the bag, for sounds: (what, which item). What: grab, pick, takeout,
         /// stow, drop, throw, hide, unhide, burst, eco, peek.</summary>
@@ -265,6 +281,15 @@ namespace SlugExtract
         public void TakeOut()
         {
             if (Holding) return;
+            var g = IsPlayer ? GroundBag.Nearest(PickupPoint(), settings.groundReach) : null;
+            if (g && !g.Empty)
+            {
+                GrabFrom = g.MouthWorld;
+                StartCarry(CarryPhase.TakeOut, g.TakeTop());
+                _ground = g;
+                Did?.Invoke("takeout", HeldKind);
+                return;
+            }
             if (_items.Count == 0) { Say(HasBag ? "バッグは空" : NoBagHint()); return; }
             StartCarry(CarryPhase.TakeOut, TakeTop());
             Did?.Invoke("takeout", HeldKind);
@@ -274,6 +299,18 @@ namespace SlugExtract
         public void Stow()
         {
             if (Carry != CarryPhase.Hold) return;
+            if (!HasBag)
+            {
+                var g = GroundBag.Nearest(PickupPoint(), settings.groundReach, this, true) ?? GroundBag.Nearest(PickupPoint(), settings.groundReach);
+                if (g)
+                {
+                    if (!g.Fits(HeldKind)) { Say($"{g.Def.displayName}がいっぱい"); return; }
+                    _ground = g;
+                    Carry = CarryPhase.Stow;
+                    CarryProgress = 0f;
+                    return;
+                }
+            }
             if (!Fits(HeldKind)) { Say(HasBag ? $"{Def.displayName}がいっぱい" : NoBagHint()); return; }
             Carry = CarryPhase.Stow;
             CarryProgress = 0f;
@@ -317,10 +354,26 @@ namespace SlugExtract
         void StepCarry(float dt)
         {
             if (!Holding || Carry == CarryPhase.Hold) return;
-            float time = Carry == CarryPhase.Grab ? (_picking ? settings.pickTime : settings.grabTime) : Carry == CarryPhase.Stow ? settings.stowTime
+            float time = GroundTransfer ? settings.groundTransferTime : Carry == CarryPhase.Grab ? (_picking ? settings.pickTime : settings.grabTime) : Carry == CarryPhase.Stow ? settings.stowTime
                 : Carry == CarryPhase.Hide || Carry == CarryPhase.Unhide ? settings.hideTime : settings.takeOutTime;
             CarryProgress = Mathf.MoveTowards(CarryProgress, 1f, dt / Mathf.Max(time, 0.05f));
             if (CarryProgress < 1f) return;
+            if (Carry == CarryPhase.Stow && _ground)
+            {
+                var k = HeldKind;
+                if (_ground.Fits(k))
+                {
+                    var g = _ground;
+                    Carry = CarryPhase.None;
+                    g.Add(k);
+                    EndCarry();
+                    Did?.Invoke("stow", k);
+                    Say($"{settings.Def(k).displayName}を地面の{g.Def.displayName}に入れた");
+                }
+                else { Carry = CarryPhase.Hold; Recount(); }
+                _ground = null;
+                return;
+            }
             if (Carry == CarryPhase.Stow)
             {
                 var k = HeldKind;
@@ -340,6 +393,67 @@ namespace SlugExtract
             }
             Carry = CarryPhase.Hold;
             CarryProgress = 0f;
+            _ground = null;
+        }
+
+        // ------------------------------------------------------------------ the bag on the ground
+        /// <summary>C held: sets the bag on the back down, or (with none on the back) shoulders the bag lying near.</summary>
+        void StepBagAction(bool held, float dt)
+        {
+            bool down = CanSetDown;
+            var near = down ? null : GroundBag.Nearest(PickupPoint(), settings.groundReach, this, true) ?? GroundBag.Nearest(PickupPoint(), settings.groundReach);
+            if (!held || Holding || Opening || (!down && !near)) { _bagAction = -1f; return; }
+            if (_bagAction < 0f) _bagAction = 0f;
+            _bagAction += dt / Mathf.Max(down ? settings.bagDownTime : settings.bagUpTime, 0.1f);
+            if (_bagAction < 1f) return;
+            _bagAction = -1f;
+            if (down) SetDown(); else Shoulder(near);
+        }
+
+        /// <summary>Sets the bag on the back down on the ground in front, mouth open, everything still in it.</summary>
+        public void SetDown()
+        {
+            if (!CanSetDown) return;
+            var t = controller ? controller.transform : transform;
+            GroundBag.Create(settings, Worn, Durability, _items, t.position + t.forward * 0.45f, Quaternion.LookRotation(-t.forward), this, 0f);
+            string name = Def.displayName;
+            _items.Clear();
+            Worn = BagKind.None;
+            Durability = 0f;
+            Recount();
+            Did?.Invoke("down", ItemKind.RockSalt);
+            Say($"{name}を地面に下ろした（C 長押しで背負う）");
+        }
+
+        /// <summary>Shoulders a bag lying on the ground (one's own or anyone's), with everything in it.</summary>
+        public void Shoulder(GroundBag g)
+        {
+            if (HasBag || !g) return;
+            Worn = g.kind;
+            Durability = g.durability;
+            _items.Clear();
+            _items.AddRange(g.items);
+            Destroy(g.gameObject);
+            Recount();
+            Did?.Invoke("up", ItemKind.RockSalt);
+            Say($"{Def.displayName}を背負った");
+        }
+
+        /// <summary>A fallen slug lets go of everything: what was in the hands falls, the bag drops where it fell (for a while).</summary>
+        void OnDied(string cause)
+        {
+            if (Holding)
+            {
+                ItemPickup.Spawn(settings, HeldKind, heldWorld, Vector3.up, OwnCollider);
+                EndCarry();
+            }
+            if (!HasBag) return;
+            var t = controller ? controller.transform : transform;
+            GroundBag.Create(settings, Worn, Durability, _items, t.position - t.forward * 0.25f, t.rotation, null, settings.droppedLifetime);
+            _items.Clear();
+            Worn = BagKind.None;
+            Durability = 0f;
+            Recount();
         }
 
         // ------------------------------------------------------------------ rounds in the back
@@ -426,6 +540,7 @@ namespace SlugExtract
                         }
                     }
                 }
+                StepBagAction(kb.cKey.isPressed, dt);
                 // X: with a thing in the hands, push it into the body; with empty hands, pull the hidden thing out
                 if (kb.xKey.wasPressedThisFrame)
                 {
@@ -456,7 +571,7 @@ namespace SlugExtract
 
             float speed = settings.SpeedFor(Weight);
             if (_peek > 0f) speed *= Mathf.Lerp(1f, settings.peekSpeed, _peek);
-            if (Opening) speed *= 0.3f;
+            if (Opening || BagAction) speed *= 0.3f;
             controller.speedMultiplier = speed;
         }
 
@@ -473,7 +588,7 @@ namespace SlugExtract
         }
 
         /// <summary>The mouth of the bag on the back (world): where things go in and come out.</summary>
-        public Vector3 BagMouthWorld() => BagPointWorld(new Vector3(0f, 1f, 0.2f));
+        public Vector3 BagMouthWorld() => GroundTransfer ? _ground.MouthWorld : BagPointWorld(new Vector3(0f, 1f, 0.2f));
 
         /// <summary>A point of the bag (world), as fractions of its half size along its own axes (x across, y up, z out).</summary>
         Vector3 BagPointWorld(Vector3 frac)
@@ -591,7 +706,8 @@ namespace SlugExtract
             float y = Mathf.Min(h * 0.5f + 60f, h - 200f);      // above the tool slots
             if (Carry == CarryPhase.Hold)
             {
-                string into = HasBag ? "E バッグに入れる" : (_ecoUsed ? "（バッグがない）" : "（バッグがない：B 長押しでエコバッグ）");
+                var gIn = HasBag ? null : GroundBag.Nearest(PickupPoint(), settings.groundReach);
+                string into = HasBag ? "E バッグに入れる" : gIn ? $"E 地面の{gIn.Def.displayName}に入れる" : (_ecoUsed ? "（バッグがない）" : "（バッグがない：B 長押しでエコバッグ）");
                 string hide = settings.Def(HeldKind).canHide && !HasHidden ? "　X 体に突っ込む" : "";
                 GUI.Label(new Rect(0, y, w, 26), $"手に{settings.Def(HeldKind).displayName}：{into}　G 落とす（長押しで投げる）{hide}", _small);
                 y += 26f;
@@ -606,6 +722,18 @@ namespace SlugExtract
                     if (plant) { GUI.Label(new Rect(0, y, w, 26), $"E  摘む：{settings.Def(plant.kind).displayName}", _small); y += 26f; }
                 }
                 if (HasHidden) { GUI.Label(new Rect(0, y, w, 26), $"X  体から取り出す：{settings.Def(Hidden).displayName}", _small); y += 26f; }
+                var gOut = GroundBag.Nearest(PickupPoint(), settings.groundReach);
+                if (gOut && !gOut.Empty) { GUI.Label(new Rect(0, y, w, 26), $"G  地面の{gOut.Def.displayName}から出す（{gOut.items.Count}個）", _small); y += 26f; }
+                if (CanSetDown) { GUI.Label(new Rect(0, y, w, 26), "C 長押し  バッグを地面に下ろす", _small); y += 26f; }
+                else if (!HasBag && gOut) { GUI.Label(new Rect(0, y, w, 26), $"C 長押し  {gOut.Def.displayName}を背負う", _small); y += 26f; }
+            }
+            if (BagAction)
+            {
+                GUI.Box(new Rect(w * 0.5f - 100, y + 4, 200, 10), GUIContent.none);
+                GUI.color = new Color(0.8f, 0.9f, 1f);
+                GUI.DrawTexture(new Rect(w * 0.5f - 100, y + 4, 200 * _bagAction, 10), Texture2D.whiteTexture);
+                GUI.color = old;
+                y += 18f;
             }
             if (!HasBag && !_ecoUsed)
             {

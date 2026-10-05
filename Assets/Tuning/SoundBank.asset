@@ -186,3 +186,13 @@ MonoBehaviour:
     - {fileID: 8300000, guid: fdc999f67efa5bc4f9c8ad265cc55421, type: 3}
     volume: 0.8
     pitchJitter: 0.06
+  - key: bag_down
+    clips:
+    - {fileID: 8300000, guid: 763e7debf8f7cbe4eba3da641547d997, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: bag_up
+    clips:
+    - {fileID: 8300000, guid: a0238569f91aec84ebbe3e54c999e135, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06

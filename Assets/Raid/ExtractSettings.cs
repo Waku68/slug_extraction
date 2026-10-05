@@ -49,7 +49,7 @@ namespace SlugExtract
         [Header("重さと速さ（上限はない）")]
         [Tooltip("閾値：この重さを超えると、這うのが明らかに遅くなる")] public float weightThreshold = 10f;
         [Range(0f, 0.5f), Tooltip("閾値までに遅くなる割合（閾値ちょうどで、この分だけ遅い）")] public float lightSlowdown = 0.15f;
-        [Range(0.1f, 1f), Tooltip("閾値を超えた瞬間の速さの倍率（ここで明らかに落ちる）")] public float overSpeed = 0.3f;
+        [Range(0.1f, 1f), Tooltip("閾値を超えた瞬間の速さの倍率。1 - lightSlowdown にすると段差なく、超えるほど少しずつ遅くなる")] public float overSpeed = 0.85f;
         [Range(0.1f, 1f), Tooltip("いちばん遅いときの速さの倍率（overSpeed と同じなら、超えたらずっと同じ遅さ）")] public float heaviestSpeed = 0.3f;
         [Tooltip("閾値をどれだけ超えると、いちばん遅くなるか（重さ）")] public float heavyRange = 10f;
 
@@ -66,6 +66,12 @@ namespace SlugExtract
         [Tooltip("つかむ・バッグに入れる・バッグから出す時間（秒）")] public float grabTime = 0.3f, stowTime = 0.5f, takeOutTime = 0.5f;
         [Tooltip("体の中に突っ込む・体から取り出す時間（秒）")] public float hideTime = 0.8f;
         [Tooltip("柔らかい植物（花、キノコ）を手で摘む時間（秒）")] public float pickTime = 0.5f;
+
+        [Header("地面に下ろしたバッグ")]
+        [Tooltip("背中のバッグを地面に下ろす時間・背負う時間（秒、C 長押し）。その間は遅い")] public float bagDownTime = 0.8f, bagUpTime = 0.8f;
+        [Tooltip("地面のバッグに入れる・から出す時間（秒）。背中よりずっと速い")] public float groundTransferTime = 0.12f;
+        [Tooltip("地面のバッグに手が届く距離（m）")] public float groundReach = 1.2f;
+        [Tooltip("倒されたナメクジのバッグが地面に残る時間（秒）。島時間2時間 = 現実の約45分")] public float droppedLifetime = 2700f;
 
         [Header("バッグの種類")]
         public BagDef cloth = new BagDef { displayName = "布の袋", durability = 60f, bodyDamage = 1f, capacity = 0f, swell = 1f, weight = 0.3f };

@@ -224,6 +224,18 @@ def bag_eco_open(rng, v):
     return mix(rustle(rng, 0.9, 2600, 60, 0.3), at(tone(0.08, 900, 600) * env(0.08, 0.001, 0.02) * 0.4, 0.8))
 
 
+def bag_down(rng, v):
+    """背中のバッグを地面に下ろす：ざざっ＋どさっ。"""
+    thump = mix(tone(0.25, 130, 70) * env(0.25, 0.003, 0.06), biquad(noise(0.15, rng), "lp", 700) * env(0.15, 0.002, 0.04) * 0.7)
+    return mix(rustle(rng, 0.5, 1500, 30, 0.15), at(thump, 0.4))
+
+
+def bag_up(rng, v):
+    """地面のバッグを背負う：ざざっ（持ち上がる）。"""
+    lift = biquad(noise(0.3, rng), "band", np.linspace(500, 1600, int(SR * 0.3)), q=1) * env(0.3, 0.05, 0.1) * 0.6
+    return mix(rustle(rng, 0.55, 1800, 34, 0.18), lift)
+
+
 def bag_peek(rng, v):
     return mix(rustle(rng, 0.2, 1400, 10, 0.06), tone(0.12, 500, 700) * env(0.12, 0.002, 0.03) * 0.3)
 
@@ -301,6 +313,8 @@ SOUNDS = {
     "bag_burst": (bag_burst, 1),
     "bag_eco_open": (bag_eco_open, 1),
     "bag_peek": (bag_peek, 1),
+    "bag_down": (bag_down, 1),
+    "bag_up": (bag_up, 1),
     "gun_fire_rifle": (lambda r, v: gun_fire(r, v, 0.22, 700, 6500, 950, 0.35), 2),
     "gun_fire_pistol": (lambda r, v: gun_fire(r, v, 0.16, 900, 7500, 1200, 0.3), 1),
     "gun_fire_shotgun": (lambda r, v: gun_fire(r, v, 0.38, 400, 5000, 520, 0.6), 1),

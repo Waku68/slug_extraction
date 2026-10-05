@@ -17,7 +17,7 @@ MonoBehaviour:
   extractRadius: 1.5
   weightThreshold: 10
   lightSlowdown: 0.15
-  overSpeed: 0.3
+  overSpeed: 0.85
   heaviestSpeed: 0.3
   heavyRange: 10
   swellPerVolume: 0.05
