@@ -81,7 +81,8 @@ namespace SlugExtract
                 float dayRate = sky == Sky.Sunny ? (_inSun ? s.sunnyInSun : s.sunnyInShade) : s.cloudy;
                 perMinute = Mathf.Lerp(s.night, dayRate, t.daylightAmount);
                 Reason = t.Night ? "夜（露）" : sky == Sky.Sunny ? (_inSun ? "晴れ・日なた" : "晴れ・日陰") : "曇り";
-                if (salt) { perMinute = Mathf.Min(perMinute * s.saltDrainMultiplier, s.saltNight); Reason += "・塩の上"; }
+                // salt ground: twice the drying by day, its own (harsh) rate by night
+                if (salt) { perMinute = Mathf.Lerp(s.saltNight, dayRate * s.saltDrainMultiplier, t.daylightAmount); Reason += "・塩の上"; }
             }
             float gain = perMinute / 60f * dt;
             if (water)

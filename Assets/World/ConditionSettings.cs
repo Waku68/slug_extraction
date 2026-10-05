@@ -27,7 +27,7 @@ namespace SlugWorld
         [Header("塩の上（塩田、岩塩の洞窟）")]
         [Tooltip("減り方の倍率")] public float saltDrainMultiplier = 2f;
         [Tooltip("雨の戻り方の倍率")] public float saltRainMultiplier = 0.5f;
-        [Tooltip("夜でも減る量（1分あたり）。日陰（−4）よりはゆるい")] public float saltNight = -2.5f;
+        [Tooltip("夜の減り方（1分あたり）。夜でも塩は体の水を吸う（満タンから4分）")] public float saltNight = -25f;
 
         [Header("乾いたとき")]
         [Tooltip("これより少ないと、見た目が乾いてくる（つやが消え、くすみ、少し縮む）")] public float looksDryBelow = 30f;
