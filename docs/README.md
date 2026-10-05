@@ -1,6 +1,6 @@
 # プロジェクトの地図
 
-Oct 4, 2026
+Oct 5, 2026
 
 ナメクジ脱出PvP（Unity 6000.5.4f1、URP 17.5.0）の、どこに何があるかの一覧。迷ったらまずここを見る。
 
@@ -9,7 +9,7 @@ Oct 4, 2026
 | 資料 | 中身 |
 | --- | --- |
 | [spec.md](spec.md) | 仕様。決まったこと・仮のこと・未決定のこと（凡例【決定】【仮】【未決定】） |
-| [progress.md](progress.md) | 進捗。仕様と照らして、何ができて何がまだか。次にやること |
+| [progress.md](progress.md) | 進捗。最近決まったこと、何ができて何がまだか、まだ決まっていないこと、次にやること。**新しいチャットはまずここ（0章）から** |
 | [bag_spec.md](bag_spec.md) | バッグの仕様（バッグ、エコバッグ、隠し場所、カタツムリの殻、ベルトと背負い紐）。今の実装との違いと作る順番 |
 
 ## docs の中身
@@ -20,31 +20,26 @@ Oct 4, 2026
 | | [design_params.md](character/design_params.md) | 今のキャラの値の一覧（`SlugPop` のスライダー、這う動き） |
 | | `face_ref.jpg` | v7 で試した平面の顔の参考画像 |
 | `character/history/` | [design_candidates_v1.md](character/history/design_candidates_v1.md)、[design_candidates_v2.md](character/history/design_candidates_v2.md) | 最初の9案と、配色・目の比較の記録 |
-| `discussions/` | [base_discussion.md](discussions/base_discussion.md) | 拠点の話し合い（種類、飾り、集会所） |
-| | [snail_discussion.md](discussions/snail_discussion.md) | カタツムリの見た目の話し合い |
-| | [bag_ui_discussion.md](discussions/bag_ui_discussion.md) | バッグUIの話し合い 1回目（覗き込む、数字の出し方） |
-| | [bag_ui_discussion_2.md](discussions/bag_ui_discussion_2.md) | バッグの話し合い 2回目（入れ物の分け方、カタツムリの殻、隠し場所） |
-| | [bag_ui_discussion_3.md](discussions/bag_ui_discussion_3.md) | バッグの話し合い 3回目（耐久値、ごちゃまぜ、弾は持ち込みだけ、網バッグ） |
-| | [slug_gun_discussion.md](discussions/slug_gun_discussion.md) | ナメクジの銃を構造から考え直す（握り込む、空気、塩に触れない、体で受ける） |
-| | [tool_carry_discussion.md](discussions/tool_carry_discussion.md) | 道具の持ち方・持ち替え・バッグが壊れたあと（エコバッグ、大物を抱える） |
-| | [map_discussion.md](discussions/map_discussion.md) | マップ案（河口の塩沼、雲が東から西へ、大きさは這う速さから、スケール・増水・苔の壁） |
-| | [map_discussion_2.md](discussions/map_discussion_2.md) | マップ 2回目（広さ・人数・時間、共通の天気予報、晴れの日：乾きを湿り気に、動く影、ぬめり跡） |
-| | [island_clock_discussion.md](discussions/island_clock_discussion.md) | 島の時計（1日を3・5・7・9時間のどれに。毎日・毎週ずれるか、影の速さ） |
-| | [moisture_discussion.md](discussions/moisture_discussion.md) | 湿り気の数字（決めた：晴れの日なた5分、塩の上は2倍、水の苔玉、120までためる） |
-| | [health_damage_discussion.md](discussions/health_damage_discussion.md) | 体力とダメージ（何発で倒れるか、塩の希少性と弾の値段、ダウン、回復） |
-| | [regions_discussion.md](discussions/regions_discussion.md) | 島の5区画（候補12、組み合わせ案、巣穴を掘れる場所、天気でつながる区画） |
-| | [no_numbers_discussion.md](discussions/no_numbers_discussion.md) | 数字を出さない世界（バッグの数字を島でも拠点でもなくしたら：天秤、秤、体で感じる重さ、色に頼らない） |
-| | [grand_nature_discussion.md](discussions/grand_nature_discussion.md) | 雄大な自然（谷の深さと見晴らし、借景）、自動生成の仕組みと完成度、ベースキャンプ、アセットとMCPでの開発 |
-| | [map_size_discussion.md](discussions/map_size_discussion.md) | 区画の広さ（数字つき：一辺ごとの作る量・這う時間・人や巣穴までの距離、区画ごとに広さを変える、名所だけ作り込む、友達と作る） |
-| | [no_numbers_discussion_2.md](discussions/no_numbers_discussion_2.md) | 数字 2回目：お金の塩だけは数字（人が作った物にだけ数字、天秤と分銅、塩の板、秤の解放）。学芸員を足した |
-| | [persistent_island_discussion.md](discussions/persistent_island_discussion.md) | 島がずっと続く世界（試合なし）：サーバーの節約、人が必ずいて落ち着かないか、巣穴に帰る、抜けると眠る。いつもの4人＋サーバー屋・Rust勢・探索好きの社会人 |
+| `discussions/` | 下の「話し合いの記録」 | Claude といつもの4人の話し合い |
 | `ideas/` | [base_ideas.md](ideas/base_ideas.md) | 拠点の設備の案出し |
 | `tech/` | [tool_craft_notes.md](tech/tool_craft_notes.md) | 作り方のメモ：ピッケル、銃3種、装備、当たり判定、縮んで伸びる、気をつけること |
 | | [region_test_notes.md](tech/region_test_notes.md) | 灰色の区画（一辺 800 m）の試作と、這う時間の測定、分かったこと |
 | | [weather_notes.md](tech/weather_notes.md) | 島の時計・天気・湿り気の作り方、開発用のキー、撮り方 |
 | | [sound_list.md](tech/sound_list.md) | 音（効果音・BGM）の置き場所、ファイル名、取り込みの設定、要る音のリスト、鳴らすときのつなぎ口 |
 
-話し合い（`discussions/`）は「Claude といつもの4人」の記録。廃人・スプラ好き・辛口インディーの3人は固定で、話題ごとにほかの人を足す（例：サーバー屋、Rust勢、看護師、生物系の院生、レベルデザイナー）。進め方は、まずそれぞれが意見を出す → 少し話し合う → 暗黙の了解をひっくり返した案（3つ）→ 極端案（2つ）→ まとめ。結論は spec.md に反映してある。
+
+## 話し合いの記録（`discussions/`）
+
+廃人（タルコフ）・スプラ好きの中学生・辛口インディー評論家の3人は固定で、話題ごとにほかの人を足す（例：サーバー屋、Rust勢、看護師、生物系の院生、レベルデザイナー、写真家）。進め方は、まずそれぞれが意見を出す → 少し話し合う → 暗黙の了解をひっくり返した案（3つ）→ 極端案（2つ）→ まとめ。各ファイルの冒頭の「このあと（わくさんの判断）」が決まったこと。結論は spec.md に反映してある。
+
+| 話題 | 資料（古い順） |
+| --- | --- |
+| 島とマップ | [map_discussion.md](discussions/map_discussion.md)（河口の塩沼、スケール）→ [map_discussion_2.md](discussions/map_discussion_2.md)（広さ・人数・時間、共通の予報、晴れの日）→ [persistent_island_discussion.md](discussions/persistent_island_discussion.md)（ずっと続く島、サーバー、抜けると眠る）→ [regions_discussion.md](discussions/regions_discussion.md)（5区画）→ [map_size_discussion.md](discussions/map_size_discussion.md)（広さを数字で）→ [grand_nature_discussion.md](discussions/grand_nature_discussion.md)（雄大さは高さ、自動生成、ベースキャンプ） |
+| 天気と体 | [island_clock_discussion.md](discussions/island_clock_discussion.md)（1日9時間、月と潮）、[moisture_discussion.md](discussions/moisture_discussion.md)（湿り気の数字） |
+| 戦い | [health_damage_discussion.md](discussions/health_damage_discussion.md)（何発で倒れるか、塩の希少性）、[slug_gun_discussion.md](discussions/slug_gun_discussion.md)（銃を構造から考え直す） |
+| 数字と見せ方 | [no_numbers_discussion.md](discussions/no_numbers_discussion.md)（数字を出さない世界）→ [no_numbers_discussion_2.md](discussions/no_numbers_discussion_2.md)（お金の塩だけは数字） |
+| バッグと道具 | [bag_ui_discussion.md](discussions/bag_ui_discussion.md) → [bag_ui_discussion_2.md](discussions/bag_ui_discussion_2.md) → [bag_ui_discussion_3.md](discussions/bag_ui_discussion_3.md) → [tool_carry_discussion.md](discussions/tool_carry_discussion.md)（持ち方、エコバッグ） |
+| 拠点とキャラ | [base_discussion.md](discussions/base_discussion.md)（拠点）、[snail_discussion.md](discussions/snail_discussion.md)（カタツムリ） |
 
 ## Assets の地図
 
