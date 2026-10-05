@@ -415,7 +415,7 @@ namespace SlugExtract
         {
             if (!CanSetDown) return;
             var t = controller ? controller.transform : transform;
-            GroundBag.Create(settings, Worn, Durability, _items, t.position + t.forward * 0.45f, Quaternion.LookRotation(-t.forward), this, 0f);
+            GroundBag.Create(settings, Worn, Durability, _items, t.position + t.forward * 0.45f, Quaternion.LookRotation(-t.forward), this, 0f, gear ? gear.bagSize : (Vector3?)null);
             string name = Def.displayName;
             _items.Clear();
             Worn = BagKind.None;
@@ -449,7 +449,7 @@ namespace SlugExtract
             }
             if (!HasBag) return;
             var t = controller ? controller.transform : transform;
-            GroundBag.Create(settings, Worn, Durability, _items, t.position - t.forward * 0.25f, t.rotation, null, settings.droppedLifetime);
+            GroundBag.Create(settings, Worn, Durability, _items, t.position - t.forward * 0.25f, t.rotation, null, settings.droppedLifetime, gear ? gear.bagSize : (Vector3?)null);
             _items.Clear();
             Worn = BagKind.None;
             Durability = 0f;

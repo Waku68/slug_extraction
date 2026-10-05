@@ -47,6 +47,7 @@ namespace SlugExtract
             if (_hitboxes) _hitboxes.Hit += OnHurt;
             Harvestable.Harvested += OnHarvested;
             Pickable.Crushed += OnCrushed;
+            GroundBag.Burst += OnGroundBurst;
         }
 
         void OnDisable()
@@ -59,6 +60,7 @@ namespace SlugExtract
             if (_hitboxes) _hitboxes.Hit -= OnHurt;
             Harvestable.Harvested -= OnHarvested;
             Pickable.Crushed -= OnCrushed;
+            GroundBag.Burst -= OnGroundBurst;
         }
 
         // ------------------------------------------------------------------ what plays when
@@ -85,6 +87,8 @@ namespace SlugExtract
         }
 
         void OnCrushed(Vector3 at) => PlayAt("crush_squish", at);
+
+        void OnGroundBurst(Vector3 at) => PlayAt("bag_burst", at);
 
         void OnFired(SlugGunHolder gun) => Play("gun_fire_" + gun.gun.kind.ToString().ToLowerInvariant());
 

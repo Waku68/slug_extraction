@@ -501,6 +501,47 @@ namespace SlugDesign
             Add("BagBelts", Own(belts.ToMesh("BagBelts")), Own(slug.GearMaterial(strapColor)));
         }
 
+        /// <summary>
+        /// The bag's own shapes (body, pocket, the dark mouth, and the lid flopped open backward) on their own, standing
+        /// upright with its bottom at <paramref name="parent"/>'s origin and its pocket toward +z: a bag set down on the
+        /// ground looks like the one on the back. <paramref name="swell"/> as on the back (1 = empty). Returns its half size.
+        /// </summary>
+        public static Vector3 BuildLooseBag(Transform parent, Vector3 bagSize, float swell, Material bagMat, Material flapMat, Material darkMat)
+        {
+            float sw = Mathf.Max(0.5f, swell) - 1f;
+            Vector3 sz = Vector3.Scale(bagSize, new Vector3(1f + 0.3f * sw, 1f + 0.55f * sw, 1f + sw));
+            Vector3 x = Vector3.right, up = Vector3.up, nOut = Vector3.forward;
+            Vector3 c = up * sz.y;
+            var body = new GearMesh();
+            body.RoundedBox(c, x, up, nOut, sz, 0.42f);
+            var pocket = new GearMesh();
+            pocket.RoundedBox(c + nOut * (sz.z * 0.92f) - up * (sz.y * 0.38f), x, up, nOut, new Vector3(sz.x * 0.58f, sz.y * 0.32f, 0.02f), 0.45f);
+            var mouth = new GearMesh();
+            mouth.RoundedBox(c + up * (sz.y * 0.97f), x, up, nOut, new Vector3(sz.x * 0.8f, sz.y * 0.06f, sz.z * 0.78f), 0.5f);
+            Loose(parent, "Bag", body.ToMesh("Bag"), bagMat);
+            Loose(parent, "BagPocket", pocket.ToMesh("BagPocket"), flapMat);
+            Loose(parent, "BagMouth", mouth.ToMesh("BagMouth"), darkMat);
+            // the lid, hinged on the back edge of the top and flopped open backward
+            Vector3 hinge = c + up * (sz.y * 1.0f) - nOut * (sz.z * 1.0f);
+            var lid = new GearMesh();
+            lid.RoundedBox(c + up * (sz.y * 0.79f) + nOut * 0.004f - hinge, x, up, nOut, new Vector3(sz.x * 0.98f, sz.y * 0.25f, sz.z * 1.04f), 0.42f);
+            var pivot = new GameObject("BagLidHinge").transform;
+            pivot.SetParent(parent, false);
+            pivot.localPosition = hinge;
+            pivot.localRotation = Quaternion.AngleAxis(-150f, x);
+            Loose(pivot, "BagLid", lid.ToMesh("BagLid"), flapMat);
+            return sz;
+        }
+
+        static void Loose(Transform parent, string name, Mesh mesh, Material mat)
+        {
+            var go = new GameObject(name);
+            go.layer = parent.gameObject.layer;
+            go.transform.SetParent(parent, false);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            go.AddComponent<MeshRenderer>().sharedMaterial = mat;
+        }
+
         void SetBackItem(Vector3 center, Vector3 normal, float t, Quaternion rotation, Vector3 half)
         {
             HasBackItem = true;
