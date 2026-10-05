@@ -40,6 +40,7 @@ Oct 5, 2026
 | 数字と見せ方 | [no_numbers_discussion.md](discussions/no_numbers_discussion.md)（数字を出さない世界）→ [no_numbers_discussion_2.md](discussions/no_numbers_discussion_2.md)（お金の塩だけは数字） |
 | バッグと道具 | [bag_ui_discussion.md](discussions/bag_ui_discussion.md) → [bag_ui_discussion_2.md](discussions/bag_ui_discussion_2.md) → [bag_ui_discussion_3.md](discussions/bag_ui_discussion_3.md) → [tool_carry_discussion.md](discussions/tool_carry_discussion.md)（持ち方、エコバッグ） |
 | 拠点とキャラ | [base_discussion.md](discussions/base_discussion.md)（拠点）、[snail_discussion.md](discussions/snail_discussion.md)（カタツムリ） |
+| 採取物と経済 | [plants_discussion.md](discussions/plants_discussion.md)（島に生える植物 10 種類、場所・条件・レア度。Claude が決めた）→ [plant_names_discussion.md](discussions/plant_names_discussion.md)（名前の決まり、ふだんの呼び名と古い名前）、[plant_uses_discussion.md](discussions/plant_uses_discussion.md)（売る以外の使い道、苗床、根ごと掘ったときのサーバー）、[market_discussion.md](discussions/market_discussion.md)（店と取引：カタツムリの行商人、動く値段、手渡しだけ）→ [economy_balance_discussion.md](discussions/economy_balance_discussion.md)（経済の数字：アモレの比率、岩塩を掘る回数、弾と装備の値段、相場、出口）→ [economy_review_discussion.md](discussions/economy_review_discussion.md)（取りこぼしと改善案） |
 
 ## Assets の地図
 
@@ -52,10 +53,11 @@ Oct 5, 2026
 | `Tools/Guns/` | 銃4種（挙動 `GunHandling`、持ち方 `SlugGunHolder`、形 `SlugRifle`・`SlugShotgun`・`SlugSniper`・`SlugPistol`、弾 `SaltRound`、設定 `GunSettings`） |
 | `Tools/Knife/` | ナイフ（突く `SlugKnifeHolder`、形 `SlugKnife`、設定 `KnifeSettings`） |
 | `Combat/` | 部位ごとの当たり判定とダメージ倍率（`SlugHitboxes`・`SlugHitbox`） |
-| `Raid/` | 採って逃げる（採取場 `Harvestable`、バッグ `SlugBag`、試合 `RaidManager`、ルール `ExtractSettings`、湿り気 `SlugMoisture`、体力 `SlugHealth`、左上の自分 `SelfPortrait`） |
+| `Raid/` | 採って逃げる（採取場 `Harvestable`（形の段階つき）、手で摘む植物 `Pickable`、バッグ `SlugBag`、試合 `RaidManager`、ルール `ExtractSettings`、湿り気 `SlugMoisture`、体力 `SlugHealth`、左上の自分 `SelfPortrait`） |
 | `World/` | 島の時計と天気（`IslandClock`・`IslandWeather`、見せ方 `WeatherPresenter`、湿らせる・乾かす場所 `MoistureZone`、設定 `IslandSettings`・`ConditionSettings`）。`tech/weather_notes.md` |
 | `Tuning/` | **調整用のアセットはすべてここ**：`SlugMoveSettings`、`PickaxeSettings`、`RifleSettings`・`ShotgunSettings`・`SniperSettings`・`PistolSettings`、`KnifeSettings`、`LoadoutSettings`（持ち替えの時間、体に付ける位置）、`ExtractSettings`、`IslandSettings`（島の時計と天気）、`ConditionSettings`（湿り気と体力）。再生中に変えてもすぐ反映され、止めても残る |
 | `TestScenes/` | 試す専用シーンの部品。`Editor/`（シーンを作るビルダー、コマ撮り `SwingFilmStrip`・`GunFilmStrip`・`MoveFilmStrip`、`HitboxShot`）、`Debug/`（画面のデバッグ表示、的）、`Generated/`（ビルダーが作る地形・マテリアル） |
+| `Art/Models/` | Blender で作ったモデル（1単位＝1 m、地面に置く物は底の真ん中に原点）。`RockSalt/`：岩塩の塊3種・欠片3種と、そのマテリアル（Slug/Toon、リアル度 0.2）。`RainTurnip/`：雨カブ（畑2種、抜いた1個）。`UgoTake/`：ウゴタケと倒木。`Art/Editor/HarvestVisuals.cs` がシーンの採る場所をモデルに差し替える（メニュー `Slug/Update Harvest Visuals (open scene)`）。`Art/Editor/WorldLook.cs` が世界の物の質感の基準（形はポップ、質感はリアル度 0.2）。作り方のスクリプトと .blend はプロジェクト直下の `Blender/`（`rocksalt_gen.py`、`rainturnip_gen.py` などを Blender の MCP か Scripting タブで実行すると作り直して書き出す） |
 | `Scenes/` | シーン（下の表） |
 | `Audio/` | 音。`BGM/`、`Ambience/`（環境音）、`SE/`（効果音：体・ピッケル・銃・ナイフ・当たる・採取・バッグ・試合・画面）、`Mixer/`。決まりは [sound_list.md](tech/sound_list.md) |
 | `Fonts/` | Noto Sans JP（日本語の表示用、SIL OFL） |
