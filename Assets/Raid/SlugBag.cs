@@ -56,7 +56,7 @@ namespace SlugExtract
         public int Count(ItemKind k) { int n = 0; foreach (var i in _items) if (i == k) n++; return n; }
         public bool Opening => _ecoOpening >= 0f;
 
-        public enum CarryPhase { None, Grab, Hold, Stow, TakeOut }
+        public enum CarryPhase { None, Grab, Hold, Stow, TakeOut, Hide, Unhide }
         /// <summary>What the hands are doing with a thing (the tools are put away meanwhile).</summary>
         public CarryPhase Carry { get; private set; }
         /// <summary>0..1 through grabbing, putting in, or taking out.</summary>
@@ -278,16 +278,24 @@ namespace SlugExtract
             var d = settings.Def(HeldKind);
             if (HasHidden) { Say($"体の中にはもう{settings.Def(Hidden).displayName}が入っている"); return; }
             if (!d.canHide) { Say($"{d.displayName}は体にしまえない（塩で溶ける）"); return; }
-            Hidden = HeldKind;
-            HasHidden = true;
-            EndCarry();
-            Say($"{d.displayName}を体の中に突っ込んだ。もう失わない");
+            Carry = CarryPhase.Hide;          // pressed into the belly over a moment (SlugCarry shows it)
+            CarryProgress = 0f;
+        }
+
+        /// <summary>Pulls the thing hidden in the body back out into the hands.</summary>
+        public void TakeOutHidden()
+        {
+            if (Holding || !HasHidden) return;
+            var k = Hidden;
+            HasHidden = false;
+            StartCarry(CarryPhase.Unhide, k);
         }
 
         void StepCarry(float dt)
         {
             if (!Holding || Carry == CarryPhase.Hold) return;
-            float time = Carry == CarryPhase.Grab ? settings.grabTime : Carry == CarryPhase.Stow ? settings.stowTime : settings.takeOutTime;
+            float time = Carry == CarryPhase.Grab ? settings.grabTime : Carry == CarryPhase.Stow ? settings.stowTime
+                : Carry == CarryPhase.Hide || Carry == CarryPhase.Unhide ? settings.hideTime : settings.takeOutTime;
             CarryProgress = Mathf.MoveTowards(CarryProgress, 1f, dt / Mathf.Max(time, 0.05f));
             if (CarryProgress < 1f) return;
             if (Carry == CarryPhase.Stow)
@@ -296,6 +304,14 @@ namespace SlugExtract
                 Carry = CarryPhase.None;            // out of the hands first (so the weight is not counted twice)
                 if (TryAdd(k, 1) == 1) { EndCarry(); Say($"{settings.Def(k).displayName}をバッグに入れた"); }
                 else { HeldKind = k; Carry = CarryPhase.Hold; Recount(); }   // it no longer fits (the bag burst meanwhile): still in hand
+                return;
+            }
+            if (Carry == CarryPhase.Hide)
+            {
+                Hidden = HeldKind;
+                HasHidden = true;
+                EndCarry();
+                Say($"{settings.Def(Hidden).displayName}を体の中に突っ込んだ。もう失わない");
                 return;
             }
             Carry = CarryPhase.Hold;
@@ -379,7 +395,12 @@ namespace SlugExtract
                         if (p) Grab(p);
                     }
                 }
-                if (kb.xKey.wasPressedThisFrame && Carry == CarryPhase.Hold) HideHeld();
+                // X: with a thing in the hands, push it into the body; with empty hands, pull the hidden thing out
+                if (kb.xKey.wasPressedThisFrame)
+                {
+                    if (Carry == CarryPhase.Hold) HideHeld();
+                    else if (!Holding && HasHidden) TakeOutHidden();
+                }
             }
             else _gHeld = -1f;
 
@@ -547,6 +568,7 @@ namespace SlugExtract
             {
                 var p = ItemPickup.Nearest(PickupPoint(), settings.pickupReach);
                 if (p) { GUI.Label(new Rect(0, y, w, 26), $"E  つかむ：{settings.Def(p.kind).displayName}", _small); y += 26f; }
+                if (HasHidden) { GUI.Label(new Rect(0, y, w, 26), $"X  体から取り出す：{settings.Def(Hidden).displayName}", _small); y += 26f; }
             }
             if (!HasBag && !_ecoUsed)
             {

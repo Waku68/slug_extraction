@@ -24,7 +24,7 @@ MonoBehaviour:
   waterPerSecond: 10
   saltDrainMultiplier: 2
   saltRainMultiplier: 0.5
-  saltNight: -4
+  saltNight: -2.5
   looksDryBelow: 30
   zeroSpeed: 0.8
   zeroSecondsToFall: 90

@@ -61,6 +61,7 @@ namespace SlugExtract
         [Tooltip("背中を覗くときに頭を回す角度（度、+ = 右、- = 左）。体はそのままで、頭だけ首の上で回る")] public float peekTwist = 90f;
         [Tooltip("落ちている物をつかめる距離（m）")] public float pickupReach = 0.8f;
         [Tooltip("つかむ・バッグに入れる・バッグから出す時間（秒）")] public float grabTime = 0.3f, stowTime = 0.5f, takeOutTime = 0.5f;
+        [Tooltip("体の中に突っ込む・体から取り出す時間（秒）")] public float hideTime = 0.8f;
 
         [Header("バッグの種類")]
         public BagDef cloth = new BagDef { displayName = "布の袋", durability = 60f, bodyDamage = 1f, capacity = 0f, swell = 1f, weight = 0.3f };

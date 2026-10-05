@@ -30,6 +30,7 @@ MonoBehaviour:
   grabTime: 0.3
   stowTime: 0.5
   takeOutTime: 0.5
+  hideTime: 0.8
   cloth:
     displayName: "\u5E03\u306E\u888B"
     durability: 60

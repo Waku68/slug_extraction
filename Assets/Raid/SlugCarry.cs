@@ -109,6 +109,7 @@ namespace SlugExtract
             Vector3 mid = (slug.HandRootWorld(-1f) + slug.HandRootWorld(1f)) * 0.5f;
             Vector3 hold = mid + body * (holdOffset + Vector3.forward * (size * 0.5f));
             Vector3 over = mid + body * new Vector3(0.12f, 0.24f, -0.04f);        // up over the right shoulder
+            Vector3 belly = mid + body * new Vector3(0f, -0.14f, 0.1f);           // the front of the body, below the arms
             float u = Ease(bag.CarryProgress), scale = 1f, away = 0f;
             Vector3 pos = hold;
             switch (bag.Carry)
@@ -122,6 +123,17 @@ namespace SlugExtract
                     pos = Bezier(hold, over, bag.BagMouthWorld(), u);
                     scale = 1f - 0.6f * Ease((bag.CarryProgress - 0.7f) / 0.3f);      // into the bag
                     away = u;
+                    break;
+                case SlugBag.CarryPhase.Hide:
+                    // pressed down into the belly, sinking out of sight
+                    pos = Vector3.Lerp(hold, belly, u);
+                    scale = 1f - 0.85f * Ease((bag.CarryProgress - 0.45f) / 0.55f);
+                    away = u;
+                    break;
+                case SlugBag.CarryPhase.Unhide:
+                    pos = Vector3.Lerp(belly, hold, u);
+                    scale = 0.15f + 0.85f * Ease(bag.CarryProgress / 0.55f);
+                    away = 1f - u;
                     break;
                 case SlugBag.CarryPhase.TakeOut:
                     pos = Bezier(bag.BagMouthWorld(), over, hold, u);

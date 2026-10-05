@@ -54,9 +54,9 @@ namespace SlugDesign
         [Range(0f, 1f), Tooltip("腕を前へ伸ばす量。1 = 少し長く、胸の前へ向く（両手で道具を持つ）")] public float handReach = 0f;
         [Range(0f, 0.9f), Tooltip("坂で上半身を起こすときに曲げる位置（体の長さ方向、0 = 尾、1 = 頭）。高いほど首から上だけが起きる")] public float uprightPivotT = 0.65f;
         [Tooltip("伏せたときに頭を下げる高さ（m）。頭はそのまま真下へ下がり、首が縮む")] public float proneDrop = 0.2f;
-        [Tooltip("伏せたときに縮む範囲（体の長さ方向、0 = 尾、1 = 頭）。x より尾側は下がらず、y より頭側はまるごと下がる")]
-        public Vector2 proneDropRange = new Vector2(0.35f, 0.8f);
-        [Range(0f, 0.35f), Tooltip("伏せたときに手の付け根を頭のほうへずらす量（体の長さ方向）")] public float proneHandShift = 0.2f;
+        [Tooltip("伏せたときに縮む範囲（体の長さ方向、0 = 尾、1 = 頭）。x より尾側は下がらず、y より頭側はまるごと下がる。手の付け根より下で縮めると、手と顔が一緒に下がる")]
+        public Vector2 proneDropRange = new Vector2(0.3f, 0.55f);
+        [Range(0f, 0.35f), Tooltip("伏せたときに手の付け根を頭のほうへずらす量（体の長さ方向）")] public float proneHandShift = 0f;
         [Tooltip("頭を回す（背中を覗く）ときにねじれる範囲（体の長さ方向）。x より尾側は回らず、y より頭側はまるごと回る")]
         public Vector2 headTwistRange = new Vector2(0.62f, 0.82f);
         [Tooltip("足（手と同じ円錐形）を、腹が地面に付くあたりの両脇に生やす")] public bool feet = true;
