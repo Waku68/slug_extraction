@@ -134,10 +134,15 @@ namespace SlugMove
             transform.localScale = new Vector3(w, w, len);
         }
 
+        /// <summary>The gun of the round landing right now (while its target takes it), else null (a knife, say).</summary>
+        public static GunSettings Striking { get; private set; }
+
         void Land(RaycastHit hit)
         {
             var target = hit.collider.GetComponentInParent<IShotTarget>();
+            Striking = _s;
             target?.OnShot(hit, _vel);
+            Striking = null;
             if (_s.chips > 0) PickaxeEffects.Chips(hit.point, hit.normal, _s.roundColor, _s.chips, 0.55f);
             if (!(target is SlugHitbox)) Mark(hit, target as Component, _s.markScale, _s.roundColor);   // no splat in the air round a body
             _onHit?.Invoke(hit);

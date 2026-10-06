@@ -66,7 +66,7 @@ namespace SlugExtract
         // ------------------------------------------------------------------ what plays when
         void OnBag(string what, ItemKind kind)
         {
-            string key = what switch { "pick" => "pick_pluck", "eco" => "bag_eco_open", _ => "bag_" + what };
+            string key = what == "pick" ? "pick_pluck" : what == "swap" ? "bag_up" : "bag_" + what;
             Play(key + "_" + kind, key);
         }
 

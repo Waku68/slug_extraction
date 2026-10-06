@@ -26,7 +26,7 @@ namespace SlugMove
         [System.NonSerialized] public Vector3 peekTarget;
         /// <summary>Looking at its own back: the tools cannot be used.</summary>
         public bool Peeking => peek > 0.02f;
-        /// <summary>Busy with something else (opening the eco bag): the tools cannot be used.</summary>
+        /// <summary>Busy with something else (setting the bag down, shouldering one): the tools cannot be used.</summary>
         [System.NonSerialized] public bool handsBusy;
         /// <summary>The hands are not free for the tools (peeking, or busy).</summary>
         /// <summary>Using something on the belt (a moss ball of water): the tools cannot be used meanwhile.</summary>

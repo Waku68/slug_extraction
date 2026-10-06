@@ -3259,6 +3259,7 @@ GameObject:
   - component: {fileID: 838981260}
   - component: {fileID: 838981261}
   - component: {fileID: 838981262}
+  - component: {fileID: 838981263}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -3644,6 +3645,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SlugExtract.SlugSounds
   bank: {fileID: 11400000, guid: 63ec2995dc81bad459d72e379d6a94a1, type: 2}
+--- !u!114 &838981263
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 838981241}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba87796ee903b8a458d999129b58652f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SlugExtract.SlugDamage
+  knifeFraction: 0.25
+  vanishOnFall: 0
 --- !u!1001 &895896250
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4602,6 +4617,243 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &1169658811
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 12861209379557547, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      propertyPath: m_Name
+      value: "\u6575\u5F79\u306E\u30CA\u30E1\u30AF\u30B8"
+      objectReference: {fileID: 0}
+    - target: {fileID: 4876064916965609892, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4876064916965609892, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4876064916965609892, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -19
+      objectReference: {fileID: 0}
+    - target: {fileID: 4876064916965609892, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: -0.14521317
+      objectReference: {fileID: 0}
+    - target: {fileID: 4876064916965609892, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4876064916965609892, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.9894004
+      objectReference: {fileID: 0}
+    - target: {fileID: 4876064916965609892, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4876064916965609892, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4876064916965609892, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4876064916965609892, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8084910285950271412, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      propertyPath: eyes
+      value: 0.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 8084910285950271412, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      propertyPath: handT
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 8084910285950271412, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      propertyPath: pattern
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8084910285950271412, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      propertyPath: _migrated
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8084910285950271412, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      propertyPath: bodyStyle
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8084910285950271412, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      propertyPath: handReach
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8084910285950271412, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      propertyPath: expression
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8084910285950271412, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      propertyPath: soleSquare
+      value: 0.75
+      objectReference: {fileID: 0}
+    - target: {fileID: 8084910285950271412, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      propertyPath: bellyLength
+      value: 0.55
+      objectReference: {fileID: 0}
+    - target: {fileID: 8084910285950271412, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      propertyPath: handsExtend
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8084910285950271412, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      propertyPath: tentacleDirection
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8084910285950271412, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      propertyPath: tentacleThickness
+      value: 0.5
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 12861209379557547, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1169658818}
+    - targetCorrespondingSourceObject: {fileID: 12861209379557547, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1169658817}
+    - targetCorrespondingSourceObject: {fileID: 12861209379557547, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1169658816}
+    - targetCorrespondingSourceObject: {fileID: 12861209379557547, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1169658815}
+    - targetCorrespondingSourceObject: {fileID: 12861209379557547, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1169658814}
+  m_SourcePrefab: {fileID: 100100000, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+--- !u!1 &1169658812 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 12861209379557547, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+  m_PrefabInstance: {fileID: 1169658811}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1169658813 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8084910285950271412, guid: d67fdf55b2241ac4dbcc6f0102e86c22, type: 3}
+  m_PrefabInstance: {fileID: 1169658811}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1169658812}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 70d225259e10a764a9f66e3a5d5c2c4b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SlugDesign.SlugPop
+--- !u!114 &1169658814
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1169658812}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba87796ee903b8a458d999129b58652f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SlugExtract.SlugDamage
+  knifeFraction: 0.25
+  vanishOnFall: 1
+--- !u!114 &1169658815
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1169658812}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41492e99be7b92145af17b4a4a476f4f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SlugExtract.SlugHealth
+  settings: {fileID: 11400000, guid: 6782c8417fa7ef844a5aa11793041e58, type: 2}
+--- !u!114 &1169658816
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1169658812}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f3ca344289998043a9b889ea419b4de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SlugExtract.SlugBag
+  settings: {fileID: 11400000, guid: 28a2b988b3a0e2b44ad287abe376f8f8, type: 2}
+  controller: {fileID: 0}
+  cameraRig: {fileID: 0}
+  slug: {fileID: 1169658813}
+  gear: {fileID: 1169658818}
+  hitboxes: {fileID: 1169658817}
+  kind: 1
+  startItems: 000000000100000000000000020000000000000002000000
+  showHud: 1
+--- !u!114 &1169658817
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1169658812}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 91168e42bf71b264b92ebe9ed272efab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SlugMove.SlugHitboxes
+  slug: {fileID: 1169658813}
+  showGizmos: 1
+  bareMultiplier: 1
+  tentacleMultiplier: 1.4
+  helmetMultiplier: 0.6
+  plateMultiplier: 0.6
+  backItemMultiplier: 1
+--- !u!114 &1169658818
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1169658812}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 44328698912f01548b6c2964924e5246, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SlugDesign.SlugEquipment
+  slug: {fileID: 1169658813}
+  helmet: 1
+  armor: 1
+  bag: 1
+  helmetColor: {r: 0.3, g: 0.32, b: 0.24, a: 1}
+  helmetCamo: 0
+  helmetGap: 0.016
+  brimFront: 0.035
+  brimSide: 0.014
+  camoBase: {r: 0.62, g: 0.57, b: 0.38, a: 1}
+  camo1: {r: 0.43, g: 0.28, b: 0.15, a: 1}
+  camo2: {r: 0.15, g: 0.13, b: 0.1, a: 1}
+  camo3: {r: 0.31, g: 0.38, b: 0.19, a: 1}
+  camoScale: 19
+  strapColor: {r: 0.22, g: 0.16, b: 0.11, a: 1}
+  bagColor: {r: 0.52, g: 0.4, b: 0.26, a: 1}
+  bagFlapColor: {r: 0.36, g: 0.26, b: 0.17, a: 1}
+  bagSize: {x: 0.11, y: 0.12, z: 0.065}
+  bagLookScale: 1.6
+  bagLookTilt: 0.45
+  bagLidAngle: 140
+  bagLidGrow: 0.3
 --- !u!1 &1174197345
 GameObject:
   m_ObjectHideFlags: 0
@@ -9303,3 +9555,4 @@ SceneRoots:
   - {fileID: 1266440810}
   - {fileID: 1159139966}
   - {fileID: 2123638042}
+  - {fileID: 1169658811}

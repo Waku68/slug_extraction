@@ -31,6 +31,14 @@ namespace SlugMove
         [Tooltip("撃つたびに手で動かすもの（ポンプ、ボルト）")] public GunAction action = GunAction.None;
         [Tooltip("ポンプ・ボルトを動かす時間（秒）。この間は撃てない")] public float cycleTime = 0.6f;
         [Tooltip("1 回で飛ぶ粒の数（散弾は多い）")] public int pellets = 1;
+        [Tooltip("むき出しの体に何発当てると倒れるか（0 = 型B の値：ライフル 8、拳銃 12、散弾銃 2（粒を全部当てて）、狙撃銃 2）")]
+        public float bodyHitsToFall = 0f;
+
+        /// <summary>Shots on the bare body that bring a slug down (health_damage_discussion.md, type B).</summary>
+        public float HitsToFall => bodyHitsToFall > 0f ? bodyHitsToFall
+            : kind == GunKind.Pistol ? 12f : kind == GunKind.Shotgun ? 2f : kind == GunKind.Sniper ? 2f : 8f;
+        /// <summary>The sniper alone brings a slug down with one round to the bare head.</summary>
+        public bool HeadshotFalls => kind == GunKind.Sniper;
         [Tooltip("散弾の広がり（度）。粒ごとにこの円錐の中へ散る")] public float pelletSpread = 0f;
 
         [Header("射撃")]

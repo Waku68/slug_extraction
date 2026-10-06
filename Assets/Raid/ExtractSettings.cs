@@ -5,7 +5,7 @@ namespace SlugExtract
     /// <summary>What can be carried. New kinds go at the end (the number is saved in scenes and bags).</summary>
     public enum ItemKind { RockSalt, Crop, UgoTake, UgoTakeCrushed }
 
-    /// <summary>The kinds of bag (what is carried on the back), plus the folding eco bag and a snail's shell.</summary>
+    /// <summary>The kinds of bag (what is carried on the back), and a snail's shell. Eco (the folding eco bag) is set aside for now.</summary>
     public enum BagKind { Cloth, Leather, ShellBox, Net, Eco, SnailShell, None }
 
     [System.Serializable]
@@ -59,7 +59,6 @@ namespace SlugExtract
 
         [Header("耐久・エコバッグ・隠し場所")]
         [Tooltip("背中に弾が 1 粒当たったときに減る耐久（弾の速さ 140 m/s あたり）")] public float hitDamage = 8f;
-        [Tooltip("エコバッグを広げる時間（秒）。その間は無防備")] public float ecoOpenTime = 3f;
         [Range(0.1f, 1f), Tooltip("背中を覗いている間の速さの倍率")] public float peekSpeed = 0.4f;
         [Tooltip("背中を覗くときに頭を回す角度（度、+ = 右、- = 左）。体はそのままで、頭だけ首の上で回る")] public float peekTwist = 90f;
         [Tooltip("落ちている物をつかめる距離（m）")] public float pickupReach = 0.8f;
@@ -69,6 +68,7 @@ namespace SlugExtract
 
         [Header("地面に下ろしたバッグ")]
         [Tooltip("背中のバッグを地面に下ろす時間・背負う時間（秒、C 長押し）。その間は遅い")] public float bagDownTime = 0.8f, bagUpTime = 0.8f;
+        [Tooltip("他人の地面のバッグと、背中のバッグを交換する時間（秒、そのバッグのそばで C 長押し）")] public float bagSwapTime = 1.2f;
         [Tooltip("地面のバッグに入れる・から出す時間（秒）。背中よりずっと速い")] public float groundTransferTime = 0.12f;
         [Tooltip("地面のバッグに手が届く距離（m）")] public float groundReach = 1.2f;
         [Tooltip("倒されたナメクジのバッグが地面に残る時間（秒）。島時間2時間 = 現実の約45分")] public float droppedLifetime = 2700f;

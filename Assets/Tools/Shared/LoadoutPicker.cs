@@ -5,7 +5,7 @@ namespace SlugMove
 {
     /// <summary>
     /// Choosing what to carry before setting out: one big gun for the back and a small gun or a knife for the hip (the
-    /// pickaxe always goes on the back), and which bag to wear (or none: the folding eco bag is always on the belt). Until the base exists, it opens over the test scenes: at the start of a raid
+    /// pickaxe always goes on the back), and which bag to wear (or none). Until the base exists, it opens over the test scenes: at the start of a raid
     /// (<see cref="openOnStart"/>), or with Tab where changing at any time is allowed. While it is open the cursor is
     /// free and the slug does not move or use anything.
     /// </summary>

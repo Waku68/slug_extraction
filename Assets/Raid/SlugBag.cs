@@ -14,8 +14,6 @@ namespace SlugExtract
     ///    and the bigger the back's hitbox;
     ///  - durability: rounds in the back wear it down (and pass on to the body, or not, by the kind of bag); at zero it
     ///    bursts and everything in it spills on the ground for anyone to pick up;
-    ///  - the folding eco bag on the belt: with no bag (burst, or set out without one), hold B for a few seconds to open
-    ///    it; it takes very little;
     ///  - the hiding place inside the body: one thing (never salt) pushed into the body stays there whatever happens.
     /// Everything goes through the hands (gloved, so salt does not burn them). In a raid: E takes what lies in front
     /// (a chunk just struck out of a rock, something dropped) in the hands, and with something in the hands E puts it in
@@ -41,14 +39,14 @@ namespace SlugExtract
         [Tooltip("背負うバッグの種類（出撃前の画面でも選べる）")] public BagKind kind = BagKind.Cloth;
         [Tooltip("始めから入っている物（試す用）。上から順に入れる")] public ItemKind[] startItems = new ItemKind[0];
         [Tooltip("画面に表示する")] public bool showHud = true;
-        /// <summary>Holds the peek key / the eco bag key without the keyboard (tests and tools).</summary>
-        [System.NonSerialized] public bool forcePeek, forceEco;
+        /// <summary>Holds the peek key without the keyboard (tests and tools).</summary>
+        [System.NonSerialized] public bool forcePeek;
 
         /// <summary>What is in the bag, in the order it went in (the last is on top).</summary>
         public IReadOnlyList<ItemKind> Items => _items;
         public bool HasHidden { get; private set; }
         public ItemKind Hidden { get; private set; }
-        /// <summary>The bag on the back now (the eco bag once opened; None when burst or set out without one).</summary>
+        /// <summary>The bag on the back now (None when burst, set down, or set out without one).</summary>
         public BagKind Worn { get; private set; }
         public bool HasBag => Worn != BagKind.None;
         public BagDef Def => settings.Bag(Worn);
@@ -57,7 +55,6 @@ namespace SlugExtract
         public float Volume { get; private set; }
         public int Value { get; private set; }
         public int Count(ItemKind k) { int n = 0; foreach (var i in _items) if (i == k) n++; return n; }
-        public bool Opening => _ecoOpening >= 0f;
 
         public enum CarryPhase { None, Grab, Hold, Stow, TakeOut, Hide, Unhide }
         /// <summary>What the hands are doing with a thing (the tools are put away meanwhile).</summary>
@@ -82,8 +79,7 @@ namespace SlugExtract
         readonly Renderer[][] _shownRenderers = { new Renderer[0], new Renderer[0], new Renderer[0] };
         Vector3 _ownMouth;
         bool _ownMouthValid;
-        bool _ecoUsed;
-        float _ecoOpening = -1f, _gHeld = -1f, _peek, _lastSwell = -1f;
+        float _gHeld = -1f, _peek, _lastSwell = -1f;
         BagKind _lastLook = (BagKind)(-1);
         string _message;
         float _messageUntil;
@@ -153,7 +149,6 @@ namespace SlugExtract
             kind = k;
             Worn = k;
             Durability = k == BagKind.None ? 0f : settings.Bag(k).durability;
-            _ecoUsed = false;
             Recount();
         }
 
@@ -175,11 +170,11 @@ namespace SlugExtract
             float volume = Volume;
             while (n < amount && FitsOn(volume, k)) { _items.Add(k); volume += settings.Def(k).volume; n++; }
             if (n > 0) Recount();
-            else if (IsPlayer) Say(HasBag ? $"{Def.displayName}がいっぱい" : Opening ? "エコバッグを広げている…" : NoBagHint());
+            else if (IsPlayer) Say(HasBag ? $"{Def.displayName}がいっぱい" : NoBagHint());
             return n;
         }
 
-        string NoBagHint() => _ecoUsed ? "バッグがない" : "バッグがない（B 長押しでエコバッグを広げる）";
+        static string NoBagHint() => "バッグがない";
 
         void Recount()
         {
@@ -260,9 +255,11 @@ namespace SlugExtract
         /// <summary>Setting the bag down or shouldering one (slow meanwhile).</summary>
         public bool BagAction => _bagAction >= 0f;
         bool CanSetDown => HasBag && Worn != BagKind.SnailShell;
+        /// <summary>Someone else's bag on the ground within reach (to swap for the one on the back).</summary>
+        GroundBag OthersBag => GroundBag.Nearest(PickupPoint(), settings.groundReach, this, false);
 
         /// <summary>Something done with the hands or the bag, for sounds: (what, which item). What: grab, pick, takeout,
-        /// stow, drop, throw, hide, unhide, burst, eco, peek.</summary>
+        /// stow, drop, throw, hide, unhide, burst, peek, down, up, swap.</summary>
         public event System.Action<string, ItemKind> Did;
 
         /// <summary>Picks one off a soft plant (a flower, a mushroom) into the hands.</summary>
@@ -397,17 +394,37 @@ namespace SlugExtract
         }
 
         // ------------------------------------------------------------------ the bag on the ground
-        /// <summary>C held: sets the bag on the back down, or (with none on the back) shoulders the bag lying near.</summary>
+        /// <summary>
+        /// C held: next to someone else's bag on the ground, swaps it for the one on the back; else sets the bag on the
+        /// back down, or (with none on the back) shoulders the bag lying near.
+        /// </summary>
         void StepBagAction(bool held, float dt)
         {
             bool down = CanSetDown;
+            var other = down ? OthersBag : null;
             var near = down ? null : GroundBag.Nearest(PickupPoint(), settings.groundReach, this, true) ?? GroundBag.Nearest(PickupPoint(), settings.groundReach);
-            if (!held || Holding || Opening || (!down && !near)) { _bagAction = -1f; return; }
+            if (!held || Holding || (!down && !near)) { _bagAction = -1f; return; }
             if (_bagAction < 0f) _bagAction = 0f;
-            _bagAction += dt / Mathf.Max(down ? settings.bagDownTime : settings.bagUpTime, 0.1f);
+            _bagAction += dt / Mathf.Max(other ? settings.bagSwapTime : down ? settings.bagDownTime : settings.bagUpTime, 0.1f);
             if (_bagAction < 1f) return;
             _bagAction = -1f;
-            if (down) SetDown(); else Shoulder(near);
+            if (other) Swap(other);
+            else if (down) SetDown();
+            else Shoulder(near);
+        }
+
+        /// <summary>Leaves the bag on the back on the ground beside it and shoulders <paramref name="other"/> instead.</summary>
+        public void Swap(GroundBag other)
+        {
+            if (!CanSetDown || !other) return;
+            var t = controller ? controller.transform : transform;
+            string mine = Def.displayName;
+            GroundBag.Create(settings, Worn, Durability, _items, t.position + t.right * 0.5f, Quaternion.LookRotation(-t.forward), this, 0f, gear ? gear.bagSize : (Vector3?)null);
+            _items.Clear();
+            Worn = BagKind.None;
+            Shoulder(other);
+            Did?.Invoke("swap", ItemKind.RockSalt);
+            Say($"{mine}を置いて、{Def.displayName}（{_items.Count}個入り）を背負った");
         }
 
         /// <summary>Sets the bag on the back down on the ground in front, mouth open, everything still in it.</summary>
@@ -495,7 +512,7 @@ namespace SlugExtract
             float dt = Time.deltaTime;
 
             // peek: bend round to look at the back while Q is held
-            bool peeking = forcePeek || (locked && kb != null && kb.qKey.isPressed && !Opening);
+            bool peeking = forcePeek || (locked && kb != null && kb.qKey.isPressed);
             if (peeking && _peek <= 0f) Did?.Invoke("peek", ItemKind.RockSalt);
             _peek = Mathf.MoveTowards(_peek, peeking ? 1f : 0f, dt / 0.22f);
             if (cameraRig)
@@ -503,7 +520,7 @@ namespace SlugExtract
                 cameraRig.peek = _peek;
                 // the eyes look at the bag's mouth as the own view last drew it (grown and tipped up toward them)
                 cameraRig.peekTarget = _ownMouthValid ? Vector3.Lerp(BagCenterWorld(), _ownMouth, Ease(_peek)) : BagCenterWorld();
-                cameraRig.handsBusy = Opening;
+                cameraRig.handsBusy = BagAction;
             }
 
             StepCarry(dt);
@@ -550,28 +567,9 @@ namespace SlugExtract
             }
             else _gHeld = -1f;
 
-            // the eco bag: hold B for a while to open it (only without a bag, and only once)
-            bool wantEco = !HasBag && !_ecoUsed && (forceEco || (locked && kb != null && kb.bKey.isPressed));
-            if (wantEco)
-            {
-                if (_ecoOpening < 0f) _ecoOpening = 0f;
-                _ecoOpening += dt / Mathf.Max(settings.ecoOpenTime, 0.1f);
-                if (_ecoOpening >= 1f)
-                {
-                    _ecoOpening = -1f;
-                    _ecoUsed = true;
-                    Worn = BagKind.Eco;
-                    Durability = settings.eco.durability;
-                    Did?.Invoke("eco", ItemKind.RockSalt);
-                    Recount();
-                    Say("エコバッグを広げた");
-                }
-            }
-            else _ecoOpening = -1f;
-
             float speed = settings.SpeedFor(Weight);
             if (_peek > 0f) speed *= Mathf.Lerp(1f, settings.peekSpeed, _peek);
-            if (Opening || BagAction) speed *= 0.3f;
+            if (BagAction) speed *= 0.3f;
             controller.speedMultiplier = speed;
         }
 
@@ -707,7 +705,7 @@ namespace SlugExtract
             if (Carry == CarryPhase.Hold)
             {
                 var gIn = HasBag ? null : GroundBag.Nearest(PickupPoint(), settings.groundReach);
-                string into = HasBag ? "E バッグに入れる" : gIn ? $"E 地面の{gIn.Def.displayName}に入れる" : (_ecoUsed ? "（バッグがない）" : "（バッグがない：B 長押しでエコバッグ）");
+                string into = HasBag ? "E バッグに入れる" : gIn ? $"E 地面の{gIn.Def.displayName}に入れる" : "（バッグがない）";
                 string hide = settings.Def(HeldKind).canHide && !HasHidden ? "　X 体に突っ込む" : "";
                 GUI.Label(new Rect(0, y, w, 26), $"手に{settings.Def(HeldKind).displayName}：{into}　G 落とす（長押しで投げる）{hide}", _small);
                 y += 26f;
@@ -724,7 +722,9 @@ namespace SlugExtract
                 if (HasHidden) { GUI.Label(new Rect(0, y, w, 26), $"X  体から取り出す：{settings.Def(Hidden).displayName}", _small); y += 26f; }
                 var gOut = GroundBag.Nearest(PickupPoint(), settings.groundReach);
                 if (gOut && !gOut.Empty) { GUI.Label(new Rect(0, y, w, 26), $"G  地面の{gOut.Def.displayName}から出す（{gOut.items.Count}個）", _small); y += 26f; }
-                if (CanSetDown) { GUI.Label(new Rect(0, y, w, 26), "C 長押し  バッグを地面に下ろす", _small); y += 26f; }
+                var gOther = CanSetDown ? OthersBag : null;
+                if (gOther) { GUI.Label(new Rect(0, y, w, 26), $"C 長押し  バッグを交換する（地面の{gOther.Def.displayName}、{gOther.items.Count}個入り）", _small); y += 26f; }
+                else if (CanSetDown) { GUI.Label(new Rect(0, y, w, 26), "C 長押し  バッグを地面に下ろす", _small); y += 26f; }
                 else if (!HasBag && gOut) { GUI.Label(new Rect(0, y, w, 26), $"C 長押し  {gOut.Def.displayName}を背負う", _small); y += 26f; }
             }
             if (BagAction)
@@ -734,19 +734,6 @@ namespace SlugExtract
                 GUI.DrawTexture(new Rect(w * 0.5f - 100, y + 4, 200 * _bagAction, 10), Texture2D.whiteTexture);
                 GUI.color = old;
                 y += 18f;
-            }
-            if (!HasBag && !_ecoUsed)
-            {
-                GUI.Label(new Rect(0, y, w, 26), "<color=#ffd9a0>B 長押しでエコバッグを広げる</color>", _small);
-                y += 26f;
-                if (Opening)
-                {
-                    GUI.Box(new Rect(w * 0.5f - 100, y + 4, 200, 10), GUIContent.none);
-                    GUI.color = new Color(1f, 0.85f, 0.5f);
-                    GUI.DrawTexture(new Rect(w * 0.5f - 100, y + 4, 200 * _ecoOpening, 10), Texture2D.whiteTexture);
-                    GUI.color = old;
-                    y += 18f;
-                }
             }
             if (_message != null && Time.time < _messageUntil) GUI.Label(new Rect(0, y, w, 26), _message, _small);
         }
