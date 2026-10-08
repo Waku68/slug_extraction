@@ -105,6 +105,8 @@ namespace SlugExtract
             bag.settings = _settings;
             bag.controller = player.GetComponent<SlugMoveController>();
             FitBag(player, bag);
+            bag.gear.helmet = true;                                        // set out in a helmet and the shell-plate armour
+            bag.gear.armor = SlugDesign.SlugEquipment.Armor.ShellPlate;
             var raid = new GameObject("Raid").AddComponent<RaidManager>();
             raid.settings = _settings;
             raid.controller = bag.controller;

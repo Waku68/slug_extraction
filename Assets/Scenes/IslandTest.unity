@@ -23349,8 +23349,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SlugDesign.SlugEquipment
   slug: {fileID: 2003768909}
-  helmet: 0
-  armor: 0
+  helmet: 1
+  armor: 1
   bag: 1
   helmetColor: {r: 0.3, g: 0.32, b: 0.24, a: 1}
   helmetCamo: 0

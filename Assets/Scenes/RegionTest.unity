@@ -16110,6 +16110,7 @@ MonoBehaviour:
   rainAround: {fileID: 0}
   dayIntensity: 1.25
   nightIntensity: {x: 0.32, y: 0.5}
+  fogScale: 1
 --- !u!4 &1055991001
 Transform:
   m_ObjectHideFlags: 0
@@ -33461,8 +33462,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SlugDesign.SlugEquipment
   slug: {fileID: 2036958356}
-  helmet: 0
-  armor: 0
+  helmet: 1
+  armor: 1
   bag: 1
   helmetColor: {r: 0.3, g: 0.32, b: 0.24, a: 1}
   helmetCamo: 0
