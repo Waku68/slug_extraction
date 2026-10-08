@@ -17,7 +17,7 @@ Oct 5, 2026
 | `SlugMoisture` | `Raid/SlugMoisture.cs` | プレイヤーの湿り気。日なた・日陰・空の下かを、1秒に5回レイで調べる。苔玉（F）。体の見た目と這う速さに出す |
 | `SlugHealth` | `Raid/SlugHealth.cs` | 体力。乾ききると減って倒れる（`Died`）。湿り気が多いとゆっくり戻る |
 
-**時刻だけから計算する理由**：全員が同じ時刻に同じ空を見る（共通の予報）。誰もいない区画のサーバーを止めておいて、入ったときにその時刻の姿で起こせる（`discussions/persistent_island_discussion.md` の 3-1）。
+**時刻だけから計算する理由**：全員が同じ時刻に同じ空を見る（共通の予報）。誰もいない場所を止めておいて、入ったときにその時刻の姿で起こせる（`discussions/persistent_island_discussion.md` の 3-1）。
 
 ## 見え方
 

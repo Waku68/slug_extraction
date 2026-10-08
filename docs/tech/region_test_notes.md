@@ -2,6 +2,8 @@
 
 Oct 5, 2026
 
+> 前の形（1区画が一辺 800 m、区画の間は拠点を通る）のときの試作。今の島（ひとつながり、東西 1.5 km）は spec の3章と `../island_map.svg`。這う時間と分かったことは今も参考になる。
+
 一辺 800 m の区画を、灰色の箱と地形でざっと作って、這う時間を測るための試作。本番の区画ではない（`discussions/regions_discussion.md` の「最初に作る灰色の試作用の区画は全部入り」）。作り直しは `Slug/RegionTest Build Scene`（`TestScenes/Editor/RegionTestBuilder.cs`）。
 
 ## 中身
