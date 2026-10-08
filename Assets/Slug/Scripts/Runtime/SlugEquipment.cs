@@ -469,12 +469,11 @@ namespace SlugDesign
             Vector3 up = Vector3.ProjectOnPlane(f.forward, nOut).normalized;
             Vector3 x = Vector3.Cross(up, nOut).normalized;
             float standOff = armor == Armor.ShellPlate ? ShieldStandOff : 0.008f;   // on top of the shield when worn
-            float sw = Mathf.Max(0.5f, bagSwell) - 1f;
-            Vector3 sz = Vector3.Scale(bagSize, new Vector3(1f + 0.3f * sw, 1f + 0.55f * sw, 1f + sw));
-            Vector3 c = p + nOut * (standOff + sz.z);
+            Vector3 sz = SwollenSize(bagSize, bagSwell);
+            Vector3 c = p + nOut * (standOff + sz.z);      // it stands on the back and piles up away from it
 
             var body = new GearMesh();
-            body.RoundedBox(c, x, up, nOut, sz, 0.42f);
+            body.RoundedBox(c, x, up, nOut, sz, SwollenRoundness(bagSwell));
             // the lid over the top (the end toward the head), a little bigger than the bag, hinged on its edge away
             // from the back; a pocket low on the outside; and the dark mouth under the lid
             var lid = new GearMesh();
@@ -502,18 +501,31 @@ namespace SlugDesign
         }
 
         /// <summary>
+        /// The bag's half size swollen by its contents (1 = empty): it piles up away from the back (up, for a crawling slug), a
+        /// full one standing about twice the slug's height, and grows only a little along the body and sideways, so it towers
+        /// over the back rather than swallowing the slug.
+        /// </summary>
+        public static Vector3 SwollenSize(Vector3 bagSize, float swell)
+        {
+            float sw = Mathf.Max(0.5f, swell) - 1f;
+            return Vector3.Scale(bagSize, new Vector3(1f + 0.25f * sw, 1f + 0.3f * sw, 1f + sw));
+        }
+
+        /// <summary>The fuller, the rounder (a crammed bag bulges): the edges soften from boxy to puffy.</summary>
+        public static float SwollenRoundness(float swell) => Mathf.Lerp(0.42f, 0.8f, Mathf.InverseLerp(1f, 6f, swell));
+
+        /// <summary>
         /// The bag's own shapes (body, pocket, the dark mouth, and the lid flopped open backward) on their own, standing
         /// upright with its bottom at <paramref name="parent"/>'s origin and its pocket toward +z: a bag set down on the
         /// ground looks like the one on the back. <paramref name="swell"/> as on the back (1 = empty). Returns its half size.
         /// </summary>
         public static Vector3 BuildLooseBag(Transform parent, Vector3 bagSize, float swell, Material bagMat, Material flapMat, Material darkMat)
         {
-            float sw = Mathf.Max(0.5f, swell) - 1f;
-            Vector3 sz = Vector3.Scale(bagSize, new Vector3(1f + 0.3f * sw, 1f + 0.55f * sw, 1f + sw));
+            Vector3 sz = SwollenSize(bagSize, swell);
             Vector3 x = Vector3.right, up = Vector3.up, nOut = Vector3.forward;
             Vector3 c = up * sz.y;
             var body = new GearMesh();
-            body.RoundedBox(c, x, up, nOut, sz, 0.42f);
+            body.RoundedBox(c, x, up, nOut, sz, SwollenRoundness(swell));
             var pocket = new GearMesh();
             pocket.RoundedBox(c + nOut * (sz.z * 0.92f) - up * (sz.y * 0.38f), x, up, nOut, new Vector3(sz.x * 0.58f, sz.y * 0.32f, 0.02f), 0.45f);
             var mouth = new GearMesh();

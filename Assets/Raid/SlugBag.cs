@@ -194,7 +194,7 @@ namespace SlugExtract
         void ApplyLook()
         {
             if (!gear) return;
-            float swell = HasBag ? Mathf.Min(1f + Volume * settings.swellPerVolume * Def.swell, settings.swellVisualMax) : 1f;
+            float swell = HasBag ? settings.Swell(Def, Volume) : 1f;
             if (Worn == _lastLook && Mathf.Abs(swell - _lastSwell) < 0.02f) return;
             _lastLook = Worn;
             _lastSwell = swell;
@@ -655,8 +655,8 @@ namespace SlugExtract
             GUI.Box(new Rect(10, 10, 96, 112), GUIContent.none);
             if (HasBag)
             {
-                float swell = Mathf.Min(1f + Volume * settings.swellPerVolume * Def.swell, settings.swellVisualMax);
-                float bw = 34f * (1f + 0.3f * (swell - 1f)), bh = 40f * (1f + 0.55f * (swell - 1f));
+                float swell = settings.Swell(Def, Volume);
+                float bw = 34f * (1f + 0.12f * (swell - 1f)), bh = 40f * (1f + 0.25f * (swell - 1f));   // (a full bag: about twice as tall)
                 float over = Weight / Mathf.Max(settings.weightThreshold, 1e-3f);
                 GUI.color = over <= 1f ? Color.Lerp(new Color(0.75f, 0.85f, 0.65f), new Color(0.95f, 0.8f, 0.45f), over)
                                        : Color.Lerp(new Color(1f, 0.6f, 0.35f), new Color(1f, 0.35f, 0.3f), Mathf.Clamp01(over - 1f));

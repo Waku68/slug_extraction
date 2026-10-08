@@ -20,6 +20,7 @@ namespace SlugWorld
         [Tooltip("雨を降らせる場所（目のまわり）。空ならメインカメラ")] public Transform rainAround;
         [Tooltip("昼の光の強さ")] public float dayIntensity = 1.25f;
         [Tooltip("月夜の光の強さ（新月 → 満月）。夜でも採取できる明るさに")] public Vector2 nightIntensity = new Vector2(0.32f, 0.5f);
+        [Tooltip("霧の濃さの倍率。島全体を見渡す場面（IslandTest）では薄くする")] public float fogScale = 1f;
 
         /// <summary>The presenter of the open scene (one per region).</summary>
         public static WeatherPresenter Current { get; private set; }
@@ -150,7 +151,7 @@ namespace SlugWorld
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.Exponential;
             RenderSettings.fogColor = skyCol;
-            RenderSettings.fogDensity = Mathf.Lerp(0.004f, 0.035f, w.rain) + (t.Night ? 0.006f : 0f);
+            RenderSettings.fogDensity = (Mathf.Lerp(0.004f, 0.035f, w.rain) + (t.Night ? 0.006f : 0f)) * fogScale;
         }
 
         void BuildRain()

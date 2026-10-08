@@ -136,7 +136,7 @@ namespace SlugExtract
             _look = new GameObject("Look").transform;
             _look.SetParent(transform, false);
             var d = Def;
-            float swell = Mathf.Min(1f + Volume * settings.swellPerVolume * d.swell, settings.swellVisualMax);
+            float swell = settings.Swell(d, Volume);
             if (kind == BagKind.Eco) swell *= 0.75f;
             _half = SlugEquipment.BuildLooseBag(_look, bagSize, swell, Mat(d.color), Mat(d.flapColor), Mat(new Color(0.07f, 0.055f, 0.045f)));
             if (_box)

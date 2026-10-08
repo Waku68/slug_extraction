@@ -22,9 +22,11 @@ namespace SlugMove
         [Tooltip("速度の倍率（荷物の重さなど、ほかのコンポーネントが変える）")] public float speedMultiplier = 1f;
         /// <summary>A second speed factor for the body's condition (dried out: slower). Set by the moisture.</summary>
         [System.NonSerialized] public float conditionSpeed = 1f;
+        /// <summary>Development only (<c>DevFastCrawl</c>): crawls this many times faster, starting and stopping as quickly.</summary>
+        [System.NonSerialized] public float devSpeed = 1f;
         /// <summary>How big the body looks (dried out: a little shrunk). Set by the moisture.</summary>
         [System.NonSerialized] public float bodyScale = 1f;
-        float SpeedFactor => speedMultiplier * conditionSpeed;
+        float SpeedFactor => speedMultiplier * conditionSpeed * devSpeed;
         [Tooltip("false の間は入力を受け付けない（試合の終了後など）")] public bool inputEnabled = true;
         [Tooltip("上半身の前後の傾き（度、+ = 前）。ピッケルを振る動きなど、ほかのコンポーネントが変える")] public float leanDegrees;
         /// <summary>How far the head is turned round on the neck to the right (degrees; the body stays put): looking
@@ -214,12 +216,12 @@ namespace SlugMove
             else if (wishAmount > 1e-4f)
             {
                 float target = s.maxSpeed * SpeedFactor * wishAmount * SlopeFactor(dir);
-                _velocity = Vector3.MoveTowards(_velocity, dir * target, s.acceleration * dt);
+                _velocity = Vector3.MoveTowards(_velocity, dir * target, s.acceleration * devSpeed * dt);
             }
             else
             {
                 float sp = _velocity.magnitude;
-                float next = Mathf.Max(0f, sp * Mathf.Exp(-dt / Mathf.Max(s.slideTime, 1e-3f)) - s.deceleration * dt);
+                float next = Mathf.Max(0f, sp * Mathf.Exp(-dt * devSpeed / Mathf.Max(s.slideTime, 1e-3f)) - s.deceleration * devSpeed * dt);
                 _velocity = sp > 1e-5f ? _velocity * (next / sp) : Vector3.zero;
             }
 
