@@ -107,8 +107,8 @@ MonoBehaviour:
     weight: 0.5
     volume: 1.2
     value: 8
-    size: 0.62
-    heldSize: 0.62
+    size: 0.37
+    heldSize: 0.37
     canHide: 1
     chipColor: {r: 0.55, g: 0.75, b: 0.3, a: 1}
     model: {fileID: 919132149155446097, guid: 1acee663db8d00d42b2882cfe13ed767, type: 3}

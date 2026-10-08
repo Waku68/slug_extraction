@@ -39,7 +39,7 @@ ExtractTest で1人で、這って、岩塩・雨カブ・ウゴタケを採っ�
 | **採取** | | |
 | ピッケル | 物理っぽい振り、硬い岩塩は跳ね返り、柔らかい作物はめり込む、ヒットストップ、伸びる腕、一人称用の描き分け | SwingTest、`tech/tool_craft_notes.md` |
 | 岩塩（塩のきのこ） | 叩く6回で岩塩3個（2回ごとに1個）、出るたびに形が満タン → 掘りかけ → 切り株。掘りきると切り株が残る（育ち直しはまだ）。手がかりは全部入りの M5（どれを残すかは見比べ中）。岩塩の欠片も新しいモデル | ExtractTest、RegionTest、`Assets/Art/Models/RockSalt/Mushroom/`、`Blender/rocksalt_mushroom_gen.py`、`Harvestable` |
-| 雨カブ | 畑の1株は土の小山にカブ1個が半分埋まった形。叩く2回で掘れて（1回目で少し浮く）、植わっていたそのカブが同じ向き・同じ大きさ（葉を広げて約 60 cm）で1個だけ飛び出す。手・バッグの中・地面のどれも同じモデル | ExtractTest、`Assets/Art/Models/RainTurnip/`、`Blender/rainturnip_gen.py` |
+| 雨カブ | 畑の1株は土の小山にカブ1個が半分埋まった形。叩く2回で掘れて（1回目で少し浮く）、植わっていた玉が同じ所・同じ向き・同じ大きさで1個だけ飛び出す。畑では葉を大きく広げ、出てきたあと（地面・手・バッグ）は葉が小さい（全体で約 37 cm）。玉の底は丸い | ExtractTest、`Assets/Art/Models/RainTurnip/`、`Blender/rainturnip_gen.py` |
 | 手で摘む＋ウゴタケ | E で摘む（0.5秒）。ピッケルで叩くと「潰れたウゴタケ」（値打ちが低い）。畑の奥にウゴタケの生えた倒木が3本。雨のあとに生える・消えるはまだ | ExtractTest、`Pickable`、`Assets/Art/Models/UgoTake/`、`Blender/ugotake_gen.py` |
 | 採って逃げる（ソロ） | 叩いて採る → 1個ずつ出る → 手でつかむ → バッグに入れる → 脱出口へ。乾ききると倒れて全部失う | ExtractTest |
 | **バッグと持ち物** | | |

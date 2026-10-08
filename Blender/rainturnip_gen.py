@@ -1,7 +1,8 @@
 # 雨カブを作るスクリプト（Blender 5.2）
-# 雨カブ1個と、それが植わる土の小山2種。畑に植わっているカブと、掘って出てくるカブは同じモデル・同じ大きさ
-# （Unity の HarvestVisuals が土の小山にこのカブを半分埋めて植え、掘りきるとそのカブが1個だけ出てくる）。
-# 形はポップ（ころんと丸いカブ、細い根、へら形の葉）、質感は Unity の WorldLook（リアル度 0.2）。
+# 雨カブ1個と、それが植わる土の小山2種。畑に植わっているカブ（Planted）と、掘って出てくるカブ（Item）は同じ玉で、
+# 葉だけ違う：畑では葉を大きく広げて目立たせ、掘ったあと（地面・手・バッグ）は葉が小さい。
+# Unity の HarvestVisuals が土の小山に Planted を半分埋めて植え、掘りきると同じ玉の Item が同じ所から1個だけ出てくる。
+# 形はポップ（ころんと丸いカブ、底は丸い、へら形の葉）、質感は Unity の WorldLook（リアル度 0.2）。
 # 色：上が彩度低めの青、下が白。
 # 書き出すメッシュは滑らかな法線（Slug/Toon の Flat Facets＋輪郭線）。葉は薄い厚みを持たせて閉じた形にする（輪郭線が出るように）。
 import bpy, bmesh, math, random
@@ -64,20 +65,20 @@ def merge(bm, cb, mat=None):
 
 # ---------------------------------------------------------------- カブ
 def bulb(rng, radius):
-    """ころんと丸いカブ。底は細い根に伸びる。原点は玉の真ん中、上が +z。上の約4割が青。"""
+    """ころんと丸いカブ。底は少しすぼまって丸い。原点は玉の真ん中、上が +z。上の約4割が青。"""
     cb = bmesh.new()
-    bmesh.ops.create_uvsphere(cb, u_segments=14, v_segments=10, radius=1.0)
+    bmesh.ops.create_uvsphere(cb, u_segments=14, v_segments=12, radius=1.0)
     off = Vector((rng.uniform(0, 50), rng.uniform(0, 50), 0))
     for v in cb.verts:
         x, y, z = v.co
         r = 1.0 + 0.05 * nz(v.co * 2 + off)
         if z > 0.75:            # 上は少し平らで、葉の付け根がくぼむ
             z = 0.75 + (z - 0.75) * 0.4
-        if z < -0.35:           # 下は細い根へ
+        if z < -0.35:           # 下は卵のように少しすぼまって、先は丸い（とがらせない）
             t = (-0.35 - z) / 0.65
-            k = 1 - 0.88 * t ** 0.7
+            k = 1 - 0.3 * t ** 1.2
             x, y = x * k, y * k
-            z = z - 1.1 * t ** 1.6
+            z = z - 0.35 * t ** 2
         v.co = Vector((x * r, y * r, z * 0.92)) * radius
     for f in cb.faces:
         c = f.calc_center_median()
@@ -197,19 +198,16 @@ def build_mound(name, seed):
     return make_object(name, bm, keep_height=True)
 
 
-def build_item(name, seed):
-    """雨カブ1個：玉と細い根と、反って垂れる葉。畑に植わっているのも、掘って出てくるのもこれ。"""
+def build_turnip(name, seed, n_leaves, leaf_len, droop_deg):
+    """雨カブ1個：底の丸い玉と、反って垂れる葉。原点は玉の真ん中（Planted と Item で玉が重なるように）。
+    同じ seed なら玉は同じ形（葉の数と長さだけ違う）。植えるときは玉の真ん中が地面より 0.2R 上（HarvestVisuals.BulbAboveGround）。"""
     rng = random.Random(seed)
     bm = bmesh.new()
     R = R_ITEM
     merge(bm, bulb(rng, R))
-    leaves(bm, rng, 6, Vector((0, 0, R * 0.72)), 0.19, math.radians(55))
+    leaves(bm, rng, n_leaves, Vector((0, 0, R * 0.72)), leaf_len, math.radians(droop_deg))
     bmesh.ops.scale(bm, vec=Vector((SCALE, SCALE, SCALE)), verts=bm.verts)
-    zs = [v.co.z for v in bm.verts]
-    # 植えるときの深さ：玉の真ん中が地面より 0.2R 上（玉の下半分と根が土の中）。Unity の HarvestVisuals.TurnipBuried
-    ground = -0.2 * R * SCALE
-    print("buried fraction", round((ground - min(zs)) / (max(zs) - min(zs)), 3))
-    return make_object(name, bm, ground=0.0)
+    return make_object(name, bm, keep_height=True)
 
 
 def export_fbx(ob):
@@ -229,7 +227,9 @@ def export_fbx(ob):
 
 def main():
     clear_scene()
-    objs = [build_mound("RainTurnip_Node_A", 3), build_mound("RainTurnip_Node_B", 8), build_item("RainTurnip_Item", 3)]
+    objs = [build_mound("RainTurnip_Node_A", 3), build_mound("RainTurnip_Node_B", 8),
+            build_turnip("RainTurnip_Planted", 3, 6, 0.19, 55),   # 畑：葉を大きく広げる
+            build_turnip("RainTurnip_Item", 3, 5, 0.1, 40)]       # 掘ったあと：葉は小さい
     for i, ob in enumerate(objs):
         ob.location = (i * 0.5, 0, 0)
     if EXPORT:

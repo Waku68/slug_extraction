@@ -87,7 +87,7 @@ namespace SlugExtract
 
         [Header("採取物")]
         public ItemDef rockSalt = new ItemDef { displayName = "岩塩", weight = 1.5f, volume = 0.6f, value = 25, size = 0.2f, heldSize = 0.3f, canHide = false, chipColor = new Color(0.95f, 0.88f, 0.9f) };
-        public ItemDef crop = new ItemDef { displayName = "雨カブ", weight = 0.5f, volume = 1.2f, value = 8, size = 0.62f, heldSize = 0.62f, canHide = true, chipColor = new Color(0.55f, 0.75f, 0.3f) };
+        public ItemDef crop = new ItemDef { displayName = "雨カブ", weight = 0.5f, volume = 1.2f, value = 8, size = 0.37f, heldSize = 0.37f, canHide = true, chipColor = new Color(0.55f, 0.75f, 0.3f) };
 
         public ItemDef ugoTake = new ItemDef { displayName = "ウゴタケ", weight = 0.15f, volume = 0.5f, value = 12, size = 0.12f, heldSize = 0.16f, canHide = true, chipColor = new Color(0.85f, 0.78f, 0.66f) };
         public ItemDef ugoTakeCrushed = new ItemDef { displayName = "潰れたウゴタケ", weight = 0.15f, volume = 0.4f, value = 4, size = 0.12f, heldSize = 0.16f, canHide = true, chipColor = new Color(0.85f, 0.78f, 0.66f), modelScale = new Vector3(1.25f, 0.45f, 1.25f) };
