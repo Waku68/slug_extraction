@@ -10,6 +10,8 @@ Oct 5, 2026
 | --- | --- |
 | [spec.md](spec.md) | 仕様。決まったこと・仮のこと・未決定のこと（凡例【決定】【仮】【未決定】） |
 | [progress.md](progress.md) | 進捗。最近決まったこと、何ができて何がまだか、まだ決まっていないこと、次にやること。**新しいチャットはまずここ（0章）から** |
+| `island_map.svg` | 島の地図（区画、川、枯れた谷、塩田、境目の崖と越えられる場所）。spec の3章と同じ |
+| `island_sketch.webp` | わくさんが描いた島の地図（区画の配置と広さの比率） |
 | [bag_spec.md](bag_spec.md) | バッグの仕様（バッグ、エコバッグ、隠し場所、カタツムリの殻、ベルトと背負い紐）。今の実装との違いと作る順番 |
 
 ## docs の中身
@@ -34,7 +36,7 @@ Oct 5, 2026
 
 | 話題 | 資料（古い順） |
 | --- | --- |
-| 島とマップ | [map_discussion.md](discussions/map_discussion.md)（河口の塩沼、スケール）→ [map_discussion_2.md](discussions/map_discussion_2.md)（広さ・人数・時間、共通の予報、晴れの日）→ [persistent_island_discussion.md](discussions/persistent_island_discussion.md)（ずっと続く島、サーバー、抜けると眠る）→ [regions_discussion.md](discussions/regions_discussion.md)（5区画）→ [map_size_discussion.md](discussions/map_size_discussion.md)（広さを数字で）→ [grand_nature_discussion.md](discussions/grand_nature_discussion.md)（雄大さは高さ、自動生成、ベースキャンプ） |
+| 島とマップ | [map_discussion.md](discussions/map_discussion.md)（河口の塩沼、スケール）→ [map_discussion_2.md](discussions/map_discussion_2.md)（広さ・人数・時間、共通の予報、晴れの日）→ [persistent_island_discussion.md](discussions/persistent_island_discussion.md)（ずっと続く島、サーバー、抜けると眠る）→ [regions_discussion.md](discussions/regions_discussion.md)（5区画）→ [map_size_discussion.md](discussions/map_size_discussion.md)（広さを数字で）→ [grand_nature_discussion.md](discussions/grand_nature_discussion.md)（雄大さは高さ、自動生成、ベースキャンプ）→ [seamless_island_discussion.md](discussions/seamless_island_discussion.md)（島ひとつをシームレスに、川と塩の流れ、島の大きさ。絵は `island_sketch.webp`） |
 | 天気と体 | [island_clock_discussion.md](discussions/island_clock_discussion.md)（1日9時間、月と潮）、[moisture_discussion.md](discussions/moisture_discussion.md)（湿り気の数字） |
 | 戦い | [health_damage_discussion.md](discussions/health_damage_discussion.md)（何発で倒れるか、塩の希少性）、[slug_gun_discussion.md](discussions/slug_gun_discussion.md)（銃を構造から考え直す） |
 | 数字と見せ方 | [no_numbers_discussion.md](discussions/no_numbers_discussion.md)（数字を出さない世界）→ [no_numbers_discussion_2.md](discussions/no_numbers_discussion_2.md)（お金の塩だけは数字） |

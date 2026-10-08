@@ -26,7 +26,7 @@ namespace SlugMove
         [Range(0f, 120f), Tooltip("お尻が遅れられる最大の角度（度）。これ以上は引きずられる")] public float tailMaxLag = 80f;
 
         [Header("坂")]
-        [Range(0f, 89f), Tooltip("登れる最大の角度（度）。これより急な坂は登れない")] public float slopeLimit = 60f;
+        [Range(0f, 89f), Tooltip("登れる最大の角度（度）。これより急な坂は登れない")] public float slopeLimit = 50f;
         [Range(0f, 1f), Tooltip("登り坂での減速。限界角度の坂をまっすぐ登ると速度が (1 - この値) 倍になる")] public float uphillSlowdown = 0.6f;
         [Range(0f, 1f), Tooltip("下り坂での加速。限界角度の坂をまっすぐ下ると速度が (1 + この値) 倍になる")] public float downhillSpeedup = 0.2f;
         [Tooltip("登れない急坂に乗ったときにずり落ちる速さ（m/s）")] public float steepSlideSpeed = 1.2f;

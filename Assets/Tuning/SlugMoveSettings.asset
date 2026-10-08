@@ -23,7 +23,7 @@ MonoBehaviour:
   tailFollowPerSpeed: 1.2
   tailFollowDamping: 0.8
   tailMaxLag: 80
-  slopeLimit: 60
+  slopeLimit: 50
   uphillSlowdown: 0.6
   downhillSpeedup: 0.2
   steepSlideSpeed: 1.2
