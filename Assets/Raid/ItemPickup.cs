@@ -24,14 +24,18 @@ namespace SlugExtract
         void OnEnable() => All.Add(this);
         void OnDisable() => All.Remove(this);
 
-        /// <summary>Makes a pickup at <paramref name="position"/>, thrown with <paramref name="velocity"/>. It does not collide with <paramref name="ignore"/>.</summary>
-        public static ItemPickup Spawn(ExtractSettings settings, ItemKind kind, Vector3 position, Vector3 velocity, Collider ignore = null)
+        /// <summary>
+        /// Makes a pickup at <paramref name="position"/>, thrown with <paramref name="velocity"/>. It does not collide with <paramref name="ignore"/>.
+        /// Without <paramref name="rotation"/> it starts turned at random.
+        /// </summary>
+        public static ItemPickup Spawn(ExtractSettings settings, ItemKind kind, Vector3 position, Vector3 velocity, Collider ignore = null,
+                                       Quaternion? rotation = null)
         {
             var go = Visual(settings, kind, null, true);
             go.name = "Pickup_" + kind;
             go.layer = 2;
             go.transform.position = position;
-            go.transform.rotation = Random.rotation;
+            go.transform.rotation = rotation ?? Random.rotation;
             var def = settings.Def(kind);
             var col = go.AddComponent<SphereCollider>();
             col.radius = 0.45f / Scale(kind);       // in the visual's own (unscaled) units
@@ -83,7 +87,8 @@ namespace SlugExtract
                 if (i == 0) b = renderers[i].bounds; else b.Encapsulate(renderers[i].bounds);
                 renderers[i].shadowCastingMode = castShadows ? UnityEngine.Rendering.ShadowCastingMode.On : UnityEngine.Rendering.ShadowCastingMode.Off;
             }
-            foreach (var c in m.GetComponentsInChildren<Collider>()) Object.Destroy(c);
+            foreach (var c in m.GetComponentsInChildren<Collider>())
+                if (Application.isPlaying) Object.Destroy(c); else Object.DestroyImmediate(c);   // also planted in the field by the editor
             float k = 1f / (Scale(kind) * Mathf.Max(b.size.x, b.size.y, b.size.z, 1e-3f));
             Vector3 s = Vector3.Scale(Vector3.one * k, def.modelScale);
             m.transform.SetParent(root, false);

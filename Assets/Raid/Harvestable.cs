@@ -8,7 +8,8 @@ namespace SlugExtract
     /// salt about 30 cm across, a turnip) that pops out toward the one who struck it and lands on the ground, to be taken
     /// in the hands and put in the bag; the node jolts and sheds chips, and the last hit gives a bonus and breaks it.
     /// With <see cref="stages"/> (the salt mushroom: full, half-mined, stump) it changes shape each time something comes
-    /// out instead, and the last stage stays behind when it is mined out.
+    /// out instead, and the last stage stays behind when it is mined out. With <see cref="planted"/> (a rain turnip in its
+    /// mound) the thing in the ground is itself what comes out: each hit loosens it, and the last one pops it out whole.
     /// </summary>
     public class Harvestable : MonoBehaviour, IPickaxeTarget, IPickaxeSurface
     {
@@ -23,6 +24,10 @@ namespace SlugExtract
         [Tooltip("何回叩くごとに出てくるか（塩のきのこは 2：6回で3個）")] public int hitsPerYield = 1;
         [Tooltip("形の段階（満タン、掘りかけ、切り株…）。出てくるたびに次へ。最後の段階は掘りきっても残る。空なら壊れて消える")]
         public GameObject[] stages = new GameObject[0];
+        [Tooltip("植わっている物そのもの（雨カブの畑）。叩くたびに少しずつ持ち上がり、出てくるときはこれが同じ向き・同じ大きさで飛び出す")]
+        public Transform planted;
+        [Tooltip("植わっている物が土に埋まっている深さ（m）。叩くたびにこれを回数で割った分だけ持ち上がる")]
+        public float plantedDepth;
 
         int _left;
         float _punch;           // 0..1, decays: the jolt of the last hit
@@ -93,6 +98,20 @@ namespace SlugExtract
             float size = settings.Def(kind).size;
             Harvested?.Invoke(kind, amount, false);
             if (_left == 0 && !HasStages) _breaking = true;
+            if (planted && planted.gameObject.activeSelf)
+            {
+                if (amount > 0)
+                {
+                    // the very one that was in the ground comes out, as it was, with a little toss toward the digger
+                    Vector3 up = Vector3.up * Random.Range(2.2f, 2.6f) + toward * Random.Range(0.6f, 0.9f);
+                    var p = ItemPickup.Spawn(settings, kind, planted.position + Vector3.up * plantedDepth / Mathf.Max(1, hits), up, ignore, planted.rotation);
+                    var pc = p.GetComponent<Collider>();
+                    foreach (var c in GetComponents<Collider>()) Physics.IgnoreCollision(pc, c);   // it starts inside the mound
+                    planted.gameObject.SetActive(false);
+                    amount--;
+                }
+                else planted.position += Vector3.up * plantedDepth / Mathf.Max(1, hits);   // dug a little looser
+            }
             for (int i = 0; i < amount; i++)
             {
                 Vector3 from = hit.point + hit.normal * (size * 0.6f) + Vector3.up * (size * 0.3f);

@@ -232,7 +232,7 @@ namespace SlugExtract
             return h;
         }
 
-        /// <summary>A leafy plant with a fat purple root showing. Three hits.</summary>
+        /// <summary>A leafy plant with a fat purple root showing. Dug out in two hits, one turnip.</summary>
         internal static Harvestable Crop(Transform parent, Vector3 pos)
         {
             var root = new GameObject("Crop");
@@ -251,7 +251,7 @@ namespace SlugExtract
                      new Vector3(0.12f, 0.03f, 0.3f), new Vector3(-35f, a, 0f));
             }
             var h = root.AddComponent<Harvestable>();
-            h.settings = _settings; h.kind = ItemKind.Crop; h.hits = 3; h.yieldPerHit = 1; h.breakBonus = 1;
+            h.settings = _settings; h.kind = ItemKind.Crop; h.hits = 2; h.yieldPerHit = 0; h.breakBonus = 1;
             SlugDesign.HarvestVisuals.ApplyTo(h);     // the rain turnip field, when its models are there
             return h;
         }

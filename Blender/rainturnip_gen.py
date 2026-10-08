@@ -1,6 +1,7 @@
 # 雨カブを作るスクリプト（Blender 5.2）
-# 採る場所（土に植わっていて、葉とカブの頭がのぞく）2種と、抜いた雨カブ1個（約 15 cm）。
-# 形はポップ（ころんと丸いカブ、細い根、へら形の葉）、質感は Unity の WorldLook（リアル度 0.8）。
+# 雨カブ1個と、それが植わる土の小山2種。畑に植わっているカブと、掘って出てくるカブは同じモデル・同じ大きさ
+# （Unity の HarvestVisuals が土の小山にこのカブを半分埋めて植え、掘りきるとそのカブが1個だけ出てくる）。
+# 形はポップ（ころんと丸いカブ、細い根、へら形の葉）、質感は Unity の WorldLook（リアル度 0.2）。
 # 色：上が彩度低めの青、下が白。
 # 書き出すメッシュは滑らかな法線（Slug/Toon の Flat Facets＋輪郭線）。葉は薄い厚みを持たせて閉じた形にする（輪郭線が出るように）。
 import bpy, bmesh, math, random
@@ -9,7 +10,7 @@ from mathutils import noise as mnoise
 
 EXPORT_DIR = "C:/UnityProjects/ExtractionGame/Assets/Art/Models/RainTurnip/"
 EXPORT = True
-NODE_SCALE = 1.8   # 畑に植わっているときは大きく見せる（抜いて手に持つと今の大きさ）
+SCALE = 1.8   # 畑で目立つ大きさ。掘って手に持っても同じ大きさ（Unity では ExtractSettings の雨カブの size が長い辺）
 
 COLORS = {
     "RainTurnip_Root": (0.92, 0.9, 0.86),   # 白い下側
@@ -184,26 +185,30 @@ def box_uv(ob):
     bm.to_mesh(me); bm.free()
 
 
-def build_node(name, seed):
-    """畑に植わった雨カブ：土の小山から、カブの頭（上4割くらい）と葉がのぞく。"""
+R_ITEM = 0.075   # 玉の半径（SCALE を掛ける前）
+
+
+def build_mound(name, seed):
+    """カブが植わる土の小山（カブは入っていない）。土の底が地面（z=0）より少し下。"""
     rng = random.Random(seed)
     bm = bmesh.new()
     merge(bm, soil_mound(rng, rng.uniform(0.15, 0.18)))
-    R = rng.uniform(0.07, 0.08)
-    merge(bm, bulb(rng, R), Matrix.Translation((0, 0, R * 0.2)) @ Matrix.Rotation(rng.uniform(-0.15, 0.15), 4, "X"))
-    leaves(bm, rng, rng.randint(5, 7), Vector((0, 0, R * 0.2 + R * 0.72)), rng.uniform(0.17, 0.21), math.radians(rng.uniform(45, 65)))
-    bmesh.ops.scale(bm, vec=Vector((NODE_SCALE, NODE_SCALE, NODE_SCALE)), verts=bm.verts)
-    # 土の底が地面（z=0）より少し下。根は地面の下に埋まる
+    bmesh.ops.scale(bm, vec=Vector((SCALE, SCALE, SCALE)), verts=bm.verts)
     return make_object(name, bm, keep_height=True)
 
 
 def build_item(name, seed):
-    """抜いた雨カブ1個：玉と根と、少ししなった葉。全体で約 15 cm。"""
+    """雨カブ1個：玉と細い根と、反って垂れる葉。畑に植わっているのも、掘って出てくるのもこれ。"""
     rng = random.Random(seed)
     bm = bmesh.new()
-    R = 0.055
+    R = R_ITEM
     merge(bm, bulb(rng, R))
-    leaves(bm, rng, 5, Vector((0, 0, R * 0.7)), 0.1, math.radians(40))
+    leaves(bm, rng, 6, Vector((0, 0, R * 0.72)), 0.19, math.radians(55))
+    bmesh.ops.scale(bm, vec=Vector((SCALE, SCALE, SCALE)), verts=bm.verts)
+    zs = [v.co.z for v in bm.verts]
+    # 植えるときの深さ：玉の真ん中が地面より 0.2R 上（玉の下半分と根が土の中）。Unity の HarvestVisuals.TurnipBuried
+    ground = -0.2 * R * SCALE
+    print("buried fraction", round((ground - min(zs)) / (max(zs) - min(zs)), 3))
     return make_object(name, bm, ground=0.0)
 
 
@@ -224,7 +229,7 @@ def export_fbx(ob):
 
 def main():
     clear_scene()
-    objs = [build_node("RainTurnip_Node_A", 3), build_node("RainTurnip_Node_B", 8), build_item("RainTurnip_Item", 5)]
+    objs = [build_mound("RainTurnip_Node_A", 3), build_mound("RainTurnip_Node_B", 8), build_item("RainTurnip_Item", 3)]
     for i, ob in enumerate(objs):
         ob.location = (i * 0.5, 0, 0)
     if EXPORT:

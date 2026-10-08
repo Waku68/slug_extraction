@@ -57,6 +57,7 @@ namespace SlugExtract
         static void Endless(Harvestable h)
         {
             h.hits = 100000;
+            h.yieldPerHit = 1;      // something comes out every hit (a rain turnip pops its planted one first)
             h.breakBonus = 0;
         }
     }

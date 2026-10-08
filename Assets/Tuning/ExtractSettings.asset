@@ -23,7 +23,6 @@ MonoBehaviour:
   swellPerVolume: 0.05
   swellVisualMax: 2.6
   hitDamage: 8
-  ecoOpenTime: 3
   peekSpeed: 0.4
   peekTwist: 90
   pickupReach: 0.8
@@ -32,6 +31,12 @@ MonoBehaviour:
   takeOutTime: 0.5
   hideTime: 0.8
   pickTime: 0.5
+  bagDownTime: 0.8
+  bagUpTime: 0.8
+  bagSwapTime: 1.2
+  groundTransferTime: 0.12
+  groundReach: 1.2
+  droppedLifetime: 2700
   cloth:
     displayName: "\u5E03\u306E\u888B"
     durability: 60
@@ -102,8 +107,8 @@ MonoBehaviour:
     weight: 0.5
     volume: 1.2
     value: 8
-    size: 0.15
-    heldSize: 0.15
+    size: 0.62
+    heldSize: 0.62
     canHide: 1
     chipColor: {r: 0.55, g: 0.75, b: 0.3, a: 1}
     model: {fileID: 919132149155446097, guid: 1acee663db8d00d42b2882cfe13ed767, type: 3}

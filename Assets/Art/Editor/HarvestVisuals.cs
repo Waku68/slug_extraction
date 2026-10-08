@@ -6,8 +6,8 @@ using UnityEngine;
 namespace SlugDesign
 {
     /// <summary>
-    /// Puts the Blender models on the things that are harvested: the rain turnip field (big in the ground, the picked
-    /// one hand-sized), the salt mushroom (full → half-mined → stump, one chunk every two hits), the chunk of rock salt,
+    /// Puts the Blender models on the things that are harvested: the rain turnip field (one turnip half in a mound
+    /// of soil, the same one that comes out when it is dug), the salt mushroom (full → half-mined → stump, one chunk every two hits), the chunk of rock salt,
     /// and ウゴタケ growing on fallen logs (picked by hand). The scene builders call <see cref="ApplyTo"/> on every node
     /// they make; <c>Slug/Update Harvest Visuals (open scene)</c> does the same to a scene already built (it keeps the
     /// nodes where they are, so hand-made changes to the scene stay).
@@ -19,6 +19,9 @@ namespace SlugDesign
 
         /// <summary>Where the logs lie in ExtractTest: the far side of the wet field, behind the turnips.</summary>
         public static readonly Vector3[] UgoTakeSpots = { new Vector3(9.5f, 0f, 5.8f), new Vector3(13f, 0f, 6.1f), new Vector3(16.4f, 0f, 5.7f) };
+
+        /// <summary>How much of the rain turnip's height is in the ground (its root and the lower half of the bulb; printed by rainturnip_gen.py).</summary>
+        const float TurnipBuried = 0.43f;
 
         static GameObject Load(string path) => AssetDatabase.LoadAssetAtPath<GameObject>(Art + path);
 
@@ -101,14 +104,23 @@ namespace SlugDesign
             }
             else
             {
-                // the rain turnip field: the root's top and the leaves show out of a mound of soil
+                // the rain turnip field: a mound of soil with one rain turnip planted in it, the very one that comes
+                // out (the same model at the same size as in the hands), its root's top and its leaves showing
                 t.localScale = Vector3.one;
                 Instance(Load(rnd.Next(2) == 0 ? "RainTurnip/RainTurnip_Node_A.fbx" : "RainTurnip/RainTurnip_Node_B.fbx"), t);
+                var turnip = ItemPickup.Visual(h.settings, h.kind, t, true).transform;
+                turnip.name = "カブ";
+                turnip.localRotation = Quaternion.Euler((float)rnd.NextDouble() * 14f - 7f, (float)rnd.NextDouble() * 360f, (float)rnd.NextDouble() * 14f - 7f);
+                float height = 0f;
+                foreach (var r in turnip.GetComponentsInChildren<Renderer>()) height = Mathf.Max(height, r.bounds.size.y);
+                turnip.localPosition = Vector3.up * (height * (0.5f - TurnipBuried));
                 var col = h.gameObject.AddComponent<SphereCollider>();
                 col.center = new Vector3(0f, 0.2f, 0f);
                 col.radius = 0.26f;
                 h.stages = new GameObject[0];
-                h.hitsPerYield = 1;
+                h.planted = turnip;
+                h.plantedDepth = height * TurnipBuried;
+                h.hits = 2; h.hitsPerYield = 1; h.yieldPerHit = 0; h.breakBonus = 1;   // dug out in two hits, one turnip
             }
             EditorUtility.SetDirty(h);
         }
