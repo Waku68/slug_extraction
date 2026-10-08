@@ -55,7 +55,7 @@ Oct 5, 2026
 | `Tools/Guns/` | 銃4種（挙動 `GunHandling`、持ち方 `SlugGunHolder`、形 `SlugRifle`・`SlugShotgun`・`SlugSniper`・`SlugPistol`、弾 `SaltRound`、設定 `GunSettings`） |
 | `Tools/Knife/` | ナイフ（突く `SlugKnifeHolder`、形 `SlugKnife`、設定 `KnifeSettings`） |
 | `Combat/` | 部位ごとの当たり判定とダメージ倍率（`SlugHitboxes`・`SlugHitbox`） |
-| `Raid/` | 採って逃げる（採取場 `Harvestable`（形の段階つき）、手で摘む植物 `Pickable`、バッグ `SlugBag`、試合 `RaidManager`、ルール `ExtractSettings`、湿り気 `SlugMoisture`、体力 `SlugHealth`、左上の自分 `SelfPortrait`） |
+| `Raid/` | 採って逃げる（採取場 `Harvestable`（形の段階つき）、手で摘む植物 `Pickable`、バッグ `SlugBag`、試合 `RaidManager`、ルール `ExtractSettings`、湿り気 `SlugMoisture`、体力 `SlugHealth`、左上の自分 `SelfPortrait`、島の時計と天気で育つ・生える `SaltRegrow`・`UgoTakeFlush`（土台は `IslandTimeFollower`）） |
 | `World/` | 島の時計と天気（`IslandClock`・`IslandWeather`、見せ方 `WeatherPresenter`、湿らせる・乾かす場所 `MoistureZone`、設定 `IslandSettings`・`ConditionSettings`）。`tech/weather_notes.md` |
 | `Tuning/` | **調整用のアセットはすべてここ**：`SlugMoveSettings`、`PickaxeSettings`、`RifleSettings`・`ShotgunSettings`・`SniperSettings`・`PistolSettings`、`KnifeSettings`、`LoadoutSettings`（持ち替えの時間、体に付ける位置）、`ExtractSettings`、`IslandSettings`（島の時計と天気）、`ConditionSettings`（湿り気と体力）。再生中に変えてもすぐ反映され、止めても残る |
 | `TestScenes/` | 試す専用シーンの部品。`Editor/`（シーンを作るビルダー、コマ撮り `SwingFilmStrip`・`GunFilmStrip`・`MoveFilmStrip`、`HitboxShot`）、`Debug/`（画面のデバッグ表示、的）、`Generated/`（ビルダーが作る地形・マテリアル） |
@@ -74,7 +74,7 @@ Oct 5, 2026
 
 | シーン | 試すこと | 作り直すメニュー |
 | --- | --- | --- |
-| `MoveTest` | 這う、坂、段差、縮んで伸びる | `Slug/MoveTest Build Scene` |
+| `MoveTest` | 這う、坂（15°・45°・70°、登れる限界の 40°・50°・60°）、段差、縮んで伸びる | `Slug/MoveTest Build Scene` |
 | `SwingTest` | ピッケルの振り（T スロー、G 軌跡） | `Slug/SwingTest Build Scene` |
 | `GunTest` | 銃4種とナイフ（Tab で持ち物を選ぶ）、的、練習用ナメクジ（当たった部位と倍率） | `Slug/GunTest Build Scene` |
 | `EquipTest` | 装備の見比べ（3体並び） | `Slug/EquipTest Build Scene` |

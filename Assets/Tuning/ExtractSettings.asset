@@ -37,6 +37,9 @@ MonoBehaviour:
   groundTransferTime: 0.12
   groundReach: 1.2
   droppedLifetime: 2700
+  saltRegrowGameHours: 3
+  ugoTakeAfterRainGameHours: 2
+  ugoTakeSunGameHours: 2
   cloth:
     displayName: "\u5E03\u306E\u888B"
     durability: 60

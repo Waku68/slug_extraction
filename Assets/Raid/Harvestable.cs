@@ -50,6 +50,24 @@ namespace SlugExtract
 
         bool HasStages => stages != null && stages.Length > 0;
 
+        /// <summary>How many hits it has taken (0 = untouched).</summary>
+        public int Done => hits - _left;
+
+        /// <summary>
+        /// Grows one stage back (stump → half-mined → full), as the salt mushroom does in dry weather
+        /// (<see cref="SaltRegrow"/>). False if it is already whole or has no stages.
+        /// </summary>
+        public bool GrowBack()
+        {
+            if (!HasStages || _breaking || Done <= 0) return false;
+            int step = Mathf.Max(1, hitsPerYield);
+            int stage = Mathf.Clamp(Done / step, 0, stages.Length - 1);
+            _left = hits - Mathf.Max(0, stage - 1) * step;     // back to the start of the stage before (a half-mined one is whole again)
+            ShowStage(Done / step);
+            _punch = 0.5f;
+            return true;
+        }
+
         /// <summary>Shows one stage and fits the box collider (if any) round it, so the pickaxe meets what is there.</summary>
         void ShowStage(int index)
         {

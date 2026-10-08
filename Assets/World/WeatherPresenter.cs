@@ -38,12 +38,12 @@ namespace SlugWorld
         ParticleSystem _rain;
         GUIStyle _style;
 
+        void Awake() => Hours = IslandClock.RealHoursNow(settings);   // before anyone's Start reads the time
         void OnEnable() => Current = this;
         void OnDisable() { if (Current == this) Current = null; }
 
         void Start()
         {
-            Hours = IslandClock.RealHoursNow(settings);
             if (!sun)
                 foreach (var l in FindObjectsByType<Light>())
                     if (l.type == LightType.Directional) { sun = l; break; }
@@ -101,6 +101,9 @@ namespace SlugWorld
 
         /// <summary>The island's moment as this scene shows it (for others that need the real hours, e.g. a forecast).</summary>
         public double ShownHours => Hours + _offsetHours + settings.devOffsetGameHours / 24.0 * settings.dayHours;
+
+        /// <summary>The weather this scene shows at any moment (with the sky fixed for development, if it is).</summary>
+        public IslandWeatherState WeatherAt(double hours) => IslandWeather.At(settings, region, hours, _devSky);
 
         void ApplyLight()
         {

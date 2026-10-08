@@ -262,13 +262,22 @@ namespace SlugMove
             var floor = Box("Floor", new Vector3(3f, -0.05f, 6f), new Vector3(50f, 0.1f, 40f), _floorMat);
             floor.GetComponent<Renderer>().sharedMaterial = _floorMat;
 
-            // slopes (each: up ramp, flat top, down ramp). The default limit is 60 degrees.
+            // slopes (each: up ramp, flat top, down ramp). The slug climbs up to 50 degrees.
             Hill("Slope_15", -9f, 15f, 3.0f);
             Hill("Slope_45", -5.5f, 45f, 1.2f);
             Steep("Slope_70", -2f, 70f, 0.5f);
             Label("緩い坂 15°", new Vector3(-9f, 1.6f, -2.3f));
             Label("急な坂 45°", new Vector3(-5.5f, 1.9f, -2.3f));
             Label("急すぎる坂 70°\n（登れない）", new Vector3(-2f, 2.0f, -2.3f));
+
+            // around the limit: 40 (climbs), 50 (just climbs, and stops on it without sliding), 60 (slides back)
+            float[] edge = { 40f, 50f, 60f };
+            for (int i = 0; i < edge.Length; i++)
+            {
+                float x = -9f + i * 3.5f, deg = edge[i];
+                Hill($"Slope_{deg:0}", x, deg, 1.4f / Mathf.Tan(deg * Mathf.Deg2Rad), 12f);
+                Label(deg < 55f ? $"坂 {deg:0}°" : $"坂 {deg:0}°\n（登れない）", new Vector3(x, 2.0f, 11.7f));
+            }
 
             // steps of increasing height: up to 0.15 m they are stepped over, up to 0.45 m (head height) climbed.
             // The gaps between them are a body length (1.1 m) plus a little, so the slug can crawl through.

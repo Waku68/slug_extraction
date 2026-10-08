@@ -42,6 +42,8 @@ namespace SlugDesign
                 var parent = GameObject.Find("Map") ? GameObject.Find("Map").transform : null;
                 UgoTakeLogs(parent, settings, UgoTakeSpots);
             }
+            foreach (var pick in Object.FindObjectsByType<Pickable>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                if (pick.kind == ItemKind.UgoTake && pick.transform.parent) Flush(pick, settings);
             EditorSceneManager.MarkSceneDirty(scene);
             Debug.Log($"Harvest visuals: {n} nodes updated in {scene.name}");
         }
@@ -101,6 +103,10 @@ namespace SlugDesign
                 h.stages = stages;
                 h.hits = 6; h.hitsPerYield = 2; h.yieldPerHit = 1; h.breakBonus = 0;
                 FitBox(h.GetComponent<BoxCollider>(), stages[0], t);
+                var regrow = h.GetComponent<SaltRegrow>();
+                if (!regrow) regrow = h.gameObject.AddComponent<SaltRegrow>();    // grows back in dry weather
+                regrow.settings = h.settings;
+                EditorUtility.SetDirty(regrow);
             }
             else
             {
@@ -170,7 +176,19 @@ namespace SlugDesign
                     pick.parts.Add(m);
                 }
                 EditorUtility.SetDirty(pick);
+                Flush(pick, settings);
             }
+        }
+
+        /// <summary>The log comes and goes with the weather: ウゴタケ come up after rain and are gone after a sunny spell.</summary>
+        static void Flush(Pickable pick, ExtractSettings settings)
+        {
+            var root = pick.transform.parent.gameObject;
+            var flush = root.GetComponent<UgoTakeFlush>();
+            if (!flush) flush = root.AddComponent<UgoTakeFlush>();
+            flush.settings = settings;
+            flush.cluster = pick;
+            EditorUtility.SetDirty(flush);
         }
 
         /// <summary>The bounds of a model as it stands at the origin, unturned and unscaled (what ItemPickup centres and sizes).</summary>

@@ -73,6 +73,12 @@ namespace SlugExtract
         [Tooltip("地面のバッグに手が届く距離（m）")] public float groundReach = 1.2f;
         [Tooltip("倒されたナメクジのバッグが地面に残る時間（秒）。島時間2時間 = 現実の約45分")] public float droppedLifetime = 2700f;
 
+        [Header("育ち直す・生える（島の時計と天気から）")]
+        [Tooltip("塩のきのこが一段育って戻る（切り株 → 掘りかけ → 満タン）のに要る、乾いた天気の時間（島時間, 時間）。雨の間は育たない。掘ると数え直し")]
+        public float saltRegrowGameHours = 3f;
+        [Tooltip("ウゴタケが、雨が上がってから生えるまでの時間（島時間, 時間）")] public float ugoTakeAfterRainGameHours = 2f;
+        [Tooltip("ウゴタケが消えるまでに続く、晴れの昼の時間（島時間, 時間）。曇りや夜が挟まると数え直し")] public float ugoTakeSunGameHours = 2f;
+
         [Header("バッグの種類")]
         public BagDef cloth = new BagDef { displayName = "布の袋", durability = 60f, bodyDamage = 1f, capacity = 0f, swell = 1f, weight = 0.3f };
         public BagDef leather = new BagDef { displayName = "革の袋", durability = 120f, bodyDamage = 0.5f, capacity = 0f, swell = 0.8f, weight = 0.8f,
