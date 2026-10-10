@@ -30,6 +30,7 @@ Oct 5, 2026
 | | [region_test_notes.md](tech/region_test_notes.md) | 灰色の区画（一辺 800 m）の試作と、這う時間の測定、分かったこと |
 | | [island_test_notes.md](tech/island_test_notes.md) | 灰色の島（東西 1.5 km、島全体を1枚の地形）の試作と、這う時間・山の傾き・谷の深さの測定、分かったこと。後半は 800 m の島（IslandTest_800）：ナメクジの目の高さの見え方、這う時間 |
 | | [weather_notes.md](tech/weather_notes.md) | 島の時計・天気・湿り気の作り方、開発用のキー、撮り方 |
+| | [network_notes.md](tech/network_notes.md) | ネットワークの仕組みの選び方（Fish-Net ＋ Steam）、誰が何を決めるか、進める順番 |
 | | [sound_list.md](tech/sound_list.md) | 音（効果音・BGM）の置き場所、ファイル名、取り込みの設定、要る音のリスト、鳴らすときのつなぎ口 |
 
 
