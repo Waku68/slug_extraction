@@ -71,6 +71,7 @@ namespace SlugExtract
             var dmg = player.GetComponent<SlugDamage>() ?? player.AddComponent<SlugDamage>();
             dmg.vanishOnFall = false;
             EditorUtility.SetDirty(dmg);
+            PlaceholderSounds.SetUp();     // the player's own sounds
 
             foreach (var old in Object.FindObjectsByType<SlugBot>(FindObjectsInactive.Include))
             {
@@ -151,6 +152,9 @@ namespace SlugExtract
             var health = bot.AddComponent<SlugHealth>();
             health.settings = condition;
             bot.AddComponent<SlugDamage>().vanishOnFall = true;
+            var sounds = bot.AddComponent<SlugSounds>();
+            sounds.bank = PlaceholderSounds.Bank();
+            sounds.other = true;           // heard from where it is: shots far off, the rest close by
 
             var brain = bot.AddComponent<SlugBot>();
             brain.controller = bot.GetComponent<SlugMoveController>();

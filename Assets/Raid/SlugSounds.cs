@@ -11,6 +11,7 @@ namespace SlugExtract
     public class SlugSounds : MonoBehaviour
     {
         public SoundBank bank;
+        [Tooltip("ほかのナメクジ（ボット、あとでほかの人）の音：その場所から聞こえ、遠くまで届く（銃声は遠く、ほかは近く）")] public bool other;
 
         AudioSource _source;
         SlugBag _bag;
@@ -20,12 +21,13 @@ namespace SlugExtract
         SlugKnifeHolder _knife;
         SlugLoadout _loadout;
         SlugHitboxes _hitboxes;
+        float _lastStrike = -9f;
 
         void Awake()
         {
             _source = gameObject.AddComponent<AudioSource>();
             _source.playOnAwake = false;
-            _source.spatialBlend = 0.3f;     // one's own doings sound close, a little placed
+            _source.spatialBlend = other ? 1f : 0.3f;     // one's own doings sound close, a little placed
             var root = transform.root;
             _bag = root.GetComponentInChildren<SlugBag>(true);
             _pickaxe = root.GetComponentInChildren<SlugToolHolder>(true);
@@ -76,12 +78,13 @@ namespace SlugExtract
         {
             var surface = hit.collider ? hit.collider.GetComponentInParent<IPickaxeSurface>() : null;
             var m = surface != null ? surface.PickaxeMaterial : PickaxeMaterial.Default;
+            _lastStrike = Time.time;
             PlayAt(m == PickaxeMaterial.Hard ? "pickaxe_hit_salt" : m == PickaxeMaterial.Soft ? "pickaxe_hit_soft" : "pickaxe_hit_default", hit.point);
         }
 
         void OnHarvested(ItemKind kind, int amount, bool full)
         {
-            if (amount <= 0) return;
+            if (amount <= 0 || Time.time - _lastStrike > 0.5f) return;      // someone else's pickaxe
             Play("harvest_pop");
             if (kind == ItemKind.RockSalt) Play("harvest_stage");   // the salt mushroom changes shape when one comes out
         }
@@ -90,7 +93,12 @@ namespace SlugExtract
 
         void OnGroundBurst(Vector3 at) => PlayAt("bag_burst", at);
 
-        void OnFired(SlugGunHolder gun) => Play("gun_fire_" + gun.gun.kind.ToString().ToLowerInvariant());
+        void OnFired(SlugGunHolder gun)
+        {
+            string key = "gun_fire_" + gun.gun.kind.ToString().ToLowerInvariant();
+            if (other) PlayAt(key, transform.position + Vector3.up * 0.4f, 10f, 400f);    // a shot is heard far off
+            else Play(key);
+        }
 
         void OnRoundHit(RaycastHit hit)
         {
@@ -112,21 +120,27 @@ namespace SlugExtract
         {
             var e = Pick(keys);
             if (e == null) return;
+            if (other) { PlayEntry(e, transform.position + Vector3.up * 0.3f, 2f, 60f); return; }
             _source.pitch = 1f + Random.Range(-e.pitchJitter, e.pitchJitter);
             _source.PlayOneShot(e.clips[Random.Range(0, e.clips.Length)], e.volume * bank.masterVolume);
         }
 
         /// <summary>From a place in the world (where a hit lands).</summary>
-        void PlayAt(string key, Vector3 at)
+        void PlayAt(string key, Vector3 at, float near = 1.5f, float far = 40f)
         {
             var e = Pick(key);
-            if (e == null) return;
-            var go = new GameObject("Sound_" + key);
+            if (e != null) PlayEntry(e, at, near, far);
+        }
+
+        /// <summary>One clip of <paramref name="e"/> from a place, full loud within <paramref name="near"/> m, fading to <paramref name="far"/>.</summary>
+        void PlayEntry(SoundBank.Entry e, Vector3 at, float near, float far)
+        {
+            var go = new GameObject("Sound_" + e.key);
             go.transform.position = at;
             var s = go.AddComponent<AudioSource>();
             s.spatialBlend = 1f;
-            s.minDistance = 1.5f;
-            s.maxDistance = 40f;
+            s.minDistance = near;
+            s.maxDistance = far;
             s.pitch = 1f + Random.Range(-e.pitchJitter, e.pitchJitter);
             s.clip = e.clips[Random.Range(0, e.clips.Length)];
             s.volume = e.volume * bank.masterVolume;

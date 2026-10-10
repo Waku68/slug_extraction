@@ -64,8 +64,8 @@ namespace SlugMove
 
         [Header("腹ですべる（伏せたまま下り坂で、ぬめりで速く滑り降りる）")]
         [Tooltip("この角度（度）より急な下り坂で、伏せていると滑り出す")] public float bellySlideMinSlope = 10f;
-        [Tooltip("いちばんゆるい坂で滑る速さ（m/s）")] public float bellySlideSlowSpeed = 2f;
-        [Tooltip("急な坂（bellySlideFastSlope）で滑る速さ（m/s）")] public float bellySlideFastSpeed = 6f;
+        [Tooltip("いちばんゆるい坂で滑る速さ（m/s）")] public float bellySlideSlowSpeed = 1.5f;
+        [Tooltip("急な坂（bellySlideFastSlope）で滑る速さ（m/s）")] public float bellySlideFastSpeed = 3.5f;
         [Tooltip("この角度（度）でいちばん速くなる")] public float bellySlideFastSlope = 40f;
         [Tooltip("滑る速さに近づく速さ（m/s²）")] public float bellySlideAcceleration = 5f;
         [Range(0f, 1f), Tooltip("滑りながら左右に寄れる割合")] public float bellySlideSteer = 0.35f;
