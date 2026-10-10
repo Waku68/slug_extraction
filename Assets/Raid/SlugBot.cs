@@ -97,9 +97,13 @@ namespace SlugExtract
 
         void Start()
         {
-            if (randomStart) MoveTo(RandomSaltSpot());
+            if (randomStart)
+            {
+                Random.InitState(System.Environment.TickCount);   // a different spot every play
+                MoveTo(RandomSaltSpot());
+            }
             _lastHealth = health ? health.Current : 0f;
-            foreach (var b in FindObjectsByType<SlugBag>(FindObjectsSortMode.None))
+            foreach (var b in FindObjectsByType<SlugBag>())
             {
                 if (!b.IsPlayer) continue;
                 _player = b.controller.transform;
@@ -116,7 +120,7 @@ namespace SlugExtract
         Vector3 RandomSaltSpot()
         {
             var spots = new List<Harvestable>();
-            foreach (var h in FindObjectsByType<Harvestable>(FindObjectsSortMode.None))
+            foreach (var h in FindObjectsByType<Harvestable>())
                 if (h.kind == ItemKind.RockSalt && Flat(h.transform.position - homeCenter) < homeRadius) spots.Add(h);
             if (spots.Count == 0) return transform.position;
             var p = spots[Random.Range(0, spots.Count)].transform.position;
@@ -471,7 +475,7 @@ namespace SlugExtract
         {
             Harvestable best = null;
             float bestD = mineRange;
-            foreach (var h in FindObjectsByType<Harvestable>(FindObjectsSortMode.None))
+            foreach (var h in FindObjectsByType<Harvestable>())
             {
                 if (h.kind != ItemKind.RockSalt || h.Done >= h.hits) continue;
                 float d = Vector3.Distance(h.transform.position, transform.position);
