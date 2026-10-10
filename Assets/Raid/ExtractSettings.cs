@@ -93,7 +93,7 @@ namespace SlugExtract
         public BagDef snailShell = new BagDef { displayName = "カタツムリの殻", durability = 200f, bodyDamage = 0.3f, capacity = 12f, swell = 0f, weight = 0f };
 
         [Header("採取物")]
-        public ItemDef rockSalt = new ItemDef { displayName = "岩塩", weight = 1.5f, volume = 0.5f, value = 25, size = 0.2f, heldSize = 0.3f, canHide = false, chipColor = new Color(0.95f, 0.88f, 0.9f) };
+        public ItemDef rockSalt = new ItemDef { displayName = "岩塩", weight = 1.5f, volume = 1f, value = 25, size = 0.2f, heldSize = 0.3f, canHide = false, chipColor = new Color(0.95f, 0.88f, 0.9f) };
         public ItemDef crop = new ItemDef { displayName = "雨カブ", weight = 0.5f, volume = 1f, value = 8, size = 0.37f, heldSize = 0.37f, canHide = true, chipColor = new Color(0.55f, 0.75f, 0.3f) };
 
         public ItemDef ugoTake = new ItemDef { displayName = "ウゴタケ", weight = 0.15f, volume = 0.4f, value = 12, size = 0.12f, heldSize = 0.16f, canHide = true, chipColor = new Color(0.85f, 0.78f, 0.66f) };
