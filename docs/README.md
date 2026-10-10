@@ -26,7 +26,7 @@ Oct 5, 2026
 | `ideas/` | [base_ideas.md](ideas/base_ideas.md) | 拠点の設備の案出し |
 | `tech/` | [tool_craft_notes.md](tech/tool_craft_notes.md) | 作り方のメモ：ピッケル、銃3種、装備、当たり判定、縮んで伸びる、気をつけること |
 | | [region_test_notes.md](tech/region_test_notes.md) | 灰色の区画（一辺 800 m）の試作と、這う時間の測定、分かったこと |
-| | [island_test_notes.md](tech/island_test_notes.md) | 灰色の島（東西 1.5 km、島全体を1枚の地形）の試作と、這う時間・山の傾き・谷の深さの測定、分かったこと |
+| | [island_test_notes.md](tech/island_test_notes.md) | 灰色の島（東西 1.5 km、島全体を1枚の地形）の試作と、這う時間・山の傾き・谷の深さの測定、分かったこと。後半は 800 m の島（IslandTest_800）：ナメクジの目の高さの見え方、這う時間 |
 | | [weather_notes.md](tech/weather_notes.md) | 島の時計・天気・湿り気の作り方、開発用のキー、撮り方 |
 | | [sound_list.md](tech/sound_list.md) | 音（効果音・BGM）の置き場所、ファイル名、取り込みの設定、要る音のリスト、鳴らすときのつなぎ口 |
 
@@ -37,7 +37,7 @@ Oct 5, 2026
 
 | 話題 | 資料（古い順） |
 | --- | --- |
-| 島とマップ | [map_discussion.md](discussions/map_discussion.md)（河口の塩沼、スケール）→ [map_discussion_2.md](discussions/map_discussion_2.md)（広さ・人数・時間、共通の予報、晴れの日）→ [persistent_island_discussion.md](discussions/persistent_island_discussion.md)（ずっと続く島、サーバー、抜けると眠る）→ [regions_discussion.md](discussions/regions_discussion.md)（5区画）→ [map_size_discussion.md](discussions/map_size_discussion.md)（広さを数字で）→ [grand_nature_discussion.md](discussions/grand_nature_discussion.md)（雄大さは高さ、自動生成、ベースキャンプ）→ [seamless_island_discussion.md](discussions/seamless_island_discussion.md)（島ひとつをシームレスに、川と塩の流れ、島の大きさ。絵は `island_sketch.webp`）→ [meadow_landmark_discussion.md](discussions/meadow_landmark_discussion.md)（花の草原の目印：菌輪）、[forest_landmark_discussion.md](discussions/forest_landmark_discussion.md)（雨の森の目印：大ガジュマル）→ [sortie_flow_discussion.md](discussions/sortie_flow_discussion.md)（島が小さくなったあとの出撃の流れ・稼ぎ・塩のきのこの数）、[island_population_discussion.md](discussions/island_population_discussion.md)（島の人の密度）→ [terrain_detail_discussion.md](discussions/terrain_detail_discussion.md)（灰色の島がでかすぎる、谷の作り直し、細かい凹凸）、[bag_fill_discussion.md](discussions/bag_fill_discussion.md)（バッグがすぐいっぱい）→ [archipelago_discussion.md](discussions/archipelago_discussion.md)（ゼルダくらいの広さ？ 500 m の島の群島）→ [bag_full_discussion.md](discussions/bag_full_discussion.md)（いっぱいになるまで採るバッグ：積み重ね、重さ、経済） |
+| 島とマップ | [map_discussion.md](discussions/map_discussion.md)（河口の塩沼、スケール）→ [map_discussion_2.md](discussions/map_discussion_2.md)（広さ・人数・時間、共通の予報、晴れの日）→ [persistent_island_discussion.md](discussions/persistent_island_discussion.md)（ずっと続く島、サーバー、抜けると眠る）→ [regions_discussion.md](discussions/regions_discussion.md)（5区画）→ [map_size_discussion.md](discussions/map_size_discussion.md)（広さを数字で）→ [grand_nature_discussion.md](discussions/grand_nature_discussion.md)（雄大さは高さ、自動生成、ベースキャンプ）→ [seamless_island_discussion.md](discussions/seamless_island_discussion.md)（島ひとつをシームレスに、川と塩の流れ、島の大きさ。絵は `island_sketch.webp`）→ [meadow_landmark_discussion.md](discussions/meadow_landmark_discussion.md)（花の草原の目印：菌輪）、[forest_landmark_discussion.md](discussions/forest_landmark_discussion.md)（雨の森の目印：大ガジュマル）→ [sortie_flow_discussion.md](discussions/sortie_flow_discussion.md)（島が小さくなったあとの出撃の流れ・稼ぎ・塩のきのこの数）、[island_population_discussion.md](discussions/island_population_discussion.md)（島の人の密度）→ [terrain_detail_discussion.md](discussions/terrain_detail_discussion.md)（灰色の島がでかすぎる、谷の作り直し、細かい凹凸）、[bag_fill_discussion.md](discussions/bag_fill_discussion.md)（バッグがすぐいっぱい）→ [archipelago_discussion.md](discussions/archipelago_discussion.md)（ゼルダくらいの広さ？ 500 m の島の群島）→ [bag_full_discussion.md](discussions/bag_full_discussion.md)（いっぱいになるまで採るバッグ：積み重ね、重さ、経済）→ [island_height_discussion.md](discussions/island_height_discussion.md)（2人で：どこでも越えられる境目、平場、高さの全面見直し、火口の丘と溶岩原、ナメクジの目線とゼルダの三角） |
 | 天気と体 | [island_clock_discussion.md](discussions/island_clock_discussion.md)（1日9時間、月と潮）、[moisture_discussion.md](discussions/moisture_discussion.md)（湿り気の数字） |
 | 戦い | [health_damage_discussion.md](discussions/health_damage_discussion.md)（何発で倒れるか、塩の希少性）、[slug_gun_discussion.md](discussions/slug_gun_discussion.md)（銃を構造から考え直す） |
 | 数字と見せ方 | [no_numbers_discussion.md](discussions/no_numbers_discussion.md)（数字を出さない世界）→ [no_numbers_discussion_2.md](discussions/no_numbers_discussion_2.md)（お金の塩だけは数字） |
@@ -81,6 +81,7 @@ Oct 5, 2026
 | `EquipTest` | 装備の見比べ（3体並び） | `Slug/EquipTest Build Scene` |
 | `ExtractTest` | 出撃前に持ち物を選んで、採って逃げる（ソロ）。島の時計と天気、湿り気（F3 で開発用の数字） | `Slug/ExtractTest Build Scene`、天気だけ入れ直すなら `Slug/Update Weather (open scene)` |
 | `IslandTest` | 島全体（東西 1.5 km）の灰色の試作。岩塩の山、溶岩台地と火口、砂漠の台地と枯れた谷、森と大ガジュマル（仮）、低い草原と菌輪、塩田、川2本、海。F4 で10倍速で這う。`tech/island_test_notes.md` | `Slug/IslandTest Build Scene` |
+| `IslandTest_800` | 800 m の島の灰色の試作（Oct 9 の高さ）。段と平場のある岩塩の山とたまり池・滝、火口の丘と黒い溶岩原（流れ、キプカ、天窓）、低い砂漠と赤い台地・枯れた谷・岩山、森と大ガジュマル（仮）、草原と菌輪、塩田、川2本。道3本とけものみち5本（つづら折り）、隠れる物（木、下草、草むら、岩、台地の岩の柱など約 1,350 個）。`Map/見る場所` に話し合った地点。`tech/island_test_notes.md` | `Slug/IslandTest 800 m/Build Scene`、`Shoot Views`、`Measure Routes`、`Measure Ways`、`Shoot Ways And Cover`、`Shoot Rivers`、`Shoot Falls` |
 | `RegionTest` | 一辺 800 m の灰色の区画（森・川・洞窟・塩田）を這う。試作 | `Slug/RegionTest Build Scene` |
 
 どのシーンも、1 ピッケル、2 背中の銃、3 腰の道具。古い作り方のシーンに持ち物を足すのは `Slug/Update Player Loadout (open scene)`。
@@ -94,6 +95,7 @@ Oct 5, 2026
 | `Equip/`・`Gun/`・`Move/` | 装備・銃・移動を作ったときの確認用の絵 |
 | `Weather/` | 天気の時計（朝昼夕夜、曇り・雨）、湿り気の見た目、灰色の区画の見下ろし |
 | `Island/` | 灰色の島の上からの全体、斜め、這う目の高さからの見え方 |
+| `Island800/` | 800 m の島：話し合った地点からのナメクジの目の高さの景色（01〜13）、道の上と隠れる物（20〜26）、川（30〜36）、滝（40〜43）、空から |
 | `_Old/` | **削除予定**。v1 の各案の絵、v2 の案ごとの絵 |
 
 ## 履歴（git）

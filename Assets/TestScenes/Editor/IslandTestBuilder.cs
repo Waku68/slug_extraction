@@ -19,10 +19,15 @@ namespace SlugExtract
     /// </summary>
     public static class IslandTestBuilder
     {
-        const string ScenePath = "Assets/Scenes/IslandTest.unity";
-        const string TerrainPath = MoveTestBuilder.GenDir + "/IslandTest_Terrain.asset";
+        // the island is drawn at 1.5 km (the numbers below are for that size) and built at any width, everything scaled
+        // together (heights too, so the slopes stay the same): 1500 m is IslandTest, smaller ones are IslandTest_300 etc.
+        static float _width = 1500f;
+        static float S => _width / IslandWidth;
+        static string Suffix => _width >= IslandWidth ? "" : $"_{_width:0}";
+        static string ScenePath => $"Assets/Scenes/IslandTest{Suffix}.unity";
+        static string TerrainPath => $"{MoveTestBuilder.GenDir}/IslandTest{Suffix}_Terrain.asset";
         // ---- 数字（m）。変えたら Slug/IslandTest Build Scene で作り直す（手で直した地形は消える。docs/tech/island_test_notes.md）
-        const float IslandWidth = 1500f;                       // 島の東西の幅
+        const float IslandWidth = 1500f;                       // 島の東西の幅（下の数字はこの幅のとき。小さい島は全部が同じ割合で縮む）
         const float MountainTop = 250f;                        // 岩塩の山の頂上
         const float MountainFootSteep = 230f, MountainFootGentle = 430f;   // 山のすその広がり（西と北／東と南。島の幅 1500 m のとき）
         const float LavaPlateau = 115f, CraterRim = 200f, CraterBowl = 150f;  // 溶岩台地、火口の縁、火口の中
@@ -30,10 +35,11 @@ namespace SlugExtract
         const float MeadowHeight = 6f;                         // 花の草原と、そのまわりの低い土地
         const float ForestRise = 55f;                          // 森が山へ向かって上がる高さ
 
-        const float Size = IslandWidth * 1.2f, MaxHeight = 300f, Bottom = -20f;   // the terrain reaches 20 m under the sea (y = 0)
+        static float Size => _width * 1.2f;
+        const float MaxHeight = 300f, Bottom = -20f;   // the terrain reaches 20 m under the sea (y = 0)
         const int Res = 1025, AlphaRes = 512;
         const float K = IslandWidth / 452f;    // metres per unit of the map drawing (the island is 452 units wide there)
-        const float Scale = IslandWidth / 1500f;   // the island's size against the first sketch (1.5 km)
+        const float Scale = 1f;   // (the shapes are worked out at 1.5 km; S scales them to the island being built)
 
         // ---- the map drawing (island_map.svg), in its own units (x to the east, y to the south)
         static readonly float[] IslandSvg = { 150,215, 175,188, 230,178, 300,180, 305,145, 330,122, 380,113, 430,122, 458,150, 462,185, 502,186, 522,214, 562,228, 592,250, 586,282, 576,312, 522,326, 482,346, 452,372, 420,396, 380,406, 340,412, 300,402, 286,377, 250,368, 215,362, 185,348, 160,352, 150,330, 140,290 };
@@ -243,11 +249,20 @@ namespace SlugExtract
 
         // ------------------------------------------------------------------ build
         [MenuItem("Slug/IslandTest Build Scene")]
-        public static void Build() => Build(true);
+        public static void Build() { _width = 1500f; Build(true); }
+        [MenuItem("Slug/IslandTest Build 500 m")] public static void Build500() { _width = 500f; Build(true); }
+        [MenuItem("Slug/IslandTest Build 400 m")] public static void Build400() { _width = 400f; Build(true); }
+        [MenuItem("Slug/IslandTest Build 300 m")] public static void Build300() { _width = 300f; Build(true); }
 
         /// <summary>Rebuilds everything but the ground: the terrain keeps the heights and paint it has (edited by hand).</summary>
         [MenuItem("Slug/IslandTest Rebuild (keep my terrain edits)")]
-        public static void RebuildKeepTerrain() => Build(false);
+        public static void RebuildKeepTerrain()
+        {
+            // the open IslandTest scene tells which size it is
+            string name = EditorSceneManager.GetActiveScene().name;
+            _width = name.StartsWith("IslandTest_") && float.TryParse(name.Substring(11), out float w) ? w : 1500f;
+            Build(false);
+        }
 
         static void Build(bool newGround)
         {
@@ -260,7 +275,8 @@ namespace SlugExtract
             Random.InitState(1500);
 
             var terrain = BuildTerrain(map, newGround);
-            System.Func<Vector2, Vector3> on = v => new Vector3(v.x, terrain.SampleHeight(new Vector3(v.x, 0f, v.y)) + Bottom, v.y);
+            float s = S;
+            System.Func<Vector2, Vector3> on = v => new Vector3(v.x * s, terrain.SampleHeight(new Vector3(v.x * s, 0f, v.y * s)) + Bottom, v.y * s);   // a point of the drawing, on the ground
 
             var lit = Shader.Find("Universal Render Pipeline/Lit");
             var sea = MoveTestBuilder.SaveMaterial("IT_Sea", lit, new Color(0.36f, 0.62f, 0.66f));
@@ -289,27 +305,27 @@ namespace SlugExtract
                         Vector2 c = Vector2.Lerp(a, b, (k + 0.5f) / n);
                         Vector3 at = on(c);
                         float yaw = -Mathf.Atan2(b.y - a.y, b.x - a.x) * Mathf.Rad2Deg;
-                        var seg = WeatherSceneSetup.Prim(props, "River", PrimitiveType.Cube, water, at + Vector3.up * 1.4f, new Vector3((b - a).magnitude / n + 2f, 0.05f, 11f), yaw);
+                        var seg = WeatherSceneSetup.Prim(props, "River", PrimitiveType.Cube, water, at + Vector3.up * 1.4f, new Vector3(((b - a).magnitude / n + 2f) * s, 0.05f, 11f * s), yaw);
                         Object.DestroyImmediate(seg.GetComponent<Collider>());
-                        if (k % 3 == 0) WeatherSceneSetup.Zone(props, "River_Zone", MoistureZone.Kind.Water, at + Vector3.up * 1f, new Vector3(14f, 4f, 14f));
+                        if (k % 3 == 0) WeatherSceneSetup.Zone(props, "River_Zone", MoistureZone.Kind.Water, at + Vector3.up * 1f, new Vector3(14f * s, 4f, 14f * s));
                     }
                 }
             }
-            WeatherSceneSetup.Zone(props, "SaltFlat_Salt", MoistureZone.Kind.Salt, on(_salt) + Vector3.up * 3f, new Vector3(56f * K, 10f, 30f * K));
+            WeatherSceneSetup.Zone(props, "SaltFlat_Salt", MoistureZone.Kind.Salt, on(_salt) + Vector3.up * 3f, new Vector3(56f * K * s, 10f, 30f * K * s));
 
             // the giant banyan (the forest's landmark): a trunk, a flat crown 100 m across, and roots hanging down as pillars
             Vector3 bb = on(_banyan);
             var banyan = new GameObject("大ガジュマル（仮）").transform;
             banyan.SetParent(props, false);
-            WeatherSceneSetup.Prim(banyan, "Trunk", PrimitiveType.Cylinder, bark, bb + Vector3.up * 22f, new Vector3(10f, 22f, 10f), 0f);
-            WeatherSceneSetup.Prim(banyan, "Crown", PrimitiveType.Sphere, leaves, bb + Vector3.up * 44f, new Vector3(100f, 14f, 100f), 0f);
+            WeatherSceneSetup.Prim(banyan, "Trunk", PrimitiveType.Cylinder, bark, bb + Vector3.up * 22f * s, new Vector3(10f, 22f, 10f) * s, 0f);
+            WeatherSceneSetup.Prim(banyan, "Crown", PrimitiveType.Sphere, leaves, bb + Vector3.up * 44f * s, new Vector3(100f, 14f, 100f) * s, 0f);
             for (int i = 0; i < 40; i++)
             {
                 Vector2 r = _banyan + Random.insideUnitCircle * 44f;
                 if ((r - _banyan).magnitude < 9f) continue;
                 Vector3 g0 = on(r);
-                float top = bb.y + 40f;
-                WeatherSceneSetup.Prim(banyan, "Root", PrimitiveType.Cylinder, bark, new Vector3(g0.x, (g0.y + top) * 0.5f, g0.z), new Vector3(1.4f, (top - g0.y) * 0.5f, 1.4f), 0f);
+                float top = bb.y + 40f * s;
+                WeatherSceneSetup.Prim(banyan, "Root", PrimitiveType.Cylinder, bark, new Vector3(g0.x, (g0.y + top) * 0.5f, g0.z), new Vector3(1.4f * s, (top - g0.y) * 0.5f, 1.4f * s), 0f);
             }
 
             // the stone arch over the dry canyon
@@ -320,11 +336,11 @@ namespace SlugExtract
                 Vector2 dir = (_canyon[i + 1] - _canyon[i]).normalized;
                 float yaw = -Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg + 90f;
                 Vector3 rim = on(_arch + new Vector2(-dir.y, dir.x) * 60f);
-                WeatherSceneSetup.Prim(props, "石橋（仮）", PrimitiveType.Cube, stone, new Vector3(_arch.x, rim.y - 2f, _arch.y), new Vector3(120f, 4f, 7f), yaw);
+                WeatherSceneSetup.Prim(props, "石橋（仮）", PrimitiveType.Cube, stone, new Vector3(_arch.x * s, rim.y - 2f * s, _arch.y * s), new Vector3(120f, 4f, 7f) * s, yaw);
             }
 
             // labels: the regions, the landmarks and the crossings
-            void L(string text, Vector2 at, float up, float size) => MoveTestBuilder.Label(text, on(at) + Vector3.up * up, size);
+            void L(string text, Vector2 at, float up, float size) => MoveTestBuilder.Label(text, on(at) + Vector3.up * up * s, Mathf.Max(4f, size * s));
             L("岩塩の山", _mountain, 30f, 40f);
             L("黒い溶岩台地", W(410, 160), 25f, 40f);
             L("冷えた火口", _crater, 25f, 25f);
@@ -379,7 +395,7 @@ namespace SlugExtract
                 for (int ix = 0; ix < Res; ix++)
                 {
                     float x = -Size * 0.5f + Size * ix / (Res - 1f), z = -Size * 0.5f + Size * iz / (Res - 1f);
-                    heights[iz, ix] = Mathf.Clamp01((Sample(x, z).h - Bottom) / MaxHeight);
+                    heights[iz, ix] = Mathf.Clamp01((Sample(x / S, z / S).h * S - Bottom) / MaxHeight);
                 }
             data.SetHeights(0, 0, heights);
 
@@ -401,7 +417,7 @@ namespace SlugExtract
                 for (int ix = 0; ix < AlphaRes; ix++)
                 {
                     float x = -Size * 0.5f + Size * ix / (AlphaRes - 1f), z = -Size * 0.5f + Size * iz / (AlphaRes - 1f);
-                    var g = Sample(x, z);
+                    var g = Sample(x / S, z / S);
                     float[] w = new float[layers.Length];
                     w[7] = g.ring;
                     w[3] = g.salt * (1f - w[7]);
@@ -459,7 +475,9 @@ namespace SlugExtract
         }
 
         /// <summary>For measuring from MCP: the island's ground height at a world point (m, the sea at 0), and the map's points.</summary>
-        public static float GroundAt(float x, float z) { if (_island == null) Prepare(); return Sample(x, z).h; }
-        public static Vector2 MapPoint(float sx, float sy) => W(sx, sy);
+        public static float GroundAt(float x, float z) { if (_island == null) Prepare(); return Sample(x / S, z / S).h * S; }
+        public static Vector2 MapPoint(float sx, float sy) => W(sx, sy) * S;
+        /// <summary>For measuring: which width the next GroundAt / MapPoint answer for.</summary>
+        public static void UseWidth(float width) => _width = width;
     }
 }

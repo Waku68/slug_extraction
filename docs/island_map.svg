@@ -1,65 +1,71 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 680 640" role="img" font-family="sans-serif"><title>島の地図（案）</title><desc>わくさんの絵をもとにした島の地図。区画、今の川と昔の川、枯れた谷、塩田、滝、区画の境目の崖と越えられる場所、溶岩洞の口</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 680 640" role="img" font-family="sans-serif"><title>島の地図（800 m）</title><desc>800 m の島の地図（Oct 9）。真ん中に段のある岩塩の山、北に火口の丘と黒い溶岩原、西に低い砂漠と赤い台地を割る枯れた谷と岩山、東と南に森、南に花の草原と塩田。区画どうしはどこでも越えられ、崖は短いものがときどき。川の源は溶岩原のふちの泉と、山の南の中腹のたまり池</desc>
 <ellipse cx="350" cy="275" rx="310" ry="245" fill="#86D3CF"/>
-<path d="M150,215 L175,188 L230,178 L300,180 L305,145 L330,122 L380,113 L430,122 L458,150 L462,185 L502,186 L522,214 L562,228 L592,250 L586,282 L576,312 L522,326 L482,346 L452,372 L420,396 L380,406 L340,412 L300,402 L286,377 L250,368 L215,362 L185,348 L160,352 L150,330 L140,290 Z" fill="#D4E4A6" stroke="#D4E4A6" stroke-width="8" stroke-linejoin="round"/>
+<path d="M150,215 L175,188 L230,178 L300,180 L305,145 L330,122 L380,113 L430,122 L458,150 L462,185 L502,186 L522,214 L562,228 L592,250 L586,282 L576,312 L522,326 L482,346 L452,372 L420,396 L380,406 L340,412 L300,402 L286,377 L250,368 L215,362 L185,348 L160,352 L150,330 L140,290 Z" fill="#D4E4A6" stroke="#E9DDB6" stroke-width="6" stroke-linejoin="round"/>
 <path d="M150,215 C175,185 230,175 300,185 L345,200 C352,230 345,262 330,285 C300,300 260,300 225,305 C195,310 165,300 150,285 C142,262 143,235 150,215 Z" fill="#F2E2BC"/>
 <path d="M400,195 C450,172 502,186 522,214 C562,228 592,250 586,282 C576,312 522,326 482,346 C452,372 420,396 380,406 C340,412 300,402 286,377 C281,356 300,336 330,330 C362,312 395,300 400,272 Z" fill="#5DAE6B"/>
 <ellipse cx="346" cy="372" rx="46" ry="34" fill="#9AD46F"/>
-<path d="M212,236 C190,238 170,232 150,228" fill="none" stroke="#DCC08F" stroke-width="9" stroke-linecap="round"/>
-<path d="M318,256 C295,252 275,246 255,240 C238,235 225,234 212,236" fill="none" stroke="#C9A36E" stroke-width="20" stroke-linecap="round"/>
-<path d="M318,256 C295,252 275,246 255,240 C238,235 225,234 212,236 C190,238 170,232 150,228" fill="none" stroke="#3F86C8" stroke-width="1.5" stroke-dasharray="2 4"/>
+<circle cx="346" cy="372" r="10" fill="none" stroke="#2F6B2A" stroke-width="2.5"/>
 <ellipse cx="210" cy="330" rx="28" ry="15" fill="#FBFAF6" stroke="#CFC4A8" stroke-width="0.5"/>
-<ellipse cx="380" cy="168" rx="80" ry="55" fill="#707070"/>
-<circle cx="350" cy="155" r="20" fill="#9A8F86"/>
-<circle cx="375" cy="262" r="58" fill="#BDBDB8"/>
-<path d="M432,258 C452,250 470,250 488,262 C506,274 522,264 540,262 C558,260 572,276 590,288" fill="none" stroke="#3F86C8" stroke-width="3" stroke-linecap="round"/>
-<path d="M362,318 C356,330 345,338 330,340 C305,344 275,338 238,332" fill="none" stroke="#3F86C8" stroke-width="3" stroke-linecap="round"/>
-<path d="M330.6,299.3 A58,58 0 0,1 317.2,267.1" fill="none" stroke="#3A2F28" stroke-width="3.5" stroke-dasharray="6 4"/>
-<path d="M319.5,245.0 A58,58 0 0,1 341.7,214.5" fill="none" stroke="#3A2F28" stroke-width="3.5" stroke-dasharray="6 4"/>
-<path d="M350.5,209.4 A58,58 0 0,1 369.9,204.2" fill="none" stroke="#3A2F28" stroke-width="3.5"/>
-<path d="M385.1,204.9 A58,58 0 0,1 404,211.8" fill="none" stroke="#3A2F28" stroke-width="3.5"/>
-<path d="M334.1,213.1 A80,55 0 0,1 307.5,191.2" fill="none" stroke="#3A2F28" stroke-width="3.5"/>
-<path d="M300.3,172.8 A80,55 0 0,1 314.5,136.5" fill="none" stroke="#3A2F28" stroke-width="3.5"/>
-<path d="M328.6,125.9 A80,55 0 0,1 368.9,113.5" fill="none" stroke="#3A2F28" stroke-width="3.5"/>
-<path d="M391.1,113.5 A80,55 0 0,1 431.4,125.9" fill="none" stroke="#3A2F28" stroke-width="3.5"/>
-<path d="M330,285 C305,297 275,300 252,302" fill="none" stroke="#3A2F28" stroke-width="3.5" stroke-dasharray="6 4"/>
-<path d="M228,305 C200,309 170,300 150,285" fill="none" stroke="#3A2F28" stroke-width="3.5" stroke-dasharray="6 4"/>
-<circle cx="360" cy="324" r="6" fill="#FFFFFF" stroke="#3F86C8" stroke-width="1.5"/>
-<circle cx="318" cy="256" r="5.5" fill="#FFFFFF" stroke="#3A2F28" stroke-width="1.5"/>
-<circle cx="377" cy="204" r="5.5" fill="#FFFFFF" stroke="#3A2F28" stroke-width="1.5"/>
-<circle cx="262" cy="242" r="5.5" fill="#FFFFFF" stroke="#3A2F28" stroke-width="1.5"/>
-<circle cx="240" cy="303" r="5.5" fill="#FFFFFF" stroke="#3A2F28" stroke-width="1.5"/>
-<circle cx="522" cy="265" r="5.5" fill="#FFFFFF" stroke="#3A2F28" stroke-width="1.5"/>
-<rect x="297" y="177" width="11" height="11" fill="#E2804A" stroke="#2C2C2A" stroke-width="1"/>
-<rect x="374.5" y="107.5" width="11" height="11" fill="#E2804A" stroke="#2C2C2A" stroke-width="1"/>
-<text class="th" x="440" y="168" text-anchor="middle" font-size="14" font-weight="500" style="fill:#F1EFE8">黒い溶岩台地</text>
-<text class="ts" x="350" y="160" text-anchor="middle" font-size="12" style="fill:#F1EFE8">火口</text>
-<text class="ts" x="394" y="198" text-anchor="start" font-size="12" style="fill:#F1EFE8">尾根</text>
-<text class="th" x="380" y="266" text-anchor="middle" font-size="14" font-weight="500" style="fill:#2C2C2A">岩塩の山</text>
+<path d="M250,214 L272,206 L300,205 L325,210 L342,222 L348,245 L346,268 L338,284 L316,292 L290,293 L262,290 L242,282 L236,262 L240,236 Z" fill="#D9A876" stroke="#B9824F" stroke-width="1.5" stroke-linejoin="round"/>
+<ellipse cx="222" cy="268" rx="9" ry="6" transform="rotate(35 222 268)" fill="#C98E5E"/>
+<ellipse cx="226" cy="214" rx="8" ry="5" transform="rotate(-20 226 214)" fill="#C98E5E"/>
+<ellipse cx="204" cy="246" rx="6" ry="4" transform="rotate(70 204 246)" fill="#C98E5E"/>
+<ellipse cx="214" cy="292" rx="7" ry="4.5" transform="rotate(10 214 292)" fill="#C98E5E"/>
+<path d="M330,258 L318,256 L295,252 L275,246 L255,240 L243,236.5 L232,233" fill="none" stroke="#9A5B32" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="281" y1="240" x2="287" y2="258" stroke="#EADCC2" stroke-width="3"/>
+<path d="M392,159 L430,122 L458,150 L466,172 L458,196 L440,210 L420,200 L400,178 Z" fill="#707070"/>
+<circle cx="350" cy="165" r="50" fill="#5C5A57"/>
+<path d="M350,165 L399,144" stroke="#3E3C3A" stroke-width="16" stroke-linecap="round"/>
+<circle cx="350" cy="165" r="18" fill="#3E3C3A"/>
+<g fill="none" stroke="#4A4846" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"><path d="M395,146 L400,135 L404,124 L407,114"/><path d="M395,146 L412,148 L430,150 L448,155 L462,159"/><path d="M395,146 L408,162 L420,178 L432,193 L438,203"/></g>
+<g fill="#5DAE6B"><ellipse cx="420" cy="133" rx="6" ry="5"/><ellipse cx="424" cy="166" rx="7" ry="6"/><ellipse cx="449" cy="180" rx="8" ry="7"/></g>
+<g fill="#1E1E1E"><circle cx="410" cy="148" r="2.5"/><circle cx="428" cy="150" r="2.5"/><circle cx="446" cy="155" r="2.5"/></g>
+<rect x="459.5" y="152.5" width="10" height="10" fill="#E2804A" stroke="#2C2C2A" stroke-width="1"/>
+<path d="M428,121 Q440,126 448,138" fill="none" stroke="#2A2A2A" stroke-width="4" stroke-linecap="round"/>
+<circle cx="375" cy="262" r="62" fill="#BDBDB8"/>
+<g fill="none" stroke="#8F8F8A" stroke-width="2" stroke-linecap="round"><path d="M352,238 A33,33 0 0,1 380,229"/><path d="M398,252 A26,26 0 0,1 396,281"/><path d="M340,292 A46,46 0 0,1 330,268"/><path d="M372,312 A50,50 0 0,0 402,303"/><path d="M413,232 A48,48 0 0,1 423,262"/></g>
+<path d="M452,203 C458,222 466,240 476,252 C488,262 506,274 522,264 C540,262 558,260 572,276 C590,288 600,294 604,296" fill="none" stroke="#3F86C8" stroke-width="3" stroke-linecap="round"/>
+<path d="M368,316 C361,325 356,331 345,338 C330,340 305,344 275,338 C250,334 238,332 222,330" fill="none" stroke="#3F86C8" stroke-width="3" stroke-linecap="round"/>
+<circle cx="452" cy="203" r="5" fill="#E6F1FB" stroke="#3F86C8" stroke-width="1.5"/>
+<circle cx="368" cy="316" r="5" fill="#E6F1FB" stroke="#3F86C8" stroke-width="1.5"/>
+<path d="M359,322 L365,330" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+<circle cx="500" cy="228" r="8" fill="#2F7A3B" stroke="#173404" stroke-width="1"/>
+<path d="M305,145 L318,132 L330,122" fill="none" stroke="#712B13" stroke-width="5" stroke-linecap="round"/>
+<g fill="none" stroke="#2C2C2A" stroke-width="3.5" stroke-linecap="round"><path d="M262,291 L280,293"/><path d="M262,207 L280,205"/><path d="M432,197 L442,207"/><path d="M406,112 L412,120"/><path d="M395,214 L408,222"/><path d="M247,284 L240,272"/></g>
+<text class="th" x="338" y="200" text-anchor="middle" font-size="13" font-weight="500" style="fill:#F1EFE8">火口の丘</text>
+<text class="th" x="440" y="186" text-anchor="middle" font-size="12" font-weight="500" style="fill:#F1EFE8">黒い溶岩原</text>
+<text class="ts" x="374" y="150" text-anchor="middle" font-size="10" style="fill:#F1EFE8">切れ目</text>
+<text class="ts" x="452" y="122" text-anchor="start" font-size="10" style="fill:#2C2C2A">黒い砂の浜</text>
+<text class="th" x="380" y="274" text-anchor="middle" font-size="14" font-weight="500" style="fill:#2C2C2A">岩塩の山</text>
 <text class="th" x="535" y="230" text-anchor="middle" font-size="14" font-weight="500" style="fill:#173404">雨の森</text>
-<text class="ts" x="522" y="288" text-anchor="middle" font-size="12" style="fill:#EAF3DE">浅瀬</text>
-<text class="th" x="346" y="380" text-anchor="middle" font-size="14" font-weight="500" style="fill:#27500A">花の草原</text>
-<text class="ts" x="384" y="342" text-anchor="start" font-size="12" style="fill:#EAF3DE">滝</text>
-<text class="th" x="225" y="206" text-anchor="middle" font-size="14" font-weight="500" style="fill:#633806">砂漠（高い台地）</text>
-<text class="ts" x="300" y="232" text-anchor="middle" font-size="12" style="fill:#633806">峠</text>
-<text class="ts" x="262" y="226" text-anchor="middle" font-size="12" style="fill:#633806">石橋</text>
-<text class="ts" x="250" y="274" text-anchor="middle" font-size="12" style="fill:#633806">枯れた谷</text>
-<text class="ts" x="250" y="320" text-anchor="start" font-size="12" style="fill:#3B6D11">崩れた坂</text>
+<text class="ts" x="500" y="248" text-anchor="middle" font-size="10" style="fill:#173404">大ガジュマル</text>
+<text class="ts" x="468" y="210" text-anchor="start" font-size="10" style="fill:#173404">溶岩のふちの泉</text>
+<text class="ts" x="522" y="288" text-anchor="middle" font-size="11" style="fill:#EAF3DE">浅瀬</text>
+<text class="th" x="346" y="392" text-anchor="middle" font-size="13" font-weight="500" style="fill:#27500A">花の草原（菌輪）</text>
+<text class="ts" x="376" y="322" text-anchor="start" font-size="10" style="fill:#2C2C2A">たまり池と滝</text>
+<text class="th" x="190" y="200" text-anchor="middle" font-size="14" font-weight="500" style="fill:#633806">砂漠</text>
+<text class="ts" x="300" y="228" text-anchor="middle" font-size="11" style="fill:#633806">赤い台地</text>
+<text class="ts" x="276" y="276" text-anchor="middle" font-size="11" style="fill:#633806">枯れた谷</text>
+<text class="ts" x="284" y="236" text-anchor="middle" font-size="10" style="fill:#633806">石橋</text>
+<text class="ts" x="182" y="270" text-anchor="middle" font-size="10" style="fill:#633806">岩山</text>
 <text class="ts" x="210" y="334" text-anchor="middle" font-size="12" style="fill:#444441">塩田</text>
-<text class="ts" x="268" y="360" text-anchor="middle" font-size="12" style="fill:#3B6D11">低い土地</text>
 <line x1="60" y1="552" x2="92" y2="552" stroke="#3F86C8" stroke-width="3" stroke-linecap="round"/>
-<text class="ts" x="100" y="556" font-size="12" style="fill:#5F5E5A">今の川</text>
-<line x1="170" y1="552" x2="202" y2="552" stroke="#3F86C8" stroke-width="1.5" stroke-dasharray="2 4"/>
-<text class="ts" x="210" y="556" font-size="12" style="fill:#5F5E5A">昔の川（枯れた谷）</text>
-<line x1="340" y1="552" x2="372" y2="552" stroke="#C9A36E" stroke-width="12" stroke-linecap="round"/>
-<text class="ts" x="380" y="556" font-size="12" style="fill:#5F5E5A">谷</text>
-<circle cx="430" cy="552" r="6" fill="#FFFFFF" stroke="#3F86C8" stroke-width="1.5"/>
-<text class="ts" x="442" y="556" font-size="12" style="fill:#5F5E5A">滝</text>
-<line x1="60" y1="582" x2="92" y2="582" stroke="#3A2F28" stroke-width="3.5"/>
-<text class="ts" x="100" y="586" font-size="12" style="fill:#5F5E5A">崖（登れない）</text>
-<line x1="230" y1="582" x2="262" y2="582" stroke="#3A2F28" stroke-width="3.5" stroke-dasharray="6 4"/>
-<text class="ts" x="270" y="586" font-size="12" style="fill:#5F5E5A">乾いた崖（雨と夜は登れる）</text>
-<circle cx="76" cy="612" r="5.5" fill="#FFFFFF" stroke="#3A2F28" stroke-width="1.5"/>
-<text class="ts" x="90" y="616" font-size="12" style="fill:#5F5E5A">越えられる所（峠・尾根・石橋・崩れた坂・浅瀬・滝の裏）</text>
-<rect x="470.5" y="606.5" width="11" height="11" fill="#E2804A" stroke="#2C2C2A" stroke-width="1"/>
-<text class="ts" x="490" y="616" font-size="12" style="fill:#5F5E5A">溶岩洞の口</text>
+<circle cx="102" cy="552" r="5" fill="#E6F1FB" stroke="#3F86C8" stroke-width="1.5"/>
+<text class="ts" x="114" y="556" font-size="12" style="fill:#5F5E5A">川と源</text>
+<line x1="180" y1="552" x2="212" y2="552" stroke="#9A5B32" stroke-width="9" stroke-linecap="round"/>
+<text class="ts" x="220" y="556" font-size="12" style="fill:#5F5E5A">枯れた谷（深さ 40〜45 m）</text>
+<line x1="390" y1="552" x2="422" y2="552" stroke="#8F8F8A" stroke-width="2"/>
+<text class="ts" x="430" y="556" font-size="12" style="fill:#5F5E5A">山の平場（高さ 19 m ごと）</text>
+<line x1="60" y1="582" x2="92" y2="582" stroke="#712B13" stroke-width="5" stroke-linecap="round"/>
+<text class="ts" x="100" y="586" font-size="12" style="fill:#5F5E5A">大きい崖（海に削られた火口の丘）</text>
+<line x1="320" y1="582" x2="340" y2="582" stroke="#2C2C2A" stroke-width="3.5" stroke-linecap="round"/>
+<text class="ts" x="348" y="586" font-size="12" style="fill:#5F5E5A">ときどきの崖（ほかはどこでも越えられる）</text>
+<line x1="60" y1="612" x2="92" y2="612" stroke="#4A4846" stroke-width="10" stroke-linecap="round"/>
+<text class="ts" x="100" y="616" font-size="12" style="fill:#5F5E5A">溶岩の流れ</text>
+<circle cx="200" cy="612" r="2.5" fill="#1E1E1E"/>
+<text class="ts" x="210" y="616" font-size="12" style="fill:#5F5E5A">天窓</text>
+<rect x="265.5" y="606.5" width="11" height="11" fill="#E2804A" stroke="#2C2C2A" stroke-width="1"/>
+<text class="ts" x="284" y="616" font-size="12" style="fill:#5F5E5A">溶岩洞の口</text>
+<ellipse cx="380" cy="612" rx="7" ry="5" fill="#5DAE6B"/>
+<text class="ts" x="394" y="616" font-size="12" style="fill:#5F5E5A">キプカ（溶岩に囲まれた森）</text>
 </svg>
