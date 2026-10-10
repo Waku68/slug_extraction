@@ -16,6 +16,37 @@ namespace SlugExtract
         const string BotName = "ボット";
         const string BotSaltName = "ボット用の岩塩";
 
+        const float SwellHeight = 0.9f, SwellSpacing = 5f;    // the swells: up to about 0.9 m, every 4–6 m
+
+        /// <summary>
+        /// Low swells of the ground on the mountain's gentle slopes and shoulder (spec 8: open ground gets 0.5–1 m swells):
+        /// a slug that lies down (Z) behind one is out of sight, a few seconds' crawl from anywhere. Mounds with flat
+        /// ground between, only where the slope is under about 30°, fading out below 25 m and above 95 m.
+        /// </summary>
+        static void Swells(float[] hm)
+        {
+            Vector2 c = W(MountainSvg);
+            float cell = Size / (Res - 1f), f = 1f / SwellSpacing;
+            var add = new float[hm.Length];
+            for (int iz = 1; iz < Res - 1; iz++)
+                for (int ix = 1; ix < Res - 1; ix++)
+                {
+                    float x = -Size * 0.5f + cell * ix, z = -Size * 0.5f + cell * iz;
+                    if ((new Vector2(x, z) - c).sqrMagnitude > 260f * 260f) continue;
+                    int i = iz * Res + ix;
+                    float h = hm[i];
+                    float band = Smooth(22f, 30f, h) * (1f - Smooth(88f, 96f, h));
+                    if (band <= 0f) continue;
+                    float gx = (hm[i + 1] - hm[i - 1]) / (2f * cell), gz = (hm[i + Res] - hm[i - Res]) / (2f * cell);
+                    float slope = Mathf.Atan(Mathf.Sqrt(gx * gx + gz * gz)) * Mathf.Rad2Deg;
+                    float gentle = 1f - Smooth(22f, 32f, slope);
+                    if (gentle <= 0f) continue;
+                    float n = Fbm(x * f, z * f, 2, 301) + 0.35f * Fbm(x * f * 2.3f, z * f * 2.3f, 1, 307);
+                    add[i] = Mathf.Max(0f, n - 0.05f) * 1.7f * SwellHeight * band * gentle;
+                }
+            for (int i = 0; i < hm.Length; i++) hm[i] += Mathf.Min(add[i], SwellHeight);
+        }
+
         [MenuItem("Slug/IslandTest 800 m/Add Bot On The Mountain")]
         public static string AddBot()
         {

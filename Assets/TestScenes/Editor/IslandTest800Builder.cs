@@ -624,6 +624,7 @@ namespace SlugExtract
                     float x = -Size * 0.5f + Size * ix / (Res - 1f), z = -Size * 0.5f + Size * iz / (Res - 1f);
                     hm[iz * Res + ix] = FallGround(x, z, Height(x, z), out _, out _);
                 }
+            Swells(hm);                            // low swells on the mountain to drop behind (IslandTest800Bot.cs)
             var paths = CarveRoads(hm);            // the roads and the animal trails, cut into the ground
             PlanCaves(hm);                         // the caves (IslandTest800Caves.cs): planned on the finished ground
             for (int iz = 0; iz < Res; iz++)

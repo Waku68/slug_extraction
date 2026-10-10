@@ -62,6 +62,14 @@ namespace SlugMove
         [Range(0.05f, 1f), Tooltip("伏せている間の速さの倍率")] public float proneSpeed = 0.35f;
         [Tooltip("伏せる・起き上がるのにかかる時間（秒）")] public float proneTime = 0.4f;
 
+        [Header("腹ですべる（伏せたまま下り坂で、ぬめりで速く滑り降りる）")]
+        [Tooltip("この角度（度）より急な下り坂で、伏せていると滑り出す")] public float bellySlideMinSlope = 10f;
+        [Tooltip("いちばんゆるい坂で滑る速さ（m/s）")] public float bellySlideSlowSpeed = 2f;
+        [Tooltip("急な坂（bellySlideFastSlope）で滑る速さ（m/s）")] public float bellySlideFastSpeed = 6f;
+        [Tooltip("この角度（度）でいちばん速くなる")] public float bellySlideFastSlope = 40f;
+        [Tooltip("滑る速さに近づく速さ（m/s²）")] public float bellySlideAcceleration = 5f;
+        [Range(0f, 1f), Tooltip("滑りながら左右に寄れる割合")] public float bellySlideSteer = 0.35f;
+
         [Header("這う動き（体の波）")]
         [Tooltip("止まっているときの波の進み（1 = シェーダー本来の速さ）")] public float idleCrawlRate = 0.2f;
         [Tooltip("速度 1 m/s あたりに足す波の進み")] public float crawlRatePerSpeed = 1.1f;

@@ -76,6 +76,8 @@ namespace SlugMove
         public bool OnGround { get; private set; }
         public bool TooSteep => OnGround && !_climbing && SlopeAngle > settings.slopeLimit;
         public bool Climbing => _climbing;
+        /// <summary>Lying down on a downhill slope and gliding down it on the slime.</summary>
+        public bool BellySliding { get; private set; }
         /// <summary>0..1 while shrinking (how far it is charged), 0 otherwise.</summary>
         public float LungeCharge => _charging ? _charge : 0f;
         /// <summary>True from letting go until the stretch has glided out.</summary>
@@ -204,6 +206,7 @@ namespace SlugMove
         void Crawl(Vector3 dir, float wishAmount, float dt)
         {
             var s = settings;
+            BellySliding = false;
             if (_lunging)
             {
                 // carried by the stretch: no speed limit; it keeps its speed in the air and glides out on the ground
@@ -214,6 +217,16 @@ namespace SlugMove
                     _velocity = sp > 1e-5f ? _velocity * (next / sp) : Vector3.zero;
                     if (next <= s.maxSpeed * SpeedFactor * 1.02f) _lunging = false;
                 }
+            }
+            // lying down on a slope: slides down it on the belly, faster the steeper (steering a little)
+            else if (BellySliding = Prone01 > 0.5f && OnGround && !TooSteep && SlopeAngle >= s.bellySlideMinSlope)
+            {
+                Vector3 down = new Vector3(_groundNormal.x, 0f, _groundNormal.z).normalized;
+                Vector3 side = Vector3.Cross(Vector3.up, down);
+                float k = Mathf.InverseLerp(s.bellySlideMinSlope, s.bellySlideFastSlope, SlopeAngle);
+                Vector3 want = (down + side * (Vector3.Dot(dir, side) * wishAmount * s.bellySlideSteer)).normalized
+                               * Mathf.Lerp(s.bellySlideSlowSpeed, s.bellySlideFastSpeed, k) * devSpeed;
+                _velocity = Vector3.MoveTowards(_velocity, want, s.bellySlideAcceleration * devSpeed * dt);
             }
             // speed: slow to build up, and a slippery stop (exponential glide + a small constant brake)
             else if (wishAmount > 1e-4f)
