@@ -53,8 +53,10 @@ namespace SlugExtract
         [Tooltip("歩き回る場所の中心と半径（m）。0 = 生まれた場所")] public Vector3 homeCenter;
         public float homeRadius = 80f;
 
-        [Header("見る")]
-        [Tooltip("頭の上に今していることを出す（調整用）")] public bool showState = true;
+        [Header("テスト")]
+        [Tooltip("始まるたびに、山の岩塩のどれかのそばへ移る（居場所が分からないように）")] public bool randomStart = true;
+        [Tooltip("プレイヤーを、ボットから見えない 60〜100 m 先から始めさせる（たどり着くまでを短く）")] public bool startPlayerNear = true;
+        [Tooltip("頭の上に今していることを出す（調整用。F5 で切り替え）")] public bool showState;
 
         public Mode State { get; private set; } = Mode.Mine;
         /// <summary>0 = nothing noticed .. 1 = sure, shooting.</summary>
@@ -95,7 +97,7 @@ namespace SlugExtract
 
         void Start()
         {
-            _yaw = cameraRig.Yaw;
+            if (randomStart) MoveTo(RandomSaltSpot());
             _lastHealth = health ? health.Current : 0f;
             foreach (var b in FindObjectsByType<SlugBag>(FindObjectsSortMode.None))
             {
@@ -106,6 +108,57 @@ namespace SlugExtract
                 foreach (var g in _player.GetComponents<SlugGunHolder>()) { g.Fired += OnPlayerShot; _heard.Add(g); }
                 var t = _player.GetComponent<SlugToolHolder>();
                 if (t) { t.Struck += OnPlayerPickaxe; _heard.Add(t); }
+            }
+            if (startPlayerNear && _player) PlacePlayer();
+            _yaw = cameraRig.Yaw;
+        }
+
+        Vector3 RandomSaltSpot()
+        {
+            var spots = new List<Harvestable>();
+            foreach (var h in FindObjectsByType<Harvestable>(FindObjectsSortMode.None))
+                if (h.kind == ItemKind.RockSalt && Flat(h.transform.position - homeCenter) < homeRadius) spots.Add(h);
+            if (spots.Count == 0) return transform.position;
+            var p = spots[Random.Range(0, spots.Count)].transform.position;
+            Vector2 o = Random.insideUnitCircle.normalized * 2f;
+            return p + new Vector3(o.x, 0.3f, o.y);
+        }
+
+        static void MoveTo(Transform t, Vector3 at)
+        {
+            var cc = t.GetComponent<CharacterController>();
+            if (cc) cc.enabled = false;
+            if (Physics.Raycast(at + Vector3.up * 5f, Vector3.down, out var hit, 20f, SlugHitboxes.WorldMask, QueryTriggerInteraction.Ignore))
+                at = hit.point + Vector3.up * 0.05f;
+            t.position = at;
+            if (cc) cc.enabled = true;
+        }
+
+        void MoveTo(Vector3 at)
+        {
+            MoveTo(transform, at);
+            float yaw = Random.Range(0f, 360f);
+            transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+            cameraRig.SetLook(yaw, 5f);
+        }
+
+        /// <summary>The player starts 60–100 m off, on ground about as high, where this slug cannot see it, facing the mountain.</summary>
+        void PlacePlayer()
+        {
+            for (int i = 0; i < 80; i++)
+            {
+                float a = Random.Range(0f, Mathf.PI * 2f), r = Random.Range(60f, 100f);
+                Vector3 p = transform.position + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * r;
+                if (!Physics.Raycast(p + Vector3.up * 200f, Vector3.down, out var hit, 400f, SlugHitboxes.WorldMask, QueryTriggerInteraction.Ignore)) continue;
+                if (hit.normal.y < 0.8f || Mathf.Abs(hit.point.y - transform.position.y) > 15f || hit.point.y < 1f) continue;
+                if (Clear(Eye, hit.point + Vector3.up * 0.45f)) continue;
+                MoveTo(_player, hit.point);
+                var rig = _player.GetComponent<SlugCameraRig>();
+                Vector3 d = homeCenter - hit.point;
+                float yaw = Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg;
+                _player.rotation = Quaternion.Euler(0f, yaw, 0f);     // the rig takes its yaw from here when it starts
+                if (rig) rig.SetLook(yaw, 0f);
+                return;
             }
         }
 
@@ -492,6 +545,12 @@ namespace SlugExtract
         void Drive(float dt, Vector2 move) => controller.Simulate(dt, Vector2.ClampMagnitude(move, 1f), false);
 
         static float Flat(Vector3 v) => new Vector2(v.x, v.z).magnitude;
+
+        void LateUpdate()
+        {
+            var kb = UnityEngine.InputSystem.Keyboard.current;
+            if (kb != null && kb.f5Key.wasPressedThisFrame) showState = !showState;
+        }
 
         void OnGUI()
         {

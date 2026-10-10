@@ -8608,7 +8608,9 @@ MonoBehaviour:
   mineRange: 120
   homeCenter: {x: 15, y: 112.49832, z: -15}
   homeRadius: 90
-  showState: 1
+  randomStart: 1
+  startPlayerNear: 1
+  showState: 0
 --- !u!114 &84144117
 MonoBehaviour:
   m_ObjectHideFlags: 0
