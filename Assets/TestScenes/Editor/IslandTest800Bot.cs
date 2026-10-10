@@ -48,7 +48,13 @@ namespace SlugExtract
         }
 
         [MenuItem("Slug/IslandTest 800 m/Add Bot On The Mountain")]
-        public static string AddBot()
+        public static string AddBot() => AddBots(1);
+
+        /// <summary>Three bots: the mountain as busy as on a full island (12–18 slugs, a third of them on the mountain).</summary>
+        [MenuItem("Slug/IslandTest 800 m/Add 3 Bots On The Mountain")]
+        public static string AddThreeBots() => AddBots(3);
+
+        public static string AddBots(int count)
         {
             var terrain = Terrain.activeTerrain;
             if (!terrain) return "no terrain (open IslandTest_800)";
@@ -66,14 +72,14 @@ namespace SlugExtract
             dmg.vanishOnFall = false;
             EditorUtility.SetDirty(dmg);
 
-            foreach (var name in new[] { BotName, BotSaltName })
+            foreach (var old in Object.FindObjectsByType<SlugBot>(FindObjectsInactive.Include))
             {
-                var old = GameObject.Find(name);
-                if (!old) continue;
                 var oldRig = old.GetComponent<SlugCameraRig>();
                 if (oldRig && oldRig.cam && !oldRig.cam.transform.IsChildOf(old.transform)) Object.DestroyImmediate(oldRig.cam.gameObject);
-                Object.DestroyImmediate(old);
+                Object.DestroyImmediate(old.gameObject);
             }
+            var oldSalt = GameObject.Find(BotSaltName);
+            if (oldSalt) Object.DestroyImmediate(oldSalt);
 
             // the mountain: its highest point
             var td = terrain.terrainData;
@@ -115,9 +121,12 @@ namespace SlugExtract
             if (placed == 0) return "no shoulder ground found";
             spawn.y = terrain.SampleHeight(spawn) + origin.y + 0.05f;
 
-            // the bot: the player's body, driven by SlugBot
-            var bot = MoveTestBuilder.BuildPlayer(MoveTestBuilder.LoadSettings(), spawn);
-            bot.name = BotName;
+            GameObject bot = null;
+            for (int n = 0; n < count; n++)
+            {
+            // the bot: the player's body, driven by SlugBot (they spread out over the salt when the play starts)
+            bot = MoveTestBuilder.BuildPlayer(MoveTestBuilder.LoadSettings(), spawn + new Vector3(n * 3f, 0f, 0f));
+            bot.name = count == 1 ? BotName : BotName + (n + 1);
             Object.DestroyImmediate(bot.GetComponent<SlugMoveHud>());
             var picker = bot.GetComponent<LoadoutPicker>();
             if (picker) Object.DestroyImmediate(picker);
@@ -154,11 +163,12 @@ namespace SlugExtract
             brain.homeCenter = new Vector3(top.x, topH + origin.y, top.z);
             brain.homeRadius = 90f;
             bag.slug.Rebuild();
+            }
 
             EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
             EditorSceneManager.SaveOpenScenes();
             Selection.activeGameObject = bot;
-            return $"bot at {spawn:F1}, {placed} salt spots round the shoulder (top {topH + origin.y:F0} m)";
+            return $"{count} bot(s) at {spawn:F1}, {placed} salt spots round the shoulder (top {topH + origin.y:F0} m)";
         }
     }
 }

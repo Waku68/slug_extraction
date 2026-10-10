@@ -97,11 +97,6 @@ namespace SlugExtract
 
         void Start()
         {
-            if (randomStart)
-            {
-                Random.InitState(System.Environment.TickCount);   // a different spot every play
-                MoveTo(RandomSaltSpot());
-            }
             _lastHealth = health ? health.Current : 0f;
             foreach (var b in FindObjectsByType<SlugBag>())
             {
@@ -113,15 +108,33 @@ namespace SlugExtract
                 var t = _player.GetComponent<SlugToolHolder>();
                 if (t) { t.Struck += OnPlayerPickaxe; _heard.Add(t); }
             }
-            if (startPlayerNear && _player) PlacePlayer();
+            // the first bot to start spreads them all out, then sets the player down out of everyone's sight
+            if (Time.frameCount != _spreadFrame)
+            {
+                _spreadFrame = Time.frameCount;
+                Random.InitState(System.Environment.TickCount);   // different spots every play
+                var bots = FindObjectsByType<SlugBot>();
+                var taken = new List<Vector3>();
+                foreach (var b in bots)
+                    if (b.randomStart) { var at = b.RandomSaltSpot(taken); taken.Add(at); b.MoveTo(at); }
+                if (startPlayerNear && _player) PlacePlayer(bots);
+            }
             _yaw = cameraRig.Yaw;
         }
 
-        Vector3 RandomSaltSpot()
+        static int _spreadFrame = -1;
+
+        /// <summary>Beside one of the mountain's rock salt, at least 30 m from the spots already <paramref name="taken"/>.</summary>
+        Vector3 RandomSaltSpot(List<Vector3> taken)
         {
             var spots = new List<Harvestable>();
             foreach (var h in FindObjectsByType<Harvestable>())
-                if (h.kind == ItemKind.RockSalt && Flat(h.transform.position - homeCenter) < homeRadius) spots.Add(h);
+            {
+                if (h.kind != ItemKind.RockSalt || Flat(h.transform.position - homeCenter) >= homeRadius) continue;
+                bool near = false;
+                foreach (var t in taken) if (Flat(h.transform.position - t) < 30f) near = true;
+                if (!near) spots.Add(h);
+            }
             if (spots.Count == 0) return transform.position;
             var p = spots[Random.Range(0, spots.Count)].transform.position;
             Vector2 o = Random.insideUnitCircle.normalized * 2f;
@@ -147,7 +160,7 @@ namespace SlugExtract
         }
 
         /// <summary>The player starts 60–100 m off, on ground about as high, where this slug cannot see it, facing the mountain.</summary>
-        void PlacePlayer()
+        void PlacePlayer(SlugBot[] bots)
         {
             for (int i = 0; i < 80; i++)
             {
@@ -155,7 +168,10 @@ namespace SlugExtract
                 Vector3 p = transform.position + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * r;
                 if (!Physics.Raycast(p + Vector3.up * 200f, Vector3.down, out var hit, 400f, SlugHitboxes.WorldMask, QueryTriggerInteraction.Ignore)) continue;
                 if (hit.normal.y < 0.8f || Mathf.Abs(hit.point.y - transform.position.y) > 15f || hit.point.y < 1f) continue;
-                if (Clear(Eye, hit.point + Vector3.up * 0.45f)) continue;
+                bool seen = false;
+                foreach (var b in bots)
+                    if (Flat(b.transform.position - hit.point) < 60f || Clear(b.Eye, hit.point + Vector3.up * 0.45f)) seen = true;
+                if (seen) continue;
                 MoveTo(_player, hit.point);
                 var rig = _player.GetComponent<SlugCameraRig>();
                 Vector3 d = homeCenter - hit.point;
