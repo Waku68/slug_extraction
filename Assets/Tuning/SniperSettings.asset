@@ -22,7 +22,7 @@ MonoBehaviour:
   pelletSpread: 0
   fireRate: 120
   magazineSize: 5
-  muzzleSpeed: 300
+  muzzleSpeed: 200
   gravityScale: 1
   roundLife: 1.6
   fireAtRaise: 0.7

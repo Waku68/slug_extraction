@@ -75,7 +75,7 @@ namespace SlugExtract
         static readonly float[] Buttes = { 222,268,8, 226,214,7, 204,246,5.5f, 214,292,6.5f };   // x, y, radius (units)
         static readonly float[] MesaBreaks = { 246,221, 270,292, 300,206 };                         // where the mesa's walls have surely fallen into a slope
         static readonly float[] Kipukas = { 420,133,11, 424,166,12, 449,180,14 };                  // x, y, radius (m)
-        static readonly float[] Skylights = { 394,147, 410,148, 428,150, 446,155 };   // the first is the vent's collapse, the way into the lava tube from the breach
+        static readonly float[] Skylights = { 394,147, 410,148, 428,150, 446,155 };   // the first is the vent's collapse, the way into the lava tube from the breach (the fourth is now the inlet's, placed by IslandTest800Inlet.cs)
         static readonly Vector2 Cone = new Vector2(350f, 165f), Breach = new Vector2(0.92f, -0.39f).normalized;
         static readonly Vector2 MountainSvg = new Vector2(375f, 262f), MeadowSvg = new Vector2(346f, 372f), SaltSvg = new Vector2(210f, 330f);
         static readonly Vector2 PoolSvg = new Vector2(368f, 316f), SpringSvg = new Vector2(452f, 203f), CoveSvg = new Vector2(438f, 128f);
@@ -130,6 +130,7 @@ namespace SlugExtract
             _canyonFloorEnd = Mathf.Max(Low, Mathf.Min(Low + CanyonFloorRise, around - 2f));
             PrepareCanyon();
             _poolH = Base(PoolSvg.x, PoolSvg.y, null, false);
+            PrepareInlet();                                            // (IslandTest800Inlet.cs)
         }
 
         // ------------------------------------------------------------------ noise and shapes
@@ -287,7 +288,7 @@ namespace SlugExtract
                     float kw = 1f - Smooth(Kipukas[i + 2] - 4f, Kipukas[i + 2] + 3f, kd);
                     if (kw > 0f) { top = Lerp(top, field + 1.5f + n1, kw); kipW = Mathf.Max(kipW, kw); }
                 }
-                for (int i = 0; i < Skylights.Length; i += 2)
+                for (int i = 0; i < 6; i += 2)            // (the fourth skylight is in the inlet's roof: IslandTest800Inlet.cs)
                 {
                     float sd = Mathf.Sqrt((sx - Skylights[i]) * (sx - Skylights[i]) + (sy - Skylights[i + 1]) * (sy - Skylights[i + 1])) * K;
                     top -= 3.5f * (1f - Smooth(2.5f, 4.5f, sd));
@@ -436,7 +437,10 @@ namespace SlugExtract
         }
 
         /// <summary>The finished ground height at a world point (m, the sea at 0).</summary>
-        static float Height(float x, float z)
+        static float Height(float x, float z) => InletCarve(x, z, HeightNoInlet(x, z));
+
+        /// <summary>The ground before the inlet is cut into it (the top of the inlet's roof).</summary>
+        static float HeightNoInlet(float x, float z)
         {
             var s = Svg(x, z);
             float h = Base(s.x, s.y, null, false) + (_erosion != null ? ErosionAt(s.x, s.y) : 0f);
@@ -560,8 +564,7 @@ namespace SlugExtract
             L("切れ目", Cone + Breach * 30f, 8f, 9f);
             L("黒い溶岩原", new Vector2(420, 150), 14f, 18f);
             for (int i = 0; i < Kipukas.Length; i += 3) L("キプカ", new Vector2(Kipukas[i], Kipukas[i + 1]), 6f, 7f);
-            for (int i = 0; i < Skylights.Length; i += 2) L("天窓", new Vector2(Skylights[i], Skylights[i + 1]), 4f, 5f);
-            L("溶岩洞の口", new Vector2(463, 158), 6f, 7f);
+            for (int i = 0; i < 6; i += 2) L("天窓", new Vector2(Skylights[i], Skylights[i + 1]), 4f, 5f);
             L("黒い砂の浜", CoveSvg, 5f, 8f);
             L("砂漠", new Vector2(190, 205), 10f, 18f);
             L("赤い台地", new Vector2(300, 215), 12f, 14f);
@@ -773,7 +776,7 @@ namespace SlugExtract
                 ("花の草原 → たまり池 → 山頂", new[] { new Vector2(346, 372), new Vector2(368, 316), new Vector2(375, 262) }),
                 ("塩田そばのキャンプ → 谷の口 → 谷の奥", new[] { new Vector2(250, 318), new Vector2(228, 232), new Vector2(243, 236.5f), new Vector2(275, 246), new Vector2(295, 252), new Vector2(318, 256), new Vector2(330, 258) }),
                 ("火口の縁（南） → 鞍部 → 山頂", new[] { new Vector2(350, 183), new Vector2(359, 199), new Vector2(375, 262) }),
-                ("火口の切れ目 → 溶岩原 → 溶岩洞の口", new[] { new Vector2(372, 155), new Vector2(395, 146), new Vector2(430, 150), new Vector2(463, 158) }),
+                ("火口の切れ目 → 溶岩原 → 入江", new[] { new Vector2(372, 155), new Vector2(395, 146), new Vector2(430, 150), new Vector2(442.5f, 153.6f) }),
                 ("東の森のキャンプ → 菌輪", new[] { new Vector2(500, 300), new Vector2(346, 372) }),
                 ("東の森のキャンプ → 南を回って → 塩田そばのキャンプ", new[] { new Vector2(500, 300), new Vector2(420, 360), new Vector2(330, 370), new Vector2(250, 318) }),
                 ("東の海岸 → 山を越えて → 西の海岸", new[] { new Vector2(586, 262), new Vector2(375, 262), new Vector2(148, 262) }),

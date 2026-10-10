@@ -172,7 +172,7 @@ namespace SlugMove
                     displayName = "狙撃銃"; ammoName = "岩塩の塊";
                     fireMode = FireMode.Semi; action = GunAction.Bolt; cycleTime = 0.85f;
                     pellets = 1; pelletSpread = 0f;
-                    fireRate = 120f; magazineSize = 5; muzzleSpeed = 300f; gravityScale = 1f; roundLife = 1.6f;
+                    fireRate = 120f; magazineSize = 5; muzzleSpeed = 200f; gravityScale = 1f; roundLife = 1.6f;
                     scopeFov = 14f; scopeTime = 0.2f; scopeSpread = 0.05f; scopeEyeRelief = 0.07f;
                     spreadBase = 2.2f; spreadPerShot = 1.5f; spreadMax = 4f; spreadRecovery = 3f; moveSpread = 3f;
                     climbPerShot = 2.6f; climbYaw = 0.5f; climbYawBias = 0f; climbRecovery = 0.85f; climbRecoverySpeed = 10f;

@@ -23,13 +23,19 @@ namespace SlugExtract
 
         static List<Tube> _tubes = new List<Tube>();
         static List<Dome> _domes = new List<Dome>();
-        static readonly List<Vector3> _mouths = new List<Vector3>();
+        static readonly List<Vector3> _mouths = new List<Vector3>();          // ways in from outside (framed with rocks)
+        static readonly List<Vector3> _openings = new List<Vector3>();        // other places meant to be open (for Check Cave Gaps)
+        class SkyFrame { public Vector2 c, along; public float floor; public Tube tube; }
+        static readonly List<SkyFrame> _skyFrames = new List<SkyFrame>();
+        static float[] _planHm;                                                // the ground the caves were planned on
+        const float SkyAlong = 3f, SkyAcross = 1.9f;                           // the skylight's hole: an ellipse along the tube
         const float SaltDomeR = 4.5f, PlatformH = 1.2f, CaveDoorHalfW = 1.4f;
 
         // ------------------------------------------------------------------ planning (on the finished heights)
         static void PlanCaves(float[] hm)
         {
-            _tubes.Clear(); _domes.Clear(); _mouths.Clear();
+            _tubes.Clear(); _domes.Clear(); _mouths.Clear(); _openings.Clear(); _skyFrames.Clear();
+            _planHm = hm;
             float H(Vector2 w) => HmAt(hm, w.x, w.y);
 
             // ---- the salt cave behind the falls
@@ -72,40 +78,73 @@ namespace SlugExtract
                 _mouths.Add(new Vector3(a0.x, floor, a0.y));
             }
 
-            // ---- the lava tube under the smooth flow
+            // ---- the lava tube under the smooth flow: from the collapse at the vent down to the inlet's head (IslandTest800Inlet.cs)
             {
                 var path = new List<Vector2>();
-                foreach (var s in new[] { new Vector2(392, 147), new Vector2(402, 147), new Vector2(412, 148), new Vector2(428, 150), new Vector2(446, 155) }) path.Add(W(s));
-                var main = new Tube { name = "溶岩洞", halfW = 2.6f, height = 4f, lava = true, capStart = true, capEnd = true };
+                foreach (var s in new[] { new Vector2(392, 147), new Vector2(402, 147), new Vector2(412, 148), new Vector2(428, 150) }) path.Add(W(s));
+                Vector2 end = _inletOK ? InletPoint(InletCenterA, 0f) - _inletU * (InletWaterR + InletLedgeW + 0.1f) : W(446, 155);
+                path.Add(end);
+                var main = new Tube { name = "溶岩洞", halfW = 2.6f, height = 4f, lava = true, capStart = true, capEnd = !_inletOK };
                 var pts = Resample(path, 2f);
                 float prev = float.MaxValue;
                 for (int i = 0; i < pts.Count; i++)
                 {
-                    // 6 m under the flow; its upper end is reached by the collapse at the vent (the first skylight)
+                    // 6 m under the flow, always down toward the sea; the last 24 m come down to the inlet's ledge
                     float f = H(pts[i]) - 6f;
+                    if (_inletOK)
+                    {
+                        float k = 1f - Mathf.Clamp01((pts.Count - 1 - i) * 2f / 24f);
+                        f = Mathf.Lerp(f, PlatformH + 0.05f, k * k * (3f - 2f * k));
+                    }
                     f = Mathf.Min(f, prev - 0.02f);
                     prev = f;
                     main.pts.Add(new Vector3(pts[i].x, f, pts[i].y));
                 }
                 _tubes.Add(main);
-                // three mouths in the sea cliff: from the end of the main tube toward the sea, onto the wave-cut platform
-                Vector3 j = main.pts[main.pts.Count - 1];
-                foreach (var target in new[] { new Vector2(470, 162), new Vector2(462, 145), new Vector2(450, 133) })
+                // where the roof has fallen in: the skylights over it (the fourth one is in the inlet's roof)
+                for (int i = 0; i < 6; i += 2)
                 {
-                    Vector2 from = new Vector2(j.x, j.z), dir = (W(target) - from).normalized;
-                    float l = 4f;
-                    while (l < 70f && H(from + dir * l) > PlatformH + 0.6f) l += 1f;
-                    if (l >= 70f) continue;
-                    var br = new Tube { name = $"溶岩洞の口 {_mouths.Count}", halfW = 2.1f, height = 3.4f, lava = true };
-                    var bp = Resample(new List<Vector2> { from, from + dir * (l + 0.4f) }, 2f);
-                    for (int i = 0; i < bp.Count; i++)
+                    var w = W(Skylights[i], Skylights[i + 1]);
+                    if (!NearTube(main, w.x, w.y, 4f, out float f)) continue;
+                    int seg = 0; float bd = float.MaxValue;
+                    for (int q = 0; q + 1 < main.pts.Count; q++) { float d = (new Vector2(main.pts[q].x, main.pts[q].z) - w).sqrMagnitude; if (d < bd) { bd = d; seg = q; } }
+                    var along = new Vector2(main.pts[seg + 1].x - main.pts[seg].x, main.pts[seg + 1].z - main.pts[seg].z).normalized;
+                    _skyFrames.Add(new SkyFrame { c = w, along = along, floor = f, tube = main });
+                }
+                if (_inletOK)
+                {
+                    _openings.Add(new Vector3(end.x, PlatformH, end.y));
+                    for (float a = InletCenterA - InletWaterR; a < 12f; a += 5f) { var q = InletPoint(a, 0f); _openings.Add(new Vector3(q.x, 0f, q.y)); }
+                    var sky = InletSky;
+                    _openings.Add(new Vector3(sky.x, 0f, sky.y));
+
+                    // the branch from the head's south side up to a pit at the kipuka's edge, climbing at up to 25 degrees
+                    Vector2 p0 = InletPoint(InletCenterA, 0f), d0 = (-_inletU * 0.5f - _inletV * 0.866f).normalized;
+                    Vector2 s0 = p0 + d0 * (InletWaterR + InletLedgeW + 0.1f), s1 = s0 + d0 * 3f, kip = W(Kipukas[6], Kipukas[7]);
+                    float climb = Mathf.Tan(25f * Mathf.Deg2Rad), bestScore = float.MaxValue, bestL = 0f;
+                    Vector2 bestDir = Vector2.zero, toKip = (kip - s1).normalized;
+                    for (float ang = -40f; ang <= 40f; ang += 5f)
                     {
-                        float k = i / (bp.Count - 1f);
-                        br.pts.Add(new Vector3(bp[i].x, Mathf.Lerp(j.y, PlatformH + 0.2f, Mathf.Clamp01(k * 1.1f)), bp[i].y));
+                        Vector2 dir = (Vector2)(Quaternion.Euler(0f, 0f, ang) * toKip);
+                        for (float l = 10f; l < 60f; l += 0.5f)
+                        {
+                            var q = s1 + dir * l;
+                            if (InletLocal(q.x, q.y, out _, out float rr) && rr < InletOuterR + 3f) break;     // not back into the inlet
+                            if (H(q) <= PlatformH + l * climb + 0.4f) { float score = l + Mathf.Abs(ang) * 0.1f; if (score < bestScore) { bestScore = score; bestL = l; bestDir = dir; } break; }
+                        }
                     }
-                    _tubes.Add(br);
-                    var m = from + dir * l;
-                    _mouths.Add(new Vector3(m.x, PlatformH, m.y));
+                    if (bestL > 0f)
+                    {
+                        var br = new Tube { name = "溶岩洞（キプカの落ち穴へ）", halfW = 2f, height = 3.2f, lava = true };
+                        br.pts.Add(new Vector3(s0.x, PlatformH + 0.05f, s0.y));
+                        br.pts.Add(new Vector3(s1.x, PlatformH + 0.05f, s1.y));
+                        for (float l = 1f; l <= bestL + 0.6f; l += 1f) { var q = s1 + bestDir * l; br.pts.Add(new Vector3(q.x, PlatformH + 0.05f + l * climb, q.y)); }
+                        _tubes.Add(br);
+                        _openings.Add(new Vector3(s0.x, PlatformH, s0.y));
+                        var m = s1 + bestDir * bestL;
+                        _mouths.Add(new Vector3(m.x, PlatformH + bestL * climb, m.y));
+                    }
+                    else Debug.LogWarning("[IslandTest800] the branch to the kipuka found no way up");
                 }
             }
         }
@@ -113,19 +152,30 @@ namespace SlugExtract
         // ------------------------------------------------------------------ holes in the terrain where it would cut into a cave
         static bool NearTube(Tube t, float x, float z, float margin, out float floor) => NearTube(t, x, z, margin, out floor, out _);
 
-        static bool NearTube(Tube t, float x, float z, float margin, out float floor, out float dist)
+        static bool NearTube(Tube t, float x, float z, float margin, out float floor, out float dist) => NearTube(t, x, z, margin, out floor, out dist, out _);
+
+        /// <summary>past: the nearest point is beyond one of the tube's ends (nothing of the tube is over it).</summary>
+        static bool NearTube(Tube t, float x, float z, float margin, out float floor, out float dist, out bool past)
         {
             floor = 0f;
+            past = false;
             float best = float.MaxValue;
             for (int i = 0; i + 1 < t.pts.Count; i++)
             {
                 Vector3 a = t.pts[i], b = t.pts[i + 1];
-                float ex = b.x - a.x, ez = b.z - a.z, tt = Mathf.Clamp01(((x - a.x) * ex + (z - a.z) * ez) / (ex * ex + ez * ez + 1e-6f));
+                float ex = b.x - a.x, ez = b.z - a.z, raw = ((x - a.x) * ex + (z - a.z) * ez) / (ex * ex + ez * ez + 1e-6f), tt = Mathf.Clamp01(raw);
                 float dx = x - a.x - ex * tt, dz = z - a.z - ez * tt, d = dx * dx + dz * dz;
-                if (d < best) { best = d; floor = Mathf.Lerp(a.y, b.y, tt); }
+                if (d < best) { best = d; floor = Mathf.Lerp(a.y, b.y, tt); past = (i == 0 && raw < 0f) || (i + 2 == t.pts.Count && raw > 1f); }
             }
             dist = Mathf.Sqrt(best);
             return dist <= t.halfW + margin;
+        }
+
+        static bool InSkylight(SkyFrame fr, float x, float z, float grow)
+        {
+            Vector2 d = new Vector2(x, z) - fr.c;
+            float u = Vector2.Dot(d, fr.along) / (SkyAlong + grow), v = (d.x * fr.along.y - d.y * fr.along.x) / (SkyAcross + grow);
+            return u * u + v * v < 1f;
         }
 
         static void PunchHoles(TerrainData data, float[] hm)
@@ -139,8 +189,11 @@ namespace SlugExtract
                 {
                     solid[j, i] = true;
                     float x = -Size * 0.5f + (i + 0.5f) * cell, z = -Size * 0.5f + (j + 0.5f) * cell, h = HmAt(hm, x, z);
+                    foreach (var fr in _skyFrames)
+                        if (h > fr.floor && InSkylight(fr, x, z, 0.4f)) { solid[j, i] = false; break; }     // (the shaft's collar covers the ragged edge)
+                    if (solid[j, i])
                     foreach (var t in _tubes)
-                        if (NearTube(t, x, z, 0.3f, out float f, out float dd) && h > f - 0.6f && h < f + t.height * Mathf.Sqrt(Mathf.Max(0f, 1f - Mathf.Pow(Mathf.Min(dd, t.halfW) / t.halfW, 2f))) + 0.3f) { solid[j, i] = false; break; }
+                        if (NearTube(t, x, z, 0.3f, out float f, out float dd, out bool past) && !past && h > f - 0.6f && h < f + t.height * Mathf.Sqrt(Mathf.Max(0f, 1f - Mathf.Pow(Mathf.Min(dd, t.halfW) / t.halfW, 2f))) + 0.3f) { solid[j, i] = false; break; }
                     if (solid[j, i])
                         foreach (var d in _domes)
                         {
@@ -206,7 +259,8 @@ namespace SlugExtract
                     int a = i * ring + k, b = i * ring + (k + 1) % ring, c = a + ring, d = b + ring;
                     var mid = (verts[a] + verts[b] + verts[c] + verts[d]) * 0.25f;
                     if (InAnyTube(mid, t, 0f)) continue;                                     // where a branch leaves the main tube
-                    if (t.lava && k > 2 && k < Arch - 2 && NearSkylight(mid)) continue;       // the skylights in the roof
+                    if (_planHm != null && AboveGround(verts[a]) && AboveGround(verts[b]) && AboveGround(verts[c]) && AboveGround(verts[d])) continue;   // where it comes out of the ground: open (a pit, a mouth), not a hump
+                    if (t.lava && NearSkylight(verts[a]) && NearSkylight(verts[b]) && NearSkylight(verts[c]) && NearSkylight(verts[d])) continue;   // the skylights in the roof
                     tris.AddRange(new[] { a, c, b, b, c, d });
                 }
             // closed ends where a tube stops underground (cut where another tube goes on from it)
@@ -229,14 +283,55 @@ namespace SlugExtract
             return mesh;
         }
 
+        static bool AboveGround(Vector3 p) => p.y > HmAt(_planHm, p.x, p.z) + 0.05f;
+
         static bool NearSkylight(Vector3 p)
         {
-            for (int i = 0; i < Skylights.Length; i += 2)
-            {
-                var w = W(Skylights[i], Skylights[i + 1]);
-                if (new Vector2(p.x - w.x, p.z - w.y).magnitude < 3f) return true;
-            }
+            foreach (var fr in _skyFrames)
+                if (p.y > fr.floor + 1.5f && InSkylight(fr, p.x, p.z, 0f)) return true;
             return false;
+        }
+
+        /// <summary>The skylight's shaft: from the tube's roof up through the ground (so the sky shows only straight up).</summary>
+        static Mesh ShaftMesh(SkyFrame fr, Terrain terrain)
+        {
+            const int N = 28;
+            var verts = new List<Vector3>();
+            var tris = new List<int>();
+            Vector2 side = new Vector2(-fr.along.y, fr.along.x);
+            for (int i = 0; i < N; i++)
+            {
+                float a = i * Mathf.PI * 2f / N, lat = Mathf.Sin(a) * SkyAcross;
+                var p = fr.c + fr.along * (Mathf.Cos(a) * SkyAlong) + side * lat;
+                float bottom = fr.floor + 0.95f * fr.tube.height * Mathf.Sqrt(Mathf.Max(0f, 1f - (lat / fr.tube.halfW) * (lat / fr.tube.halfW))) - 0.9f;   // (deep enough to meet the tube's bumpy roof)
+                float top = terrain.SampleHeight(new Vector3(p.x, 0f, p.y)) + terrain.transform.position.y + 0.3f;
+                verts.Add(new Vector3(p.x, bottom, p.y)); verts.Add(new Vector3(p.x, top, p.y));
+            }
+            // a collar on the ground round the top, over the ragged edge of the terrain's hole
+            int collar = verts.Count;
+            for (int i = 0; i < N; i++)
+            {
+                float a = i * Mathf.PI * 2f / N;
+                var p = fr.c + fr.along * (Mathf.Cos(a) * (SkyAlong + 1.1f)) + side * (Mathf.Sin(a) * (SkyAcross + 1.1f));
+                verts.Add(new Vector3(p.x, terrain.SampleHeight(new Vector3(p.x, 0f, p.y)) + terrain.transform.position.y + 0.04f, p.y));
+            }
+            for (int i = 0; i < N; i++)
+            {
+                int a = i * 2 + 1, b = ((i + 1) % N) * 2 + 1, c = collar + i, d = collar + (i + 1) % N;
+                if (Vector3.Cross(verts[b] - verts[a], verts[c] - verts[a]).y >= 0f) tris.AddRange(new[] { a, b, c, b, d, c });
+                else tris.AddRange(new[] { a, c, b, b, c, d });
+            }
+            for (int i = 0; i < N; i++)
+            {
+                int a = i * 2, b = ((i + 1) % N) * 2;
+                var n = Vector3.Cross(verts[b] - verts[a], verts[a + 1] - verts[a]);
+                var inward = new Vector3(fr.c.x - verts[a].x, 0f, fr.c.y - verts[a].z);
+                if (Vector3.Dot(n, inward) >= 0f) tris.AddRange(new[] { a, b, a + 1, b, b + 1, a + 1 });
+                else tris.AddRange(new[] { a, a + 1, b, b, a + 1, b + 1 });
+            }
+            var mesh = new Mesh { name = "IT_SkyShaft" };
+            mesh.SetVertices(verts); mesh.SetTriangles(tris, 0); mesh.RecalculateNormals(); mesh.RecalculateBounds();
+            return mesh;
         }
 
         static Mesh DomeMesh(Dome d)
@@ -340,16 +435,16 @@ namespace SlugExtract
                 NearTube(lava, sky.x, sky.y, 9f, out float f);
                 int k = Mathf.Max(0, lava.pts.FindIndex(p => new Vector2(p.x - sky.x, p.z - sky.y).magnitude < 3f) - 6);
                 Shot("54_lava_tube_skylight", lava.pts[k] + up, new Vector3(sky.x, f + 3f, sky.y));
-                var mouth = _tubes.Find(x => x.name.StartsWith("溶岩洞の口"));
-                if (mouth != null)
-                {
-                    Vector3 m = mouth.pts[mouth.pts.Count - 1], dir = (m - mouth.pts[0]);
-                    dir.y = 0f; dir.Normalize();
-                    var side = new Vector3(-dir.z, 0f, dir.x);
-                    var eye = m + dir * 4f + side * 8f;
-                    eye.y = Mathf.Max(G(new Vector2(eye.x, eye.z)), PlatformH) + 0.47f;
-                    Shot("55_lava_mouths_from_platform", eye, mouth.pts[mouth.pts.Count - 3] + Vector3.up * 1.5f);
-                }
+            }
+            ShootInlet((file, eye, look, fov) => Shot(file, eye, look, fov), t);
+            var kip = _tubes.Find(x => x.name.Contains("キプカ"));
+            if (kip != null)
+            {
+                Vector3 m = kip.pts[kip.pts.Count - 1], back = kip.pts[Mathf.Max(0, kip.pts.Count - 12)], dir = m - back;
+                dir.y = 0f; dir.Normalize();
+                var eye = m + dir * 6f;
+                eye.y = G(new Vector2(eye.x, eye.z)) + 0.47f;
+                Shot("60_kipuka_pit", eye, back + Vector3.up * 1f);
             }
             foreach (var (a, b) in _ringBridges)
             {
@@ -380,6 +475,13 @@ namespace SlugExtract
                 mesh.name = "IT_Tube_" + _tubes.IndexOf(t);
                 MeshObject(root, t.name, SaveMesh(mesh), t.lava ? lavaMat : saltMat, true);
             }
+            for (int i = 0; i < _skyFrames.Count; i++)
+            {
+                var mesh = ShaftMesh(_skyFrames[i], terrain);
+                mesh.name = "IT_SkyShaft_" + i;
+                MeshObject(root, "天窓の縦穴", SaveMesh(mesh), lavaMat, true);
+            }
+            BuildInlet(root, terrain, rnd);
             foreach (var d in _domes)
             {
                 MeshObject(root, d.name, SaveMesh(DomeMesh(d)), saltMat, true);
@@ -419,8 +521,8 @@ namespace SlugExtract
                     if (Mathf.Abs(p.y - m.y) > 6f) continue;
                     Rock(root, "口の岩", Mat("IT_Stone", new Color(0.62f, 0.5f, 0.4f)), p, new Vector3(1.6f, 1.2f, 1.5f) * (0.7f + (float)rnd.NextDouble() * 0.6f), rnd);
                 }
-            foreach (var t in _tubes)
-                if (t.name.StartsWith("溶岩洞の口")) { var e = t.pts[t.pts.Count - 2]; MoveTestBuilder.Label("溶岩洞の口", e + Vector3.up * 5f, 3f); }
+            var kipTube = _tubes.Find(x => x.name.Contains("キプカ"));
+            if (kipTube != null) { var e = kipTube.pts[kipTube.pts.Count - 1]; MoveTestBuilder.Label("キプカの落ち穴", e + Vector3.up * 4f, 2.4f); }
             if (_domes.Count > 0) MoveTestBuilder.Label("岩塩の洞窟", _domes[0].floor + Vector3.up * 4f, 2f);
         }
     }

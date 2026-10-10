@@ -20,7 +20,7 @@ namespace SlugExtract
         {
             ("東のキャンプ", new Vector2(500, 300)), ("塩田のキャンプ", new Vector2(250, 318)), ("山頂", new Vector2(375, 262)),
             ("たまり池", new Vector2(368, 314)), ("谷の奥", new Vector2(326, 257)), ("台地の上", new Vector2(292, 222)),
-            ("火口の中", new Vector2(350, 165)), ("溶岩洞の口", new Vector2(463, 158)), ("黒い砂の浜", new Vector2(438, 130)),
+            ("火口の中", new Vector2(350, 165)), ("入江", new Vector2(442.5f, 153.6f)), ("黒い砂の浜", new Vector2(438, 130)),
             ("大ガジュマル", new Vector2(500, 228)), ("菌輪", new Vector2(346, 372)), ("塩田の大岩", new Vector2(214, 332)),
             ("砂漠の西", new Vector2(172, 256)), ("溶岩のふちの泉", new Vector2(452, 205)),
         };
