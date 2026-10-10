@@ -75,7 +75,7 @@ namespace SlugExtract
         static readonly float[] Buttes = { 222,268,8, 226,214,7, 204,246,5.5f, 214,292,6.5f };   // x, y, radius (units)
         static readonly float[] MesaBreaks = { 246,221, 270,292, 300,206 };                         // where the mesa's walls have surely fallen into a slope
         static readonly float[] Kipukas = { 420,133,11, 424,166,12, 449,180,14 };                  // x, y, radius (m)
-        static readonly float[] Skylights = { 410,148, 428,150, 446,155 };
+        static readonly float[] Skylights = { 394,147, 410,148, 428,150, 446,155 };   // the first is the vent's collapse, the way into the lava tube from the breach
         static readonly Vector2 Cone = new Vector2(350f, 165f), Breach = new Vector2(0.92f, -0.39f).normalized;
         static readonly Vector2 MountainSvg = new Vector2(375f, 262f), MeadowSvg = new Vector2(346f, 372f), SaltSvg = new Vector2(210f, 330f);
         static readonly Vector2 PoolSvg = new Vector2(368f, 316f), SpringSvg = new Vector2(452f, 203f), CoveSvg = new Vector2(438f, 128f);
@@ -315,24 +315,10 @@ namespace SlugExtract
                 }
             }
 
-            // the rock-salt mountain: benches in patches, ridges and gullies; a little steeper to the north
+            // the rock-salt mountain: a cliff band round its top broken by four ridges, a shoulder round it (IslandTest800Mountain.cs)
             float mw;
             {
-                float dx = sx - MountainSvg.x, dy = sy - MountainSvg.y, ang = Mathf.Atan2(dy, dx), ca = Mathf.Cos(ang), sa = Mathf.Sin(ang);
-                float d = Mathf.Sqrt(dx * dx + dy * dy) * K;
-                d *= 1f + 0.25f * (Vn(ca * 1.8f + 21f, sa * 1.8f + 37f) - 0.5f) * Warp;
-                float foot = MountainFoot * (1f + 0.18f * Mathf.Max(0f, ca) + 0.1f * Mathf.Max(0f, sa) - 0.12f * Mathf.Max(0f, -sa));
-                float t = Mathf.Clamp01((d - 12f) / (foot - 12f)), up = Mathf.Pow(1f - t, 1.25f);
-                float hm = MountainTop * up;
-                hm += MountainTop * 0.07f * Fbm(ca * 2.2f + d * 0.005f + 40f, sa * 2.2f + d * 0.005f + 40f, 3, 63) * 4f * up * (1f - up) * Warp;
-                hm += 4f * Fbm(mx * 0.03f, my * 0.03f, 3, 65) * up * Warp;
-                if (hm > 2f)
-                {
-                    float nn = Fbm(mx * 0.02f, my * 0.02f, 2, 61) * BenchStep * 0.8f;
-                    float k = (hm + nn) / BenchStep, f = k - Mathf.Floor(k), f2 = Mathf.Max(0f, (f - BenchFlat) / (1f - BenchFlat));
-                    float ter = BenchStep * (Mathf.Floor(k) + 0.35f * Smooth(0f, 1f, f2) + 0.65f * f2) - nn;
-                    hm = Lerp(hm, ter, Smooth(-0.05f, 0.12f, Vn(mx * 0.012f + 3f, my * 0.012f + 8f) - 0.42f));
-                }
+                float hm = MountainHeight(sx, sy, mx, my, out _);
                 mw = Smooth(-3f, 3f, hm - h);
                 h = Smax(h, hm, 8f);
             }
@@ -370,6 +356,16 @@ namespace SlugExtract
                 o[6] = cw;
                 o[8] = salt;
                 o[9] = ring;
+            }
+            // where the coast is a cliff, the waves have cut a rock platform at its foot (about 6 m wide, 1.2 m above the
+            // sea): a way round the island under the cliffs, and where the lava tube's mouths open
+            float cliffCoast = Smooth(2.5f, 4f, h) * (1f - Smooth(6f, 9f, inM));
+            if (cliffCoast > 0f)
+            {
+                float pf = PlatformH + 0.25f * Fbm(mx * 0.1f, my * 0.1f, 2, 151);
+                h = Lerp(h, Mathf.Min(h, pf), cliffCoast * (1f - Smooth(5f, 7.5f, inM)));
+                land = Mathf.Max(land, cliffCoast * Smooth(-6f, -4f, inM));
+                if (o != null) { o[2] = Mathf.Max(o[2], cliffCoast * (1f - Smooth(5f, 7.5f, inM))); }
             }
             return h * land + Mathf.Max(-14f, inM * 0.12f) * (1f - land);
         }
@@ -503,6 +499,8 @@ namespace SlugExtract
             // the rivers' water (IslandTest800Rivers.cs)
             BuildRiverWater(props, water, terrain);
             BuildFalls(map, terrain, water);
+            BuildCaves(map, terrain);
+            BuildRingBridges(props);
             {
                 Vector3 pool = on(PoolSvg);
                 var p = WeatherSceneSetup.Prim(props, "たまり池", PrimitiveType.Cylinder, water, new Vector3(pool.x, _poolH - 0.35f, pool.z), new Vector3(13f, 0.03f, 13f), 0f);
@@ -546,6 +544,14 @@ namespace SlugExtract
 
             RecordRoads(map);
             PlaceCover(map, terrain);
+
+            // rock salt on the summit: the prize for getting up one of the four ridges
+            for (int i = 0; i < 3; i++)
+            {
+                float a = i * 2.1f + 0.4f;
+                var w = W(MountainSvg) + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * (2.5f + i);
+                ExtractTestBuilder.SaltRock(props, new Vector3(w.x, terrain.SampleHeight(new Vector3(w.x, 0f, w.y)) + Bottom, w.y), 1.3f);
+            }
 
             // labels
             void L(string text, Vector2 at, float up, float size) => MoveTestBuilder.Label(text, on(at) + Vector3.up * up, size);
@@ -616,10 +622,12 @@ namespace SlugExtract
                     hm[iz * Res + ix] = FallGround(x, z, Height(x, z), out _, out _);
                 }
             var paths = CarveRoads(hm);            // the roads and the animal trails, cut into the ground
+            PlanCaves(hm);                         // the caves (IslandTest800Caves.cs): planned on the finished ground
             for (int iz = 0; iz < Res; iz++)
                 for (int ix = 0; ix < Res; ix++)
                     heights[iz, ix] = Mathf.Clamp01((hm[iz * Res + ix] - Bottom) / MaxHeight);
             data.SetHeights(0, 0, heights);
+            PunchHoles(data, hm);
 
             var layers = new[]
             {

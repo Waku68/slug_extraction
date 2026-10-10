@@ -195,6 +195,9 @@ namespace SlugExtract
             for (int j = 0; j < Cols; j++)
                 for (int k = 0; k + 1 < rows; k++)
                 {
+                    // the doorway in the alcove's back wall into the salt cave (IslandTest800Caves.cs)
+                    float midDeg = Mathf.Lerp(From, To, (j + 0.5f) / Cols);
+                    if (k == 0 && Mathf.Abs(midDeg * Mathf.Deg2Rad * (FallR + AlcoveDeep)) < CaveDoorHalfW) continue;
                     int a = j * rows + k, b = a + rows;
                     tris.AddRange(new[] { a, b, a + 1, a + 1, b, b + 1 });
                 }

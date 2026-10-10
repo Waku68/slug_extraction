@@ -21,7 +21,7 @@ namespace SlugExtract
         {
             new float[] { 300,253, 302,243, 305,232 },    // north, into the north half of the mesa
             new float[] { 266,244, 264,256, 261,268 },    // south
-            new float[] { 318,256, 322,246, 327,238 },    // north-east, by the dead end
+            new float[] { 318,256, 323,245, 329,233 },    // north-east, by the dead end: a slot that climbs out onto the mesa (the canyon's back door)
         };
         static Vector2[][] _sides;
         static float[][] _sideAt;
@@ -94,8 +94,8 @@ namespace SlugExtract
             else
             {
                 float wall = Mesa - floor, brk = Smooth(0.72f, 0.8f, Vn(mx * 0.02f + 21f, my * 0.02f + 4f));   // now and then a wall has fallen into a slope
-                float cliff = WallAt(x, Mathf.Max(0.2f, wall / WallHeight) * layers), slope = x * 0.65f;
-                hc = cliff > wall && slope > wall ? 10000f : floor + Lerp(Mathf.Min(cliff, wall), Mathf.Min(slope, wall), brk);
+                float cliff = WallAt(x, Mathf.Max(0.2f, wall / WallHeight) * layers), slope = x * 0.65f, v = Lerp(Mathf.Min(cliff, wall + 30f), Mathf.Min(slope, wall + 30f), brk);
+                hc = v >= wall ? 10000f : floor + v;          // past the rim the canyon takes nothing (not even the mountain beside the mesa)
             }
 
             // the side canyons: narrow, their floors climbing to end high in the walls
@@ -103,7 +103,7 @@ namespace SlugExtract
             {
                 float d = Line(cx, cy, _sides[i], _sideAt[i], out float sf);
                 if (d > 40f) continue;
-                float sfloor = Mathf.Lerp(_sideFloor[i], Mesa - 7f, Mathf.Pow(sf, 1.3f));
+                float sfloor = i == 2 ? Mathf.Lerp(_sideFloor[i], Mesa + 0.5f, sf) : Mathf.Lerp(_sideFloor[i], Mesa - 7f, Mathf.Pow(sf, 1.3f));
                 float sx = d - (2f + 1.5f * (1f - sf)) + 1.5f * Fbm(mx * 0.07f, my * 0.07f, 2, 96 + i);
                 float hs = sx <= 0f ? sfloor : sfloor + WallAt(sx, Mathf.Max(0.15f, (Mesa - sfloor) / WallHeight) * layers);
                 if (hs < hc) { hc = hs; floor01 = sx <= 0f ? 1f : 0f; }

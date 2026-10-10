@@ -56,24 +56,62 @@ namespace SlugExtract
             var mask = new float[Res * Res];
             _wayCore = new bool[Res * Res];
             // the trails first, so a road crossing one keeps its own bench
-            foreach (bool road in new[] { false, true })
-                foreach (var w in Ways)
+            // the roads that went to the summit now end on the shoulder at the foot of the nearest ridge; the ridge
+            // trails and the road round the shoulder come from the mountain (IslandTest800Mountain.cs)
+            var ways = new List<Way>();
+            foreach (var w0 in Ways)
+            {
+                var w = w0;
+                int n = w.svg.Length;
+                if (w.road && w.svg[n - 2] == MountainSvg.x && w.svg[n - 1] == MountainSvg.y)
+                {
+                    var from = new Vector2(w.svg[n - 4], w.svg[n - 3]);
+                    float a = Mathf.Atan2(from.y - MountainSvg.y, from.x - MountainSvg.x);
+                    int best = 0;
+                    for (int k = 1; k < Spurs.Length; k++) if (Mathf.Abs(Mathf.DeltaAngle(a * Mathf.Rad2Deg, SpurAngle(k) * Mathf.Rad2Deg)) < Mathf.Abs(Mathf.DeltaAngle(a * Mathf.Rad2Deg, SpurAngle(best) * Mathf.Rad2Deg))) best = k;
+                    var end = RidgeFoot(best);
+                    w.svg = (float[])w.svg.Clone();
+                    w.svg[n - 2] = end.x; w.svg[n - 1] = end.y;
+                }
+                ways.Add(w);
+            }
+            ways.AddRange(MountainWays());
+            CarveRing(hm, mask);                                      // the road round the shoulder, first of all
+            foreach (bool road in new[] { true, false })            // the roads first: their wide cuttings would break a trail crossed after
+                foreach (var w in ways)
                 {
                     if (w.road != road) continue;
-                    float grade = Mathf.Tan((road ? RoadGrade : TrailGrade) * Mathf.Deg2Rad);
+                    // each leg at the gentlest grade it can be found at (a road that cannot keep to 15° gets steeper bits);
+                    // a leg with no way at all leaves a gap, and the way goes on from the next point
+                    float[] grades = road ? new[] { RoadGrade, 22f, 30f } : new[] { TrailGrade };
                     var flat = new List<Vector2>();
-                    bool ok = true;
-                    for (int i = 0; i + 3 < w.svg.Length && ok; i += 2)
+                    float used = grades[0];
+                    int piece = 0;
+                    void Finish()
                     {
-                        var leg = FindPath(hm, W(w.svg[i], w.svg[i + 1]), W(w.svg[i + 2], w.svg[i + 3]), grade * 0.95f, road ? 3f : 1f);
-                        if (leg == null) { Debug.LogWarning($"[IslandTest800] no way found: {w.name} (leg {i / 2})"); ok = false; break; }
+                        if (flat.Count >= 2)
+                        {
+                            float g = Mathf.Tan(used * Mathf.Deg2Rad);
+                            var pts = Profile(hm, Smooth(flat), g * 0.92f, road);
+                            Carve(hm, mask, pts, road ? RoadHalfWidth : TrailHalfWidth, road ? 5.5f : 1.2f, road ? 0f : 0.12f);
+                            _ways.Add((piece == 0 ? w.name : $"{w.name} {piece + 1}", road, pts));
+                            piece++;
+                        }
+                        flat.Clear(); used = grades[0];
+                    }
+                    for (int i = 0; i + 3 < w.svg.Length; i += 2)
+                    {
+                        List<Vector2> leg = null;
+                        foreach (float gd in grades)
+                        {
+                            leg = FindPath(hm, W(w.svg[i], w.svg[i + 1]), W(w.svg[i + 2], w.svg[i + 3]), Mathf.Tan(gd * Mathf.Deg2Rad) * 0.95f, road ? 3f : 1f);
+                            if (leg != null) { used = Mathf.Max(used, gd); break; }
+                        }
+                        if (leg == null) { Debug.LogWarning($"[IslandTest800] no way found: {w.name} (leg {i / 2})"); Finish(); continue; }
                         if (flat.Count > 0) leg.RemoveAt(0);
                         flat.AddRange(leg);
                     }
-                    if (!ok || flat.Count < 2) continue;
-                    var pts = Profile(hm, Smooth(flat), grade * 0.92f, road);
-                    Carve(hm, mask, pts, road ? RoadHalfWidth : TrailHalfWidth, road ? 5.5f : 1.2f, road ? 0f : 0.12f);
-                    _ways.Add((w.name, road, pts));
+                    Finish();
                 }
             _wayMask = mask;
             return mask;
@@ -370,6 +408,8 @@ namespace SlugExtract
             // keep the camps, the pool and the spring clear
             foreach (var s in new[] { new Vector2(250, 318), new Vector2(500, 300), PoolSvg, SpringSvg }) Take(W(s), 24f);
             if (_fallOK) Take(_fallC, FallR * 2f + 8f);              // the plunge pool and the ledge behind the falls
+            foreach (var m in _mouths) Take(new Vector2(m.x, m.z), 12f);   // the caves' mouths
+            Take(W(MountainSvg), 12f);                                  // the summit's rock salt
 
             var data = terrain.terrainData;
             var o = new float[Kinds];
