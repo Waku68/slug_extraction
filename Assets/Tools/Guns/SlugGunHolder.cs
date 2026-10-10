@@ -48,6 +48,8 @@ namespace SlugMove
         [System.NonSerialized] public bool forceTrigger;
         /// <summary>Holds the aim button without the mouse (tests and tools).</summary>
         [System.NonSerialized] public bool forceAim;
+        /// <summary>Worked by something else (a bot, later the network) through <see cref="Simulate"/>: no keys or mouse are read.</summary>
+        [System.NonSerialized] public bool driven;
 
         public GunHandling Handling => _handling;
         /// <summary>The spread right now (cone half-angle, degrees), crawling and the scope included.</summary>
@@ -175,7 +177,7 @@ namespace SlugMove
         // ------------------------------------------------------------------ update: input, firing, recoil
         void Update()
         {
-            if (!_ready) return;
+            if (!_ready || driven) return;
             bool canUse = inputEnabled && !cameraRig.HandsBusy && !controller.Climbing && (Cursor.lockState == CursorLockMode.Locked || forceTrigger || forceAim);
             bool trigger = canUse && (forceTrigger || (_attack != null && _attack.IsPressed()));
             var mouse = Mouse.current;

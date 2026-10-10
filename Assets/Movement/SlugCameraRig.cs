@@ -18,6 +18,8 @@ namespace SlugMove
         public bool thirdPerson;
         /// <summary>Magnification (a scope sets it): narrows the view and slows the look to match. 1 = none.</summary>
         [System.NonSerialized] public float zoom = 1f;
+        /// <summary>Turned by something else (a bot, later the network) through <see cref="SetLook"/>: no mouse, no cursor lock.</summary>
+        [System.NonSerialized] public bool driven;
         /// <summary>A menu is open (the loadout picker): the cursor stays free, a click does not lock it, the eyes do not turn.</summary>
         [System.NonSerialized] public bool cursorFree;
         /// <summary>0..1: how far the slug has bent round to look at its own back (set by the bag; eased here).</summary>
@@ -59,14 +61,14 @@ namespace SlugMove
         void Start()
         {
             Yaw = controller.transform.eulerAngles.y;
-            LockCursor(true);
+            if (!driven) LockCursor(true);
             // the helmet only casts its shadow for this camera while it sits in the head
             var gear = slug ? slug.GetComponent<SlugDesign.SlugEquipment>() : null;
             if (gear) gear.SetOwnCamera(cam, () => !ShowsBody);
             cam.cullingMask |= 1 << SlugToolHolder.BodyToolLayer;
         }
 
-        void OnDisable() { LockCursor(false); }
+        void OnDisable() { if (!driven) LockCursor(false); }
 
         static void LockCursor(bool on)
         {
@@ -81,6 +83,13 @@ namespace SlugMove
             _pitch = Mathf.Clamp(_pitch + pitch, settings.minPitch, settings.maxPitch);
         }
 
+        /// <summary>Sets where the eyes look (degrees; pitch + = down).</summary>
+        public void SetLook(float yaw, float pitch)
+        {
+            Yaw = yaw;
+            _pitch = Mathf.Clamp(pitch, settings.minPitch, settings.maxPitch);
+        }
+
         /// <summary>A short, decaying shake (1 = a full-power blow). A stronger shake replaces a weaker one.</summary>
         public void Shake(float strength, float duration)
         {
@@ -93,6 +102,7 @@ namespace SlugMove
 
         void Update()
         {
+            if (driven) return;
             var kb = Keyboard.current;
             var mouse = Mouse.current;
             if (kb != null && kb.vKey.wasPressedThisFrame) thirdPerson = !thirdPerson;

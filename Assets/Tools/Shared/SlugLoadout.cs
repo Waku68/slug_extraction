@@ -28,6 +28,8 @@ namespace SlugMove
         [Tooltip("腰の道具")] public HipTool hip = HipTool.Pistol;
         [Tooltip("最初に持つ道具（0 = ピッケル、1 = 背中の銃、2 = 腰の道具）")] public int startWith;
         [Tooltip("false の間は持ち替えられない（試合の終了後など）")] public bool inputEnabled = true;
+        /// <summary>Switched by something else (a bot, later the network) through <see cref="Select"/>: no keys are read.</summary>
+        [System.NonSerialized] public bool driven;
         [Tooltip("持ち物の欄を画面に出す")] public bool showHud = true;
 
         /// <summary>The slot in hand: <see cref="PickaxeSlot"/>, <see cref="BackSlot"/> or <see cref="HipSlot"/>.</summary>
@@ -93,7 +95,7 @@ namespace SlugMove
 
         void Update()
         {
-            if (!inputEnabled || HandsFull || Cursor.lockState != CursorLockMode.Locked || (Rig && Rig.HandsBusy)) return;
+            if (driven || !inputEnabled || HandsFull || Cursor.lockState != CursorLockMode.Locked || (Rig && Rig.HandsBusy)) return;
             var kb = Keyboard.current;
             if (kb != null)
             {

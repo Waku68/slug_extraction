@@ -28,6 +28,8 @@ namespace SlugMove
         [System.NonSerialized] public float bodyScale = 1f;
         float SpeedFactor => speedMultiplier * conditionSpeed * devSpeed;
         [Tooltip("false の間は入力を受け付けない（試合の終了後など）")] public bool inputEnabled = true;
+        /// <summary>Moved by something else (a bot, later the network) through <see cref="Simulate"/>: no keys are read.</summary>
+        [System.NonSerialized] public bool driven;
         [Tooltip("上半身の前後の傾き（度、+ = 前）。ピッケルを振る動きなど、ほかのコンポーネントが変える")] public float leanDegrees;
         /// <summary>How far the head is turned round on the neck to the right (degrees; the body stays put): looking
         /// back at the bag. Set by the bag.</summary>
@@ -95,13 +97,14 @@ namespace SlugMove
             _jump = InputSystem.actions != null ? InputSystem.actions.FindAction("Player/Jump") : null;
             _jump?.Enable();
             // the crawl of every slug shader now follows CrawlTime instead of the clock
-            Shader.SetGlobalFloat(FreezeId, 1f);
+            if (!driven) Shader.SetGlobalFloat(FreezeId, 1f);
         }
 
-        void OnDisable() { Shader.SetGlobalFloat(FreezeId, 0f); }
+        void OnDisable() { if (!driven) Shader.SetGlobalFloat(FreezeId, 0f); }
 
         void Update()
         {
+            if (driven) return;
             Vector2 input = _move != null && inputEnabled ? Vector2.ClampMagnitude(_move.ReadValue<Vector2>(), 1f) : Vector2.zero;
             bool jump = forceJumpHold || (inputEnabled && _jump != null && _jump.IsPressed());
             var kb = Keyboard.current;

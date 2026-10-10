@@ -30,6 +30,9 @@ namespace SlugMove
         public SlugCameraRig cameraRig;
         public SlugPop slug;
         [Tooltip("false の間は振れない（試合の終了後など）")] public bool inputEnabled = true;
+        /// <summary>Swung by something else (a bot, later the network): <see cref="swingHeld"/> stands for the mouse button.</summary>
+        [System.NonSerialized] public bool driven;
+        [System.NonSerialized] public bool swingHeld;
         /// <summary>How long the next draw takes (set by the loadout before enabling; 0 or less = at once).</summary>
         [System.NonSerialized] public float drawTime = -1f;
         /// <summary>0..1: how far the pickaxe has been taken in hand (1 = ready to swing).</summary>
@@ -136,8 +139,8 @@ namespace SlugMove
             if (!_ready) return;
             _swing.settings = pickaxe;
             if (_draw < 1f) _draw = Mathf.MoveTowards(_draw, 1f, Time.deltaTime / Mathf.Max(drawTime, 1e-3f));
-            bool canSwing = inputEnabled && _draw >= 1f && !cameraRig.HandsBusy && !controller.Climbing && Cursor.lockState == CursorLockMode.Locked;
-            bool held = canSwing && _attack != null && _attack.IsPressed();
+            bool canSwing = _draw >= 1f && !cameraRig.HandsBusy && !controller.Climbing && (driven || (inputEnabled && Cursor.lockState == CursorLockMode.Locked));
+            bool held = canSwing && (driven ? swingHeld : _attack != null && _attack.IsPressed());
             if (held && (_swing.Phase == SwingPhase.Idle || (_swing.Phase == SwingPhase.Recover && _swing.Blend < pickaxe.chainAt)))
                 BeginSwing();
             Simulate(Time.deltaTime);
