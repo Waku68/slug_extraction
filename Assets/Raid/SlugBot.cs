@@ -33,6 +33,7 @@ namespace SlugExtract
         [Tooltip("銃声が聞こえる距離（m）")] public float hearShot = 150f;
         [Tooltip("ピッケルの音が聞こえる距離（m）")] public float hearPickaxe = 35f;
         [Tooltip("這う音が聞こえる距離（m）")] public float hearCrawl = 5f;
+        [Tooltip("縮んで伸びる音が聞こえる距離（m）。バッグが重いほど、中身の音で遠くまで（いっぱいで2倍）")] public float hearLunge = 15f;
         [Tooltip("見失ってから探すのをやめるまで（秒）")] public float giveUpTime = 25f;
 
         [Header("撃つ")]
@@ -75,6 +76,7 @@ namespace SlugExtract
         Vector3? _goal;
         float _stuckFor, _sideUntil, _sideSign = 1f;
         Harvestable _mining;
+        SlugBag _playerBag;
         readonly List<Object> _heard = new List<Object>();
 
         SlugGunHolder Gun => loadout ? loadout.BackGun : null;
@@ -104,6 +106,8 @@ namespace SlugExtract
                 _player = b.controller.transform;
                 _playerMove = b.controller;
                 _playerSlug = b.slug;
+                _playerBag = b;
+                _playerMove.Lunged += OnPlayerLunge; _heard.Add(_playerMove);
                 foreach (var g in _player.GetComponents<SlugGunHolder>()) { g.Fired += OnPlayerShot; _heard.Add(g); }
                 var t = _player.GetComponent<SlugToolHolder>();
                 if (t) { t.Struck += OnPlayerPickaxe; _heard.Add(t); }
@@ -188,12 +192,20 @@ namespace SlugExtract
             {
                 if (o is SlugGunHolder g && g) g.Fired -= OnPlayerShot;
                 if (o is SlugToolHolder t && t) t.Struck -= OnPlayerPickaxe;
+                if (o is SlugMoveController m && m) m.Lunged -= OnPlayerLunge;
             }
         }
 
         // ------------------------------------------------------------------ hearing
         void OnPlayerShot(Vector3 eye, Vector3 dir) => Hear(eye, hearShot, 0.7f);
         void OnPlayerPickaxe(RaycastHit hit, IPickaxeTarget target) => Hear(hit.point, hearPickaxe, 0.4f);
+
+        void OnPlayerLunge(float charge)
+        {
+            float heavy = _playerBag && _playerBag.settings
+                ? Mathf.Clamp01(_playerBag.Weight / (2f * Mathf.Max(_playerBag.settings.weightThreshold, 1e-3f))) : 0f;
+            Hear(_player.position, hearLunge * (1f + heavy), 0.45f);
+        }
 
         void Hear(Vector3 at, float range, float alert)
         {

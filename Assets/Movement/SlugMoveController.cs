@@ -9,9 +9,10 @@ namespace SlugMove
     /// are climbed slowly, like a snail going up a wall. The body (SlugPop) is tilted to the ground and
     /// its shader crawl is driven by the distance actually travelled.
     ///
-    /// Instead of a jump, the slug shrinks and stretches: hold Jump to shrink (the body gets short, wide and low, and
-    /// hardly moves: easy to hit), let go to stretch forward in a low hop, faster the longer it was held, then glide out
-    /// on landing with a wobble. It is for getting out of a line of fire, not for climbing.
+    /// Instead of a jump, the slug shrinks and stretches: press Jump to shrink a little and stretch forward in a low hop
+    /// (pressed again and again, a little faster than crawling, and a little harder to hit), or hold it to shrink more
+    /// (the body gets short, wide and low, and hardly moves: easy to hit) and let go to stretch further. It glides out
+    /// on landing with a wobble, and it is heard. It is for getting about and out of a line of fire, not for climbing.
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
     public class SlugMoveController : MonoBehaviour
@@ -59,6 +60,7 @@ namespace SlugMove
         // shrink, then stretch forward
         bool _charging, _lunging, _airborne;
         float _charge, _cooldown, _stretch, _stretchV, _lungeAlong = 1f;
+        float _pressed;         // a press a moment too early (still shrinking back from the last one) is kept this long
         Vector3 _bodyBaseScale = Vector3.one;
 
         // climbing a step taller than stepHeight
@@ -76,12 +78,14 @@ namespace SlugMove
         public bool OnGround { get; private set; }
         public bool TooSteep => OnGround && !_climbing && SlopeAngle > settings.slopeLimit;
         public bool Climbing => _climbing;
-        /// <summary>Lying down on a downhill slope and gliding down it on the slime.</summary>
-        public bool BellySliding { get; private set; }
         /// <summary>0..1 while shrinking (how far it is charged), 0 otherwise.</summary>
         public float LungeCharge => _charging ? _charge : 0f;
         /// <summary>True from letting go until the stretch has glided out.</summary>
         public bool Lunging => _lunging;
+        /// <summary>The body stretched off the ground (how far it was charged, 0..1). Heard: the stretch and what is in the bag.</summary>
+        public event System.Action<float> Lunged;
+        /// <summary>Back on the ground after a stretch.</summary>
+        public event System.Action Landed;
 
         /// <summary>Holds the Jump button without the keyboard (tests and tools).</summary>
         [System.NonSerialized] public bool forceJumpHold;
@@ -108,7 +112,7 @@ namespace SlugMove
         {
             if (driven) return;
             Vector2 input = _move != null && inputEnabled ? Vector2.ClampMagnitude(_move.ReadValue<Vector2>(), 1f) : Vector2.zero;
-            bool jump = forceJumpHold || (inputEnabled && _jump != null && _jump.IsPressed());
+            bool jump = forceJumpHold || (inputEnabled && _jump != null && (_jump.IsPressed() || _jump.WasPressedThisFrame()));
             var kb = Keyboard.current;
             if (inputEnabled && kb != null && kb.zKey.wasPressedThisFrame && Cursor.lockState == CursorLockMode.Locked) prone = !prone;
             Simulate(Time.deltaTime, input, jump);
@@ -146,7 +150,10 @@ namespace SlugMove
             // ---- the body turns after the eyes, a little late (and faces the wall while climbing)
             float targetYaw = _climbing ? Quaternion.LookRotation(_climbDir).eulerAngles.y : yaw;
             float prevYaw = transform.eulerAngles.y;
-            float bodyYaw = Mathf.MoveTowardsAngle(prevYaw, targetYaw, s.bodyTurnSpeed * dt);
+            // the further behind, the faster it catches up (a quick look round is followed at once), never slower than bodyTurnSpeed
+            float behind = Mathf.Abs(Mathf.DeltaAngle(prevYaw, targetYaw));
+            float turn = Mathf.Max(s.bodyTurnSpeed * dt, behind * (1f - Mathf.Exp(-dt / Mathf.Max(s.bodyTurnLag, 1e-3f))));
+            float bodyYaw = Mathf.MoveTowardsAngle(prevYaw, targetYaw, turn);
             transform.rotation = Quaternion.Euler(0f, bodyYaw, 0f);
             FollowTail(Mathf.DeltaAngle(prevYaw, bodyYaw), dt);
             AlignBody(dt);
@@ -158,24 +165,34 @@ namespace SlugMove
 
         // ------------------------------------------------------------------ shrink, then stretch forward
         /// <summary>
-        /// Holding Jump on the ground charges (the body shrinks); letting go throws the slug forward the way it is
-        /// crawling (or the way it looks), a little up off the ground, faster the longer it was held.
+        /// Pressing Jump on the ground charges (the body shrinks); letting go throws the slug forward the way it is
+        /// crawling (or the way it looks), a little up off the ground, faster the longer it was held. A mere press
+        /// still shrinks a little (<see cref="SlugMoveSettings.lungeTapCharge"/>) before it stretches: pressed again
+        /// and again while crawling, it goes a little faster than crawling, dodging a little as it goes.
         /// </summary>
         void StepLunge(float dt, bool held, Vector3 dir, float yaw)
         {
             var s = settings;
             _cooldown = Mathf.Max(0f, _cooldown - dt);
+            if (_charging && Prone01 > 0f) { _charging = false; _charge = 0f; }    // lying down: the shrink is let go of
             bool canCharge = !_climbing && !_lunging && OnGround && _cooldown <= 0f;
-            if (held && (_charging || canCharge))
+            float tapCharge = Mathf.Clamp01(s.lungeTapCharge / Mathf.Max(s.lungeChargeTime, 1e-3f));
+            bool tapping = _charging && _charge < tapCharge && Prone01 <= 0f;     // let go early: it shrinks that little first
+            _pressed = held && !_charging ? 0.2f : Mathf.Max(0f, _pressed - dt);
+            if ((held || tapping || _pressed > 0f) && (_charging || canCharge))
             {
+                _pressed = 0f;
                 _charging = true;
                 _charge = Mathf.Min(1f, _charge + dt / Mathf.Max(s.lungeChargeTime, 1e-3f));
             }
             else if (_charging)
             {
                 Vector3 d = dir != Vector3.zero ? dir : Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
-                float c = Mathf.SmoothStep(0f, 1f, _charge);
-                _velocity = d * (Mathf.Lerp(s.lungeSpeedMin, s.lungeSpeedMax, c) * SpeedFactor);
+                float c = ChargePower(_charge);
+                // along the ground (up a slope it goes up the slope instead of into it), slower uphill as crawling is;
+                // the development fast crawl is for getting about, not for stretching
+                Vector3 along = OnGround ? Vector3.ProjectOnPlane(d, _groundNormal).normalized : d;
+                _velocity = along * (Mathf.Lerp(s.lungeSpeedMin, s.lungeSpeedMax, c) * speedMultiplier * conditionSpeed * SlopeFactor(d));
                 // the head keeps facing the way the eyes look (the eyes sit in it): a stretch along the body makes it
                 // long; a stretch to the side flings the tail out the other way instead, trailing behind
                 _lungeAlong = Mathf.Abs(Vector3.Dot(d, transform.forward));
@@ -186,10 +203,11 @@ namespace SlugMove
                 _stretchV += Mathf.Lerp(0.5f, 1f, c) * Mathf.Lerp(0.3f, 1f, _lungeAlong) * s.lungeStretch * 2f * Mathf.PI * s.lungeSpringHz * 1.8f;
                 _charging = false;
                 _charge = 0f;
+                Lunged?.Invoke(c);
             }
 
             // the body's length: short while charging, long in the air, a wobble on landing
-            float target = _charging ? -s.lungeSquash * Mathf.SmoothStep(0f, 1f, _charge)
+            float target = _charging ? -s.lungeSquash * ChargePower(_charge)
                          : _airborne ? s.lungeStretch * 0.6f * Mathf.Lerp(0.3f, 1f, _lungeAlong) : 0f;
             float w = 2f * Mathf.PI * s.lungeSpringHz;
             int n = Mathf.Clamp(Mathf.CeilToInt(dt * 240f), 1, 16);
@@ -202,11 +220,23 @@ namespace SlugMove
             _stretch = Mathf.Clamp(_stretch, -0.45f, 0.6f);
         }
 
+        /// <summary>
+        /// How strong a stretch is after shrinking this long (a part of lungeChargeTime): most of it comes quickly
+        /// (lungeQuickPower by lungeQuickTime: slowness is a sin), the rest by lungeChargeTime.
+        /// </summary>
+        float ChargePower(float charge)
+        {
+            var s = settings;
+            float t = charge * s.lungeChargeTime, quick = Mathf.Clamp(s.lungeQuickTime, 1e-3f, s.lungeChargeTime);
+            if (t <= quick) return s.lungeQuickPower * Mathf.Sin(t / quick * Mathf.PI * 0.5f);     // quick at first, easing in
+            float rest = Mathf.Max(s.lungeChargeTime - quick, 1e-3f);
+            return Mathf.Lerp(s.lungeQuickPower, 1f, Mathf.SmoothStep(0f, 1f, (t - quick) / rest));
+        }
+
         // ------------------------------------------------------------------ crawling on the ground
         void Crawl(Vector3 dir, float wishAmount, float dt)
         {
             var s = settings;
-            BellySliding = false;
             if (_lunging)
             {
                 // carried by the stretch: no speed limit; it keeps its speed in the air and glides out on the ground
@@ -218,21 +248,12 @@ namespace SlugMove
                     if (next <= s.maxSpeed * SpeedFactor * 1.02f) _lunging = false;
                 }
             }
-            // lying down on a slope: slides down it on the belly, faster the steeper (steering a little)
-            else if (BellySliding = Prone01 > 0.5f && OnGround && !TooSteep && SlopeAngle >= s.bellySlideMinSlope)
-            {
-                Vector3 down = new Vector3(_groundNormal.x, 0f, _groundNormal.z).normalized;
-                Vector3 side = Vector3.Cross(Vector3.up, down);
-                float k = Mathf.InverseLerp(s.bellySlideMinSlope, s.bellySlideFastSlope, SlopeAngle);
-                Vector3 want = (down + side * (Vector3.Dot(dir, side) * wishAmount * s.bellySlideSteer)).normalized
-                               * Mathf.Lerp(s.bellySlideSlowSpeed, s.bellySlideFastSpeed, k) * devSpeed;
-                _velocity = Vector3.MoveTowards(_velocity, want, s.bellySlideAcceleration * devSpeed * dt);
-            }
             // speed: slow to build up, and a slippery stop (exponential glide + a small constant brake)
             else if (wishAmount > 1e-4f)
             {
                 float target = s.maxSpeed * SpeedFactor * wishAmount * SlopeFactor(dir);
-                _velocity = Vector3.MoveTowards(_velocity, dir * target, s.acceleration * devSpeed * dt);
+                float accel = _charging ? s.lungeChargeBrake : s.acceleration;      // shrinking: it all but stops
+                _velocity = Vector3.MoveTowards(_velocity, dir * target, accel * devSpeed * dt);
             }
             else
             {
@@ -257,6 +278,7 @@ namespace SlugMove
                 // landed: squashes, then wobbles back
                 _airborne = false;
                 _stretchV -= settings.lungeStretch * 2f * Mathf.PI * settings.lungeSpringHz * 1.6f;
+                Landed?.Invoke();
             }
             Vector3 moved = transform.position - before;
             moved.y = 0f;

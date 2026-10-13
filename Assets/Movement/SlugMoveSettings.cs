@@ -17,7 +17,8 @@ namespace SlugMove
         [Tooltip("止まるときの滑り（秒）。大きいほど、ぬるっと長く滑る")] public float slideTime = 0.5f;
         [Range(0f, 1f), Tooltip("横移動（A/D）の速さの倍率")] public float strafeMultiplier = 0.6f;
         [Range(0f, 1f), Tooltip("後ろ移動（S）の速さの倍率")] public float backwardMultiplier = 0.5f;
-        [Tooltip("体の向きが視点の向きに追いつく速さ（度/秒）")] public float bodyTurnSpeed = 120f;
+        [Tooltip("体の向きが視点の向きに追いつく、いちばん遅い速さ（度/秒）")] public float bodyTurnSpeed = 120f;
+        [Tooltip("体の向きが視点に追いつく時間（秒）。ずれが大きいほど速く回り、この時間で約6割追いつく")] public float bodyTurnLag = 0.07f;
 
         [Header("向きを変えるとき（お尻が遅れてついてくる）")]
         [Tooltip("止まっているときに、お尻が体の向きに追いつく速さ（Hz）。小さいほど、ぬるっと遅れてついてくる")] public float tailFollowHz = 0.75f;
@@ -41,13 +42,17 @@ namespace SlugMove
         [Tooltip("よじ登る速さ（m/s、上向き）")] public float climbSpeed = 0.3f;
         [Range(0f, 90f), Tooltip("よじ登るときに体を起こす最大の角度（度）")] public float climbTilt = 50f;
 
-        [Header("縮んで伸びる（スペース長押しで縮み、離すと前へ伸びる）")]
-        [Tooltip("いちばん縮むまでの時間（秒）。長く溜めるほど遠くへ伸びる")] public float lungeChargeTime = 0.45f;
+        [Header("縮んで伸びる（スペースを押すと少し縮んで伸びる。長押しで大きく溜める）")]
+        [Tooltip("いちばん縮むまでの時間（秒）。長く溜めるほど遠くへ伸びる")] public float lungeChargeTime = 0.5f;
+        [Tooltip("ここまで溜めれば、ほとんどの力が出る（秒）。遅さは罪：短い溜めでもちゃんと跳べる")] public float lungeQuickTime = 0.35f;
+        [Range(0f, 1f), Tooltip("lungeQuickTime までに出る力の割合。残りは lungeChargeTime までにゆっくり足される")] public float lungeQuickPower = 0.7f;
+        [Tooltip("1回押しただけのときの溜め（秒）。すぐ離しても、ここまで縮んでから伸びる。続けて押すと這うより少し速い")] public float lungeTapCharge = 0.35f;
         [Tooltip("溜めずに離したときの、伸びる速さ（m/s）")] public float lungeSpeedMin = 1.6f;
         [Tooltip("溜めきって離したときの、伸びる速さ（m/s）")] public float lungeSpeedMax = 3.3f;
         [Tooltip("伸びるときに浮く速さ（m/s、溜めきったとき）。地面から少し離れる")] public float lungeUp = 1.15f;
-        [Tooltip("伸びたあと、次に縮めるまでの時間（秒）")] public float lungeCooldown = 0.7f;
+        [Tooltip("伸びたあと、次に縮めるまでの時間（秒）")] public float lungeCooldown = 1f;
         [Range(0f, 1f), Tooltip("縮んでいる間の移動の速さの倍率。溜めている間はほぼ止まる（狙われやすい）")] public float lungeChargeMove = 0.25f;
+        [Tooltip("縮み始めてから、その速さまで落ちる速さ（m/s²）。大きいほど、縮むとすぐ止まる。続けて押したときの速さはほぼこれで決まる")] public float lungeChargeBrake = 8f;
         [Tooltip("伸びた勢いが抜けるまでの時間（秒、地面に着いてから）。大きいほど、ぬるっと長く滑る")] public float lungeSlideTime = 0.42f;
         [Range(0f, 0.5f), Tooltip("溜めたときに体が縮む割合（前後の長さ）")] public float lungeSquash = 0.28f;
         [Range(0f, 0.5f), Tooltip("伸びるときに体が伸びる割合（前後の長さ）")] public float lungeStretch = 0.3f;
@@ -61,14 +66,6 @@ namespace SlugMove
         [Header("伏せ（Z キーで切り替え）")]
         [Range(0.05f, 1f), Tooltip("伏せている間の速さの倍率")] public float proneSpeed = 0.35f;
         [Tooltip("伏せる・起き上がるのにかかる時間（秒）")] public float proneTime = 0.4f;
-
-        [Header("腹ですべる（伏せたまま下り坂で、ぬめりで速く滑り降りる）")]
-        [Tooltip("この角度（度）より急な下り坂で、伏せていると滑り出す")] public float bellySlideMinSlope = 10f;
-        [Tooltip("いちばんゆるい坂で滑る速さ（m/s）")] public float bellySlideSlowSpeed = 1.5f;
-        [Tooltip("急な坂（bellySlideFastSlope）で滑る速さ（m/s）")] public float bellySlideFastSpeed = 3.5f;
-        [Tooltip("この角度（度）でいちばん速くなる")] public float bellySlideFastSlope = 40f;
-        [Tooltip("滑る速さに近づく速さ（m/s²）")] public float bellySlideAcceleration = 5f;
-        [Range(0f, 1f), Tooltip("滑りながら左右に寄れる割合")] public float bellySlideSteer = 0.35f;
 
         [Header("這う動き（体の波）")]
         [Tooltip("止まっているときの波の進み（1 = シェーダー本来の速さ）")] public float idleCrawlRate = 0.2f;

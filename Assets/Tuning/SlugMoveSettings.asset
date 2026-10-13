@@ -19,6 +19,7 @@ MonoBehaviour:
   strafeMultiplier: 0.6
   backwardMultiplier: 0.5
   bodyTurnSpeed: 120
+  bodyTurnLag: 0.07
   tailFollowHz: 0.75
   tailFollowPerSpeed: 1.2
   tailFollowDamping: 0.8
@@ -33,12 +34,16 @@ MonoBehaviour:
   climbHeight: 0.45
   climbSpeed: 0.3
   climbTilt: 50
-  lungeChargeTime: 0.45
+  lungeChargeTime: 0.4
+  lungeQuickTime: 0.15
+  lungeQuickPower: 0.8
+  lungeTapCharge: 0.1
   lungeSpeedMin: 1.6
   lungeSpeedMax: 3.3
   lungeUp: 1.15
   lungeCooldown: 0.7
   lungeChargeMove: 0.25
+  lungeChargeBrake: 8
   lungeSlideTime: 0.42
   lungeSquash: 0.28
   lungeStretch: 0.3
@@ -47,12 +52,6 @@ MonoBehaviour:
   peekEye: {x: 0.34, y: 0.2, z: -0.2}
   proneSpeed: 0.35
   proneTime: 0.4
-  bellySlideMinSlope: 10
-  bellySlideSlowSpeed: 1.5
-  bellySlideFastSpeed: 3.5
-  bellySlideFastSlope: 40
-  bellySlideAcceleration: 5
-  bellySlideSteer: 0.35
   idleCrawlRate: 0.2
   crawlRatePerSpeed: 1.1
   mouseSensitivity: 0.08

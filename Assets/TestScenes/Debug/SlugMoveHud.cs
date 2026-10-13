@@ -25,7 +25,7 @@ namespace SlugMove
                 $"速度  {controller.Speed:0.00} m/s  （最高 {s.maxSpeed:0.00}）\n" +
                 $"坂の角度  {controller.SlopeAngle:0.0}°  （限界 {s.slopeLimit:0}°）{steep}\n" +
                 $"視点  {(cameraRig && cameraRig.thirdPerson ? "三人称" : "一人称")}\n" +
-                "<size=14>WASD 移動 / スペース長押し 縮む→離して前へ伸びる / マウス 視点 / V 視点切替 / Esc カーソル解放（クリックで戻る）</size>";
+                "<size=14>WASD 移動 / スペース 縮んで伸びる（長押しで大きく） / マウス 視点 / V 視点切替 / Esc カーソル解放（クリックで戻る）</size>";
             GUI.Box(new Rect(10, 10, 520, 110), GUIContent.none);
             GUI.Label(new Rect(20, 16, 510, 110), text, _style);
         }

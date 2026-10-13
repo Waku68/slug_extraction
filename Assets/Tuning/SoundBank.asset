@@ -196,3 +196,21 @@ MonoBehaviour:
     - {fileID: 8300000, guid: a0238569f91aec84ebbe3e54c999e135, type: 3}
     volume: 0.8
     pitchJitter: 0.06
+  - key: bag_rattle
+    clips:
+    - {fileID: 8300000, guid: 58825df294b88b7448341e14d4d02767, type: 3}
+    - {fileID: 8300000, guid: f8ec7ff39e0216a45a606554fe625401, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: slug_land
+    clips:
+    - {fileID: 8300000, guid: b62c9de60947ce04cad188c2c2d1dac2, type: 3}
+    - {fileID: 8300000, guid: 63c2020f7a70fb042bc381fdd9538d01, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: slug_lunge
+    clips:
+    - {fileID: 8300000, guid: 09b2f3abe93486a489b3bc03ae09e836, type: 3}
+    - {fileID: 8300000, guid: ba7f63845982bd84a8cf4b16f0346723, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06

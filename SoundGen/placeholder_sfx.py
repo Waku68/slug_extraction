@@ -1,9 +1,10 @@
 # 仮の効果音を波形の計算で作るスクリプト（わくさんの本物の音ができるまでのつなぎ）
 # 書き出し先：Assets/Audio/Placeholder/（わくさんの音の SE/ とは分ける）。44.1 kHz、16 bit、モノラル。
-# 使い方：uv run --no-project --with numpy python SoundGen/placeholder_sfx.py
+# 使い方：uv run --no-project --with numpy python SoundGen/placeholder_sfx.py [音の名前 …]（名前を渡すとその音だけ）
 # 音の考え方：雨の夜のナメクジの世界。硬い物（岩塩）は明るく割れる、柔らかい物（植物、体）はくぐもって湿っている。
 # 銃は火薬ではなく炭酸ガスなので「パン」ではなく「プシュ」。同じ音の揺らぎは番号違い（_01、_02）で作る。
 import os
+import sys
 import wave
 import zlib
 import numpy as np
@@ -290,6 +291,40 @@ def slug_hurt(rng, v):
     return voice
 
 
+def slug_lunge(rng, v):
+    """縮んで伸びる：むにゅっと縮んで、びよーんと伸びる。"""
+    d = 0.3
+    t = t_axis(d)
+    squelch = biquad(noise(0.08, rng), "lp", 900 + 300 * v) * env(0.08, 0.004, 0.025)
+    f = (190 + 20 * v) * (520 / 190) ** np.clip(t / 0.18, 0, 1) * (1 + 0.06 * np.sin(2 * np.pi * 18 * t))
+    ph = 2 * np.pi * np.cumsum(f) / SR
+    boing = (np.sin(ph) + 0.25 * np.sin(2 * ph)) * env(d, 0.03, 0.09, hold=0.04) * 0.5
+    return mix(squelch * 1.2, at(boing, 0.03))
+
+
+def slug_land(rng, v):
+    """着地：ぺちょっと湿った音＋ぷるんと揺れる。"""
+    d = 0.24
+    t = t_axis(d)
+    slap = biquad(noise(0.06, rng), "lp", 1400 + 300 * v) * env(0.06, 0.001, 0.015)
+    thud = tone(d, 150, 70) * env(d, 0.002, 0.04) * 0.6
+    wob = np.sin(2 * np.pi * (260 + 30 * v) * t) * (0.5 + 0.5 * np.sin(2 * np.pi * 9 * t)) * env(d, 0.02, 0.06) * 0.25
+    return mix(slap * 1.3, thud, at(wob, 0.02))
+
+
+def bag_rattle(rng, v):
+    """跳ねたときのバッグの中身：岩塩の塊がごとごと、かちかち鳴る。"""
+    d = 0.34
+    x = np.zeros(int(SR * d))
+    for k in range(9):
+        s = int(SR * (0.01 + 0.24 * rng.random()))
+        click = biquad(noise(0.03, rng), "band", rng.uniform(1300, 3200), q=3) * env(0.03, 0.001, 0.008)
+        knock = tone(0.06, rng.uniform(160, 260), 110) * env(0.06, 0.001, 0.02) * 0.6
+        g = mix(click * rng.uniform(0.4, 1), knock * rng.uniform(0.3, 1))
+        x[s:s + len(g)] += g[:max(0, len(x) - s)]
+    return mix(x, rustle(rng, 0.2, 1600, 10, 0.06) * 0.4)
+
+
 def tool_switch(rng, v):
     return mix(rustle(rng, 0.12, 2000, 8, 0.04), at(gun_cue(rng, v, 1400, 0.06, False), 0.06))
 
@@ -328,11 +363,17 @@ SOUNDS = {
     "knife_stab": (knife_stab, 1),
     "slug_hurt": (slug_hurt, 2),
     "tool_switch": (tool_switch, 1),
+    "slug_lunge": (slug_lunge, 2),
+    "slug_land": (slug_land, 2),
+    "bag_rattle": (bag_rattle, 2),
 }
 
 
 def main():
+    only = sys.argv[1:]          # 名前を渡すと、その音だけ作り直す
     for name, (fn, count) in SOUNDS.items():
+        if only and name not in only:
+            continue
         for i in range(count):
             rng = np.random.default_rng(zlib.crc32(name.encode()) + i * 31)   # 毎回同じ音になる
             save(f"{name}_{i + 1:02d}", fn(rng, i / max(count - 1, 1) - 0.5 if count > 1 else 0.0))

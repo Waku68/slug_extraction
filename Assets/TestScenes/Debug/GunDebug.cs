@@ -118,7 +118,7 @@ namespace SlugMove
                 $"最後の当たり  {_last}\n" +
                 $"的に当たった粒  {_onTarget} / {_shots}　　平均 {avg:0.0} 点\n" +
                 "<size=14>左クリック 撃つ・突く ／ 右クリック 覗く（狙撃銃）／ R リロード ／ 1 ピッケル・2 背中の銃・3 腰の道具（ホイールでも）／ Tab 持ち物\n" +
-                "スペース長押し 縮む→離して伸びる（よける）／ T スロー ／ C 記録を消す ／ V 視点切替</size>";
+                "スペース 縮んで伸びる（長押しで大きく。よける）／ T スロー ／ C 記録を消す ／ V 視点切替</size>";
             GUI.Box(new Rect(10, 10, 760, 150), GUIContent.none);
             GUI.Label(new Rect(20, 16, 750, 150), text, _style);
         }

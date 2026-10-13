@@ -38,8 +38,8 @@ namespace SlugExtract
         bool _breaking;
         float _breakT;
 
-        /// <summary>Called after every hit: (item, how many came out, false).</summary>
-        public static event System.Action<ItemKind, int, bool> Harvested;
+        /// <summary>Called after every hit: (who struck it, item, how many came out, false).</summary>
+        public static event System.Action<GameObject, ItemKind, int, bool> Harvested;
 
         void Awake()
         {
@@ -117,7 +117,7 @@ namespace SlugExtract
             Vector3 toward = Vector3.ProjectOnPlane(hitter.transform.position - transform.position, Vector3.up).normalized;
             var ignore = hitter.GetComponent<Collider>();
             float size = settings.Def(kind).size;
-            Harvested?.Invoke(kind, amount, false);
+            Harvested?.Invoke(hitter, kind, amount, false);
             if (_left == 0 && !HasStages) _breaking = true;
             if (planted && planted.gameObject.activeSelf)
             {

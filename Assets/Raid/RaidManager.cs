@@ -44,8 +44,9 @@ namespace SlugExtract
             if (health) health.Died += cause => { if (_state == State.Playing) { _cause = cause; End(State.Failed); } };
         }
 
-        void OnHarvested(ItemKind kind, int added, bool full)
+        void OnHarvested(GameObject who, ItemKind kind, int added, bool full)
         {
+            if (!controller || who != controller.gameObject) return;     // someone else's pickaxe (a bot)
             var name = settings.Def(kind).displayName;
             if (added > 0) Log($"{name}が出た（E でつかむ）");
         }

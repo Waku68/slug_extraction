@@ -63,5 +63,6 @@ Oct 4, 2026
 | `SlugGunHolder.Cue` | `Tools/Guns/SlugGunHolder.cs` | リロードの各段階（`GunHandling.Cue` をそのまま外へ） |
 | `SlugBag.Did`（grab, pick, takeout, stow, drop, throw, hide, unhide, burst, eco, peek） | `Raid/SlugBag.cs` | つかむ・摘む・出す・入れる・落とす・投げる・体に突っ込む・取り出す・破れる・エコバッグ・覗く |
 | `Pickable.Crushed` | `Raid/Pickable.cs` | 植物がピッケルで潰れた |
+| `SlugMoveController.Lunged` / `Landed` | `Movement/SlugMoveController.cs` | 縮んで伸びる（`slug_lunge`）、着地（`slug_land`）、跳ねたときのバッグの中身（`bag_rattle`、重いほど大きい） |
 
-移動（這う・縮む・伸びる・伏せる）、試合（脱出・時間切れ）、天気（雨・風）にはまだイベントがないので、音を入れるときに足す。
+移動（這う・伏せる）、試合（脱出・時間切れ）、天気（雨・風）にはまだイベントがないので、音を入れるときに足す。
