@@ -14,7 +14,7 @@ namespace SlugDesign
     /// </summary>
     public static class HarvestVisuals
     {
-        const string Art = "Assets/Art/Models/";
+        const string Art = "Assets/Art/Models/Harvest/";
         const string SettingsPath = "Assets/Tuning/ExtractSettings.asset";
 
         /// <summary>Where the logs lie in ExtractTest: the far side of the wet field, behind the turnips.</summary>

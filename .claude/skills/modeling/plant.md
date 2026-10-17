@@ -1,6 +1,6 @@
 # 植物
 
-Blender のスクリプトで作り、`Slug/Toon`（`WorldLook`、リアル度 0.2）で描く。お手本は `Blender/rainturnip_gen.py`（畑と抜いた1個）と `Blender/ugotake_gen.py`（倒木の上に並べて1本ずつ摘む）。Unity でシーンに置くのは `Assets/Art/Editor/HarvestVisuals.cs`。
+Blender のスクリプトで作り、`Slug/Toon`（`WorldLook`、リアル度 0.2）で描く。お手本は `Blender/Harvest/rainturnip_gen.py`（畑と抜いた1個）と `Blender/Harvest/ugotake_gen.py`（倒木の上に並べて1本ずつ摘む）。Unity でシーンに置くのは `Assets/Art/Editor/HarvestVisuals.cs`。
 
 植物の名前・場所・条件・値打ちは spec.md 6章の表。**「その植物だけの理由」を形で見せる** のが一番大事。
 

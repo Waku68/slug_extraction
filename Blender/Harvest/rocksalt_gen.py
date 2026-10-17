@@ -7,7 +7,7 @@
 import bpy, bmesh, math, random
 from mathutils import Vector, Matrix, Euler
 
-EXPORT_DIR = "C:/UnityProjects/ExtractionGame/Assets/Art/Models/RockSalt/"
+EXPORT_DIR = "C:/UnityProjects/ExtractionGame/Assets/Art/Models/Harvest/RockSalt/"
 EXPORT = True
 
 # ---------------------------------------------------------------- 色（Blender のプレビュー用。Unity 側はマテリアルで決める）

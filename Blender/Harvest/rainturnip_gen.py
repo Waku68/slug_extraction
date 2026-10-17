@@ -9,7 +9,7 @@ import bpy, bmesh, math, random
 from mathutils import Vector, Matrix
 from mathutils import noise as mnoise
 
-EXPORT_DIR = "C:/UnityProjects/ExtractionGame/Assets/Art/Models/RainTurnip/"
+EXPORT_DIR = "C:/UnityProjects/ExtractionGame/Assets/Art/Models/Harvest/RainTurnip/"
 EXPORT = True
 SCALE = 1.8   # 畑で目立つ大きさ。掘って手に持っても同じ大きさ（Unity では ExtractSettings の雨カブの size が長い辺）
 

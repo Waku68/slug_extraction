@@ -5,7 +5,7 @@ import bpy, bmesh, math, random
 from mathutils import Vector, Matrix
 from mathutils import noise as mnoise
 
-EXPORT_DIR = "C:/UnityProjects/ExtractionGame/Assets/Art/Models/UgoTake/"
+EXPORT_DIR = "C:/UnityProjects/ExtractionGame/Assets/Art/Models/Harvest/UgoTake/"
 EXPORT = True
 COLORS = {
     "UgoTake_Cap": (0.62, 0.46, 0.33),    # 雨に濡れた茶色のかさ

@@ -1,6 +1,6 @@
 # 鉱石・塩
 
-Blender のスクリプトで作り、`Slug/Toon`（`WorldLook`、リアル度 0.2）で描く。お手本は `Blender/rocksalt_gen.py`（今の本番：採る場所 `RockSalt_Node_A〜C` と手に持つ塊 `RockSalt_Chunk_A〜C`）、`rocksalt_mushroom_gen.py`（塩のきのこ）、`rocksalt_v2_gen.py`（形の考え方10種の見比べ）。Unity でシーンに置くのは `Assets/Art/Editor/HarvestVisuals.cs`、段階の切り替えは `Harvestable`。
+Blender のスクリプトで作り、`Slug/Toon`（`WorldLook`、リアル度 0.2）で描く。お手本は `Blender/Harvest/rocksalt_gen.py`（今の本番：採る場所 `RockSalt_Node_A〜C` と手に持つ塊 `RockSalt_Chunk_A〜C`）、`rocksalt_mushroom_gen.py`（塩のきのこ）、`Blender/_Old/rocksalt_v2_gen.py`（形の考え方10種の見比べ。試作なので _Old）。Unity でシーンに置くのは `Assets/Art/Editor/HarvestVisuals.cs`、段階の切り替えは `Harvestable`。
 
 塩は重くて小さい資源。**叩いて採る気持ちよさ** と **「塩だ！掘ろう！」と一目で分かること** が形の目的。種類と産地は spec.md 6章（粗塩＝塩田、黒い塩＝溶岩台地、岩塩＝洞窟の山）。
 

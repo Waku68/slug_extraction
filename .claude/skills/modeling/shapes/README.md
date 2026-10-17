@@ -15,7 +15,7 @@
 | 口・天窓・落ち穴 | [opening.md](opening.md) | 地形の穴＋崩れた岩 | `PunchHoles`、`BuildCaves` |
 | 道・けものみち・石橋 | [path.md](path.md) | 地形を掘る＋橋はモデル | `IslandTest800Paths.cs`、`BuildRingBridges` |
 | 隠れる物・岩・木の散らし | [cover.md](cover.md) | コードのモデルを並べる | `PlaceCover`、`Rock`、`Tree` |
-| 名所の大物（大ガジュマル、目印の岩） | [../map.md](../map.md) | Blender | `Blender/<name>_gen.py` |
+| 名所の大物（大ガジュマル、目印の岩） | [../map.md](../map.md) | Blender | `Blender/Landmarks/<name>_gen.py` |
 
 ## 共通のやり方：トークンを節約して、質は落とさない
 

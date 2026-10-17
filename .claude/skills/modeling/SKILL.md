@@ -11,8 +11,8 @@ description: Blender や Unity の MCP で形を作るときの指示の型と�
 | --- | --- | --- |
 | マップ（地形、区画、名所、巨大な木や岩） | [map.md](map.md)。形は造形ごとに [shapes/](shapes/README.md)（崖、谷、川、滝、海岸・入江、洞窟、天窓、道、隠れる物） | 地形と配置は Unity のコード（シーンのビルダー）、名所の大物だけ Blender |
 | ナメクジ（体、装備、バッグ、銃・道具） | [slug.md](slug.md) | Unity のコード（`SlugMeshFactory`、`GearMesh`、`ProfileMesh`）。Blender は使わないのが基本 |
-| 植物 | [plant.md](plant.md) | Blender のスクリプト（`Blender/<name>_gen.py`） |
-| 鉱石・塩 | [ore.md](ore.md) | Blender のスクリプト（`Blender/<name>_gen.py`） |
+| 植物 | [plant.md](plant.md) | Blender のスクリプト（`Blender/Harvest/<name>_gen.py`） |
+| 鉱石・塩 | [ore.md](ore.md) | Blender のスクリプト（`Blender/Harvest/<name>_gen.py`） |
 
 ツールの癖は memory の Blender MCP・Unity MCP のメモを見る（Blender 5.2 の bpy の落とし穴、再生を止めてからスクリプトを直す、など）。
 
@@ -81,7 +81,7 @@ description: Blender や Unity の MCP で形を作るときの指示の型と�
 - 質感はテクスチャを描かず、マテリアルを部品ごとに分けて色で塗る。シェーダーは `Slug/Toon`、世界の物の値は `Assets/Art/Editor/WorldLook.cs`（形はポップ、質感はリアル度 0.2）
 - 世界は雨に濡れたくすんだ色、キャラだけが鮮やか。世界の物の彩度はナメクジより上げない（珍しい物だけ例外）
 - マテリアル名は `<物の名前>_<部品>`（例 `UgoTake_Cap`）。Unity のマテリアルと同じ名前にして、`WorldLook.Remap` でつなぐ
-- Blender の作り方はスクリプトに残す：`Blender/<name>_gen.py` と同じ名前の .blend。もう一度実行すれば作り直して書き出せるようにする（手で直した形は残らない前提）。書き出し先は `Assets/Art/Models/<Name>/`
+- Blender の作り方はスクリプトに残す：`Blender/<種類>/<name>_gen.py` と同じ名前の .blend。もう一度実行すれば作り直して書き出せるようにする（手で直した形は残らない前提）。書き出し先は `Assets/Art/Models/<種類>/<Name>/`（種類は `Harvest` 採る物、`Base` 拠点、`Creatures` 生き物、`Landmarks` 名所、`Props` 小物。Blender 側も同じ名前のフォルダ）。使わなくなった試作は消さずに `Assets/_Old/Art/` と `Blender/_Old/` へ
 - 違う形はシードを変えて A／B／C（同じ物を並べたときに同じに見えないように）
 - 三角形の目安：手に持つ物 300〜1,500、採る場所 1,000〜4,000、名所の大物 5,000〜20,000
 - 当たり判定は形に合わせた単純な形（Box・Capsule・凸の MeshCollider）。見た目のメッシュをそのまま当たり判定にしない

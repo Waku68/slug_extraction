@@ -15,7 +15,7 @@ import bpy, bmesh, math, random
 from mathutils import Vector, Matrix
 from mathutils import noise as mnoise
 
-EXPORT_DIR = "C:/UnityProjects/ExtractionGame/Assets/Art/Models/RockSalt/V2/"
+EXPORT_DIR = "C:/UnityProjects/ExtractionGame/Assets/_Old/Art/RockSalt/V2/"
 EXPORT = True
 MATS = ["RockSalt_Rock", "RockSalt_Crystal"]   # Unity の本番マテリアルと同じ名前
 ROCK, CRY = 0, 1

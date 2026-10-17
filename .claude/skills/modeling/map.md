@@ -9,7 +9,7 @@
 | 地形（島全体の高さ、谷、川、塩田、崖） | Unity の地形（Terrain）を Unity のコードで作る（島全体を1枚。侵食もまずコード。足りなければ Gaea）。50° より急な崖も Terrain で作れる | 前の試作は `TestScenes/Editor/RegionTestBuilder.cs` |
 | 配置（木・岩・採取場・ベースキャンプの場所） | Unity のコード。並べたあと固定して、人が直す | 同上 |
 | Terrain で作れない形（洞窟、溶岩洞、石橋、滝の裏の岩棚） | Blender のスクリプトかコードのモデルを地形の上に置く | — |
-| 名所の大物（大ガジュマル、菌輪のキノコ、目印の岩） | Blender のスクリプト → FBX。大ガジュマルの垂れた根はコードで並べる（曲がった管） | `Blender/<name>_gen.py` |
+| 名所の大物（大ガジュマル、菌輪のキノコ、目印の岩） | Blender のスクリプト（`Blender/Landmarks/`）→ FBX（`Assets/Art/Models/Landmarks/`）。大ガジュマルの垂れた根はコードで並べる（曲がった管） | `Blender/<name>_gen.py` |
 | 小物（隠れる岩、倒木、苔玉） | Blender のスクリプトでシード違いを 3〜5 種類 | `UgoTake_Log` |
 
 造形（崖、谷、川、滝、海岸・入江、洞窟の通路と部屋、口・天窓、道、隠れる物）ごとの作り方・数字・確かめ方・失敗は [shapes/README.md](shapes/README.md)。作る造形のファイルだけ読む。

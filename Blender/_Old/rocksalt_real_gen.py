@@ -10,7 +10,7 @@ import bpy, bmesh, math, random
 from mathutils import Vector, Matrix
 from mathutils import noise as mnoise
 
-EXPORT_DIR = "C:/UnityProjects/ExtractionGame/Assets/Art/Models/RockSalt/Real/"
+EXPORT_DIR = "C:/UnityProjects/ExtractionGame/Assets/_Old/Art/RockSalt/Real/"
 EXPORT = True
 
 # Blender のプレビュー用の色（Unity 側はマテリアルで決める）

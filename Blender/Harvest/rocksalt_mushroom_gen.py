@@ -11,7 +11,7 @@ import bpy, bmesh, math, random
 from mathutils import Vector, Matrix
 from mathutils import noise as mnoise
 
-EXPORT_DIR = "C:/UnityProjects/ExtractionGame/Assets/Art/Models/RockSalt/Mushroom/"
+EXPORT_DIR = "C:/UnityProjects/ExtractionGame/Assets/Art/Models/Harvest/RockSalt/Mushroom/"
 EXPORT = True
 MATS = ["RockSalt_Rock", "RockSalt_Crystal", "RockSalt_Fresh"]
 ROCK, CRY, FRESH = 0, 1, 2

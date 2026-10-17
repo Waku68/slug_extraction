@@ -15,6 +15,7 @@ Oct 5, 2026
 | [sakurai_notes.md](sakurai_notes.md) | 「桜井政博のゲーム作るには」から、このゲームに使えることの整理（Oct 10） |
 | [agenda.md](agenda.md) | ゲーム全体を見渡して、話し合うことの一覧（開発の目線・プレイヤーの目線、Oct 10） |
 | [bag_spec.md](bag_spec.md) | バッグの仕様（バッグ、エコバッグ、隠し場所、カタツムリの殻、ベルトと背負い紐）。今の実装との違いと作る順番 |
+| `../AGENTS.md` | ほかの AI（Antigravity の Argon など）がこのプロジェクトで働くときの入口。モデリングの決まり、置き場所、Blender と Unity の MCP の使い方 |
 
 ## docs の中身
 
@@ -26,6 +27,7 @@ Oct 5, 2026
 | `character/history/` | [design_candidates_v1.md](character/history/design_candidates_v1.md)、[design_candidates_v2.md](character/history/design_candidates_v2.md) | 最初の9案と、配色・目の比較の記録 |
 | `discussions/` | 下の「話し合いの記録」 | Claude といつもの4人の話し合い |
 | `ideas/` | [base_ideas.md](ideas/base_ideas.md) | 拠点の設備の案出し |
+| `modeling/` | [base_cenote.md](modeling/base_cenote.md) | Argon（Antigravity）に渡すモデリングのプロンプト。拠点「セノーテの洞窟」（英語＋日本語訳）。`reference/cenote_base_viewer.html` は回して見られる3Dの参考 |
 | `tech/` | [tool_craft_notes.md](tech/tool_craft_notes.md) | 作り方のメモ：ピッケル、銃3種、装備、当たり判定、縮んで伸びる、気をつけること |
 | | [region_test_notes.md](tech/region_test_notes.md) | 灰色の区画（一辺 800 m）の試作と、這う時間の測定、分かったこと |
 | | [island_test_notes.md](tech/island_test_notes.md) | 灰色の島（東西 1.5 km、島全体を1枚の地形）の試作と、這う時間・山の傾き・谷の深さの測定、分かったこと。後半は 800 m の島（IslandTest_800）：ナメクジの目の高さの見え方、這う時間 |
@@ -47,7 +49,7 @@ Oct 5, 2026
 | 戦い | [health_damage_discussion.md](discussions/health_damage_discussion.md)（何発で倒れるか、塩の希少性）、[slug_gun_discussion.md](discussions/slug_gun_discussion.md)（銃を構造から考え直す）→ [movement_discussion.md](discussions/movement_discussion.md)（プレイヤーの動き：速く這うと縮んで伸びるのかぶり、目的で分ける、バッグを投げ捨てる） |
 | 数字と見せ方 | [no_numbers_discussion.md](discussions/no_numbers_discussion.md)（数字を出さない世界）→ [no_numbers_discussion_2.md](discussions/no_numbers_discussion_2.md)（お金の塩だけは数字） |
 | バッグと道具 | [bag_ui_discussion.md](discussions/bag_ui_discussion.md) → [bag_ui_discussion_2.md](discussions/bag_ui_discussion_2.md) → [bag_ui_discussion_3.md](discussions/bag_ui_discussion_3.md) → [tool_carry_discussion.md](discussions/tool_carry_discussion.md)（持ち方、エコバッグ） |
-| 拠点とキャラ | [base_discussion.md](discussions/base_discussion.md)（拠点）、[snail_discussion.md](discussions/snail_discussion.md)（カタツムリ） |
+| 拠点とキャラ | [base_discussion.md](discussions/base_discussion.md)（拠点）→ [base_layout_discussion.md](discussions/base_layout_discussion.md)（本版の拠点の形：大きさ・形・材質・部屋の並び、デッキ、建築家の構造案）→ [sortie_launch_discussion.md](discussions/sortie_launch_discussion.md)（島へ出発する瞬間から拠点の形を考える：吹き抜けを打ち上がる）→ [flying_carrier_discussion.md](discussions/flying_carrier_discussion.md)（拠点の飛ぶ生き物に行き帰りを運んでもらう）、[snail_discussion.md](discussions/snail_discussion.md)（カタツムリ） |
 | 採取物と経済 | [plants_discussion.md](discussions/plants_discussion.md)（島に生える植物 10 種類、場所・条件・レア度。Claude が決めた）→ [plant_names_discussion.md](discussions/plant_names_discussion.md)（名前の決まり、ふだんの呼び名と古い名前）、[plant_uses_discussion.md](discussions/plant_uses_discussion.md)（売る以外の使い道、苗床、根ごと掘ったときのサーバー）、[market_discussion.md](discussions/market_discussion.md)（店と取引：カタツムリの行商人、動く値段、手渡しだけ）→ [economy_balance_discussion.md](discussions/economy_balance_discussion.md)（経済の数字：アモレの比率、岩塩を掘る回数、弾と装備の値段、相場、出口）→ [economy_review_discussion.md](discussions/economy_review_discussion.md)（取りこぼしと改善案） |
 
 ## Assets の地図
@@ -65,7 +67,7 @@ Oct 5, 2026
 | `World/` | 島の時計と天気（`IslandClock`・`IslandWeather`、見せ方 `WeatherPresenter`、湿らせる・乾かす場所 `MoistureZone`、設定 `IslandSettings`・`ConditionSettings`）。`tech/weather_notes.md` |
 | `Tuning/` | **調整用のアセットはすべてここ**：`SlugMoveSettings`、`PickaxeSettings`、`RifleSettings`・`ShotgunSettings`・`SniperSettings`・`PistolSettings`、`KnifeSettings`、`LoadoutSettings`（持ち替えの時間、体に付ける位置）、`ExtractSettings`、`IslandSettings`（島の時計と天気）、`ConditionSettings`（湿り気と体力）。再生中に変えてもすぐ反映され、止めても残る |
 | `TestScenes/` | 試す専用シーンの部品。`Editor/`（シーンを作るビルダー、コマ撮り `SwingFilmStrip`・`GunFilmStrip`・`MoveFilmStrip`、`HitboxShot`）、`Debug/`（画面のデバッグ表示、的）、`Generated/`（ビルダーが作る地形・マテリアル） |
-| `Art/Models/` | Blender で作ったモデル（1単位＝1 m、地面に置く物は底の真ん中に原点）。`RockSalt/`：岩塩の塊3種・欠片3種と、そのマテリアル（Slug/Toon、リアル度 0.2）。`RainTurnip/`：雨カブ（畑に植わっている葉の大きい `Planted` と、掘って出てくる葉の小さい `Item`。玉は同じ）と土の小山2種。`UgoTake/`：ウゴタケと倒木。`Art/Editor/HarvestVisuals.cs` がシーンの採る場所をモデルに差し替える（メニュー `Slug/Update Harvest Visuals (open scene)`）。`Art/Editor/WorldLook.cs` が世界の物の質感の基準（形はポップ、質感はリアル度 0.2）。作り方のスクリプトと .blend はプロジェクト直下の `Blender/`（`rocksalt_gen.py`、`rainturnip_gen.py` などを Blender の MCP か Scripting タブで実行すると作り直して書き出す）。モデリングを頼むときの指示の型と作り方は `.claude/skills/modeling/`（共通の型 `SKILL.md`、`map.md`・`slug.md`・`plant.md`・`ore.md`） |
+| `Art/Models/` | モデル（FBX。1単位＝1 m、地面に置く物は底の真ん中に原点）。種類ごとの箱：`Harvest/`（採る物。`RockSalt/`：塩のきのこ `Mushroom/RockSaltMush_M5_All`・`_Half`・`_Stump`、手に持つ塊 `RockSalt_Chunk_A〜C`、`RainTurnip/`：雨カブ（畑の `Planted`、掘った `Item`、土の小山2種）、`UgoTake/`：ウゴタケと倒木）、`Base/`（拠点）、`Creatures/`（飛ぶ生き物など）、`Landmarks/`（名所）、`Props/`（小物）。`Art/Editor/HarvestVisuals.cs` がシーンの採る場所をモデルに差し替える（メニュー `Slug/Update Harvest Visuals (open scene)`）。`Art/Editor/WorldLook.cs` が世界の物の質感の基準（形はポップ、質感はリアル度 0.2）。作り方のスクリプトと .blend はプロジェクト直下の `Blender/<種類>/`（同じ箱の名前。例 `Blender/Harvest/rocksalt_gen.py`）。使わなくなった試作は `Assets/_Old/Art/` と `Blender/_Old/`（Oct 17 に岩塩の V2・Real・Realism、きのこの M1〜M4 を移した）。モデリングの指示の型と作り方は `.claude/skills/modeling/`。ほかの AI（Argon など）への入口はプロジェクト直下の `AGENTS.md` |
 | `Scenes/` | シーン（下の表） |
 | `Audio/` | 音。`BGM/`、`Ambience/`（環境音）、`SE/`（効果音：体・ピッケル・銃・ナイフ・当たる・採取・バッグ・試合・画面）、`Mixer/`。決まりは [sound_list.md](tech/sound_list.md) |
 | `Fonts/` | Noto Sans JP（日本語の表示用、SIL OFL） |
