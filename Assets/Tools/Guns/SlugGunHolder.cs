@@ -52,6 +52,8 @@ namespace SlugMove
         [System.NonSerialized] public bool driven;
 
         public GunHandling Handling => _handling;
+        /// <summary>The gun as the others see it (on the back, at the hip or in the hands).</summary>
+        public Transform BodyModel => _gun ? _gun.transform : null;
         /// <summary>The spread right now (cone half-angle, degrees), crawling and the scope included.</summary>
         public float CurrentSpread => (_handling.Spread + gun.moveSpread * controller.Speed01)
                                       * Mathf.Lerp(1f, gun.scopeFov > 0f ? gun.scopeSpread : gun.sightSpread, _handling.Scope);
@@ -133,10 +135,17 @@ namespace SlugMove
             foreach (var r in _bodyUnshadowed) if (r) r.enabled = !hide;
         }
 
+        // loaded and the rest carried from the start, even while it waits on the back unused (Start only comes when it is
+        // first taken in hand): the rounds count from the moment the slug sets out
+        void Awake()
+        {
+            _handling.settings = gun;
+            if (gun) _handling.Reset();
+        }
+
         void Start()
         {
             _handling.settings = gun;
-            _handling.Reset();
             _handling.Draw(drawTime);
             _handling.Cue += OnCue;
             _rack = GetComponent<SlugToolRack>();
@@ -539,6 +548,7 @@ namespace SlugMove
             string ammo = h.Reloading && gun.reloadStyle == ReloadStyle.Magazine ? "<size=18>リロード中…</size>"
                 : h.Ammo == 0 ? "<color=#ff9080><b>0</b></color> / " + gun.magazineSize
                 : $"<b>{h.Ammo}</b> / {gun.magazineSize}";
+            if (!h.Unlimited) ammo += h.Reserve > 0 ? $"<size=15>　残り {h.Reserve}</size>" : "<size=15><color=#ff9080>　残りなし</color></size>";
             if (h.Reloading && gun.reloadStyle == ReloadStyle.OneByOne) ammo = "<size=16>込めている… </size>" + ammo;
             if (h.Reloading && gun.reloadStyle == ReloadStyle.Pour) ammo = "<size=16>注いでいる… </size>" + ammo;
             GUI.Box(new Rect(w - 230, hgt - 70, 220, 56), GUIContent.none);

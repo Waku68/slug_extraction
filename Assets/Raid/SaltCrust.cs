@@ -71,7 +71,13 @@ namespace SlugExtract
             if (dir.sqrMagnitude < 0.04f) dir = local.z < 0f ? Vector2.down : Vector2.up;
             _pendingDir = dir.normalized;
             _pending = true;
+            // in words, for when it falls (spec 8章: only the way it came, never who or how far)
+            Vector3 flat = new Vector3(local.x, 0f, local.z);
+            LastFrom = flat.sqrMagnitude < 1e-4f ? "上" : flat.z < -0.6f * flat.magnitude ? "うしろ" : flat.z > 0.6f * flat.magnitude ? "前" : flat.x > 0f ? "右" : "左";
         }
+
+        /// <summary>The way the last round came from, in words ("うしろ", "右", "左", "前"; null before any).</summary>
+        public string LastFrom { get; private set; }
 
         void LateUpdate()
         {

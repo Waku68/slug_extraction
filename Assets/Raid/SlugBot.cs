@@ -31,7 +31,8 @@ namespace SlugExtract
         [Tooltip("この距離より近ければ、後ろでも気づく（m）")] public float feelRange = 3f;
         [Tooltip("見えてから撃ち始めるまで（秒）。近いとき〜遠いとき")] public Vector2 reactTime = new Vector2(0.5f, 1.8f);
         [Tooltip("銃声が聞こえる距離（m）")] public float hearShot = 150f;
-        [Tooltip("ピッケルの音が聞こえる距離（m）")] public float hearPickaxe = 35f;
+        [Tooltip("掘る音（ピッケル）が聞こえる距離（m）。ふだんの移動で 10 秒で着く所まで（spec 13章 Oct 25）")] public float hearDig = 18f;
+        [Tooltip("摘む音（キノコ・花を手で）が聞こえる距離（m）。3 秒で着く所まで")] public float hearPick = 5f;
         [Tooltip("這う音が聞こえる距離（m）")] public float hearCrawl = 5f;
         [Tooltip("縮んで伸びる音が聞こえる距離（m）。バッグが重いほど、中身の音で遠くまで（いっぱいで2倍）")] public float hearLunge = 15f;
         [Tooltip("見失ってから探すのをやめるまで（秒）")] public float giveUpTime = 25f;
@@ -80,6 +81,8 @@ namespace SlugExtract
         readonly List<Object> _heard = new List<Object>();
 
         SlugGunHolder Gun => loadout ? loadout.BackGun : null;
+        /// <summary>Every round it brought is spent (in the gun and outside).</summary>
+        public bool OutOfRounds => Gun && Gun.Handling != null && !Gun.Handling.Unlimited && Gun.Handling.Carried <= 0;
         Vector3 Eye => slug ? slug.FaceCenterWorld : transform.position + Vector3.up * 0.45f;
 
         void Awake()
@@ -111,6 +114,7 @@ namespace SlugExtract
                 foreach (var g in _player.GetComponents<SlugGunHolder>()) { g.Fired += OnPlayerShot; _heard.Add(g); }
                 var t = _player.GetComponent<SlugToolHolder>();
                 if (t) { t.Struck += OnPlayerPickaxe; _heard.Add(t); }
+                b.Did += OnPlayerBag; _heard.Add(b);
             }
             // the first bot to start spreads them all out, then sets the player down out of everyone's sight
             if (Time.frameCount != _spreadFrame)
@@ -193,18 +197,28 @@ namespace SlugExtract
                 if (o is SlugGunHolder g && g) g.Fired -= OnPlayerShot;
                 if (o is SlugToolHolder t && t) t.Struck -= OnPlayerPickaxe;
                 if (o is SlugMoveController m && m) m.Lunged -= OnPlayerLunge;
+                if (o is SlugBag bag && bag) bag.Did -= OnPlayerBag;
             }
         }
 
         // ------------------------------------------------------------------ hearing
         void OnPlayerShot(Vector3 eye, Vector3 dir) => Hear(eye, hearShot, 0.7f);
-        void OnPlayerPickaxe(RaycastHit hit, IPickaxeTarget target) => Hear(hit.point, hearPickaxe, 0.4f);
+        void OnPlayerPickaxe(RaycastHit hit, IPickaxeTarget target) => Hear(hit.point, hearDig * RainHush, 0.4f);
+
+        /// <summary>Rain drowns the small sounds (spec 4章: in heavy rain footsteps vanish in the rain): the crawl, the
+        /// stretch, digging and picking carry less far, down to 40% in a downpour. Shots are not drowned.</summary>
+        static float RainHush => SlugWorld.WeatherPresenter.Current ? 1f - 0.6f * SlugWorld.WeatherPresenter.Current.Weather.rain : 1f;
+        /// <summary>Picking a mushroom or a flower by hand is heard only close by.</summary>
+        void OnPlayerBag(string what, ItemKind kind)
+        {
+            if (what == "pick" && _player) Hear(_player.position, hearPick * RainHush, 0.3f);
+        }
 
         void OnPlayerLunge(float charge)
         {
             float heavy = _playerBag && _playerBag.settings
                 ? Mathf.Clamp01(_playerBag.Weight / (2f * Mathf.Max(_playerBag.settings.weightThreshold, 1e-3f))) : 0f;
-            Hear(_player.position, hearLunge * (1f + heavy), 0.45f);
+            Hear(_player.position, hearLunge * (1f + heavy) * RainHush, 0.45f);
         }
 
         void Hear(Vector3 at, float range, float alert)
@@ -228,6 +242,13 @@ namespace SlugExtract
 
             Look(dt);
             CheckHurt();
+
+            // nothing left to shoot (the same rounds as the player, Oct 26): no fighting, it gets away into cover
+            if (OutOfRounds && (State == Mode.Fight || State == Mode.Search))
+            {
+                if (FindCover(out var hide)) { _goal = hide; State = Mode.Cover; _coverUntil = -1f; }
+                else Enter(Mode.Mine);
+            }
 
             Vector2 move = Vector2.zero;
             bool trigger = false;
@@ -303,8 +324,8 @@ namespace SlugExtract
             else
             {
                 // a crawl close by is heard
-                if (_playerMove && _playerMove.Speed > 0.3f && Vector3.Distance(_player.position, transform.position) < hearCrawl)
-                    Hear(_player.position, hearCrawl, 0.5f);
+                if (_playerMove && _playerMove.Speed > 0.3f && Vector3.Distance(_player.position, transform.position) < hearCrawl * RainHush)
+                    Hear(_player.position, hearCrawl * RainHush, 0.5f);
                 if (State == Mode.Fight && Time.time - _lastSeenTime > 1.5f) Enter(Mode.Search);
                 if (State == Mode.Mine || State == Mode.Look) Alert = Mathf.Max(0f, Alert - step * 0.05f);
             }
@@ -435,11 +456,13 @@ namespace SlugExtract
             if (_goal == null) { Enter(Mode.Fight); return Vector2.zero; }
             if (Flat(transform.position - _goal.Value) > 0.6f && _coverUntil < 0f)
                 return Steer(_goal.Value, false);
-            if (_coverUntil < 0f) _coverUntil = Time.time + Random.Range(coverWait.x, coverWait.y);
+            // (with nothing left to shoot it lies low much longer, then goes back to digging)
+            if (_coverUntil < 0f) _coverUntil = Time.time + Random.Range(coverWait.x, coverWait.y) * (OutOfRounds ? 4f : 1f);
             if (Time.time > _coverUntil)
             {
                 _hurtFrom = 0f;
                 _goal = null;
+                if (OutOfRounds) { Alert = 0f; Enter(Mode.Mine); return Vector2.zero; }
                 State = Mode.Search;          // back out to where it last saw the player from
                 _searchFrom = _lastSeenFrom;
             }

@@ -28,7 +28,9 @@ namespace SlugExtract
         [Tooltip("脱出口の中心")] public Transform exitPoint;
 
         static int _stashValue, _stashSalt, _stashCrop, _runs;
-        string _savedText, _cause;
+        string _savedText, _cause, _roundsHome;
+        /// <summary>The way the last round came from before the player fell (from the salt on the view).</summary>
+        string LastFrom => health && health.GetComponent<SaltCrust>() ? health.GetComponent<SaltCrust>().LastFrom : null;
 
         State _state = State.Playing;
         float _timeLeft, _extractProgress;
@@ -102,6 +104,17 @@ namespace SlugExtract
                 _stashValue += held.value;
                 if (bag.HeldKind == ItemKind.RockSalt) _stashSalt++; else _stashCrop++;
             }
+            // rounds not fired come home (spec 9章: back into the purse at the salt's worth; there is no purse yet, so
+            // they are only told)
+            _roundsHome = null;
+            if (s == State.Extracted)
+            {
+                var sb = new System.Text.StringBuilder();
+                foreach (var g in guns)
+                    if (g && g.Handling != null && !g.Handling.Unlimited && g.Handling.Carried > 0)
+                        sb.Append(sb.Length > 0 ? "、" : "撃たずに持ち帰った弾：").Append($"{g.gun.ammoName}（{g.gun.displayName}）{g.Handling.Carried}");
+                if (sb.Length > 0) _roundsHome = sb.ToString();
+            }
             // what was pushed into the body always comes home
             _savedText = null;
             if (bag.HasHidden)
@@ -160,12 +173,15 @@ namespace SlugExtract
             string title = _state == State.Extracted ? "<color=#a0ffa0>脱出成功</color>"
                 : _cause == "time" ? "<color=#ff9090>雨が止んで、乾いてしまった</color>"
                 : _cause == "dried" ? "<color=#ff9090>乾ききって、倒れてしまった</color>"
+                : _cause == "salt" && LastFrom != null ? $"<color=#ff9090>{LastFrom}から撃たれて、倒れた</color>"
                 : "<color=#ff9090>倒れてしまった</color>";
             string body = _state == State.Extracted
                 ? $"持ち帰り：{salt.displayName} ×{bag.Count(ItemKind.RockSalt)}、{crop.displayName} ×{bag.Count(ItemKind.Crop)}（{bag.Value} 塩）"
                 : _savedText != null ? $"持ち物はすべて失った（体の中の{_savedText}だけは持ち帰った）" : "持ち物はすべて失った";
             GUI.Label(new Rect(w * 0.5f - 300, h * 0.25f + 20, 600, 60), title, _big);
             GUI.Label(new Rect(w * 0.5f - 300, h * 0.25f + 100, 600, 30), body, _small);
+            if (_state == State.Extracted && _roundsHome != null)
+                GUI.Label(new Rect(w * 0.5f - 300, h * 0.25f + 124, 600, 30), _roundsHome, _small);
             GUI.Label(new Rect(w * 0.5f - 300, h * 0.25f + 150, 600, 60),
                 $"倉庫：{salt.displayName} {_stashSalt}、{crop.displayName} {_stashCrop}（合計 {_stashValue} 塩、{_runs} 回出撃）", _small);
             GUI.Label(new Rect(w * 0.5f - 300, h * 0.25f + 230, 600, 30), "R でもう一度", _small);

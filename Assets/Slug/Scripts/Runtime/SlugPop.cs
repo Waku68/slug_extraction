@@ -501,7 +501,15 @@ namespace SlugDesign
         // ------------------------------------------------------------------ lifecycle
         void Reset() { shader = Shader.Find("Slug/Toon"); }
         void OnEnable() { Schedule(); }
-        void OnValidate() { Schedule(); }
+        void OnValidate()
+        {
+#if UNITY_EDITOR
+            // creating objects inside OnValidate is not allowed in play mode either (Unity warns "SendMessage cannot be
+            // called during ... OnValidate" for each part): always defer
+            if (!gameObject.scene.IsValid()) return;
+            UnityEditor.EditorApplication.delayCall += () => { if (this != null && isActiveAndEnabled) Rebuild(); };
+#endif
+        }
         void OnDisable() { Cleanup(true); }
 
         void Schedule()

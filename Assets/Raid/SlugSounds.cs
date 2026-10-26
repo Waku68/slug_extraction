@@ -13,6 +13,8 @@ namespace SlugExtract
     {
         public SoundBank bank;
         [Tooltip("ほかのナメクジ（ボット、あとでほかの人）の音：その場所から聞こえ、遠くまで届く（銃声は遠く、ほかは近く）")] public bool other;
+        [Tooltip("掘る音（ピッケル）が届く距離（m）。ふだんの移動で 10 秒で着く所まで。近いほど大きい（spec 13章 Oct 25）")] public float digHeard = 18f;
+        [Tooltip("摘む音（キノコ・花を手で）が届く距離（m）。3 秒で着く所まで")] public float pickHeard = 5f;
 
         AudioSource _source;
         AudioSource _squeeze;       // the shrink: plays while Jump is held, cut short on letting go
@@ -49,7 +51,10 @@ namespace SlugExtract
             _loadout = root.GetComponentInChildren<SlugLoadout>(true);
             _hitboxes = root.GetComponentInChildren<SlugHitboxes>(true);
             _move = root.GetComponentInChildren<SlugMoveController>(true);
+            _moisture = root.GetComponentInChildren<SlugMoisture>(true);
         }
+
+        SlugMoisture _moisture;
 
         /// <summary>One handler per gun (made again after a script reload in play, which keeps the guns but not these).</summary>
         void MakeFired()
@@ -68,6 +73,7 @@ namespace SlugExtract
             if (_loadout) _loadout.Changed += OnSwitch;
             if (_hitboxes) _hitboxes.Hit += OnHurt;
             if (_move) { _move.Squeezed += OnSqueeze; _move.Lunged += OnLunge; _move.Landed += OnLand; }
+            if (_moisture) { _moisture.DryingStarted += OnDrying; _moisture.WettingStarted += OnWetting; _moisture.StageChanged += OnDryStage; }
             Harvestable.Harvested += OnHarvested;
             Pickable.Crushed += OnCrushed;
             GroundBag.Burst += OnGroundBurst;
@@ -82,6 +88,7 @@ namespace SlugExtract
             if (_loadout) _loadout.Changed -= OnSwitch;
             if (_hitboxes) _hitboxes.Hit -= OnHurt;
             if (_move) { _move.Squeezed -= OnSqueeze; _move.Lunged -= OnLunge; _move.Landed -= OnLand; }
+            if (_moisture) { _moisture.DryingStarted -= OnDrying; _moisture.WettingStarted -= OnWetting; _moisture.StageChanged -= OnDryStage; }
             Harvestable.Harvested -= OnHarvested;
             Pickable.Crushed -= OnCrushed;
             GroundBag.Burst -= OnGroundBurst;
@@ -91,6 +98,8 @@ namespace SlugExtract
         void OnBag(string what, ItemKind kind)
         {
             string key = what == "pick" ? "pick_pluck" : what == "swap" ? "bag_up" : "bag_" + what;
+            // someone else picking by hand: only close by
+            if (other && what == "pick") { var e = Pick(key + "_" + kind, key); if (e != null) PlayEntry(e, transform.position + Vector3.up * 0.3f, 1f, pickHeard * RainHush); return; }
             Play(key + "_" + kind, key);
         }
 
@@ -100,7 +109,7 @@ namespace SlugExtract
         {
             var surface = hit.collider ? hit.collider.GetComponentInParent<IPickaxeSurface>() : null;
             var m = surface != null ? surface.PickaxeMaterial : PickaxeMaterial.Default;
-            PlayAt(m == PickaxeMaterial.Hard ? "pickaxe_hit_salt" : m == PickaxeMaterial.Soft ? "pickaxe_hit_soft" : "pickaxe_hit_default", hit.point);
+            PlayAt(m == PickaxeMaterial.Hard ? "pickaxe_hit_salt" : m == PickaxeMaterial.Soft ? "pickaxe_hit_soft" : "pickaxe_hit_default", hit.point, 1.5f, digHeard * (other ? RainHush : 1f));
         }
 
         void OnHarvested(GameObject who, ItemKind kind, int amount, bool full)
@@ -145,6 +154,15 @@ namespace SlugExtract
 
         void OnLand() => Play("slug_land");
 
+        /// <summary>Rain drowns another slug's small sounds (its moving, digging, picking; not its shots): heard 40% as far
+        /// in a downpour (spec 4章).</summary>
+        static float RainHush => SlugWorld.WeatherPresenter.Current ? 1f - 0.6f * SlugWorld.WeatherPresenter.Current.Weather.rain : 1f;
+
+        // moisture (spec 4章): said once at the moment it changes. Silent until the bank has clips for these keys
+        void OnDrying() => Play("moisture_sizzle");
+        void OnWetting() => Play("moisture_squelch");
+        void OnDryStage(int now, int was) => Play(now > was ? "moisture_stage_drier_" + now : "moisture_stage_wetter_" + now, now > was ? "moisture_stage_drier" : "moisture_stage_wetter");
+
         /// <summary>The press: a squeak, then the body tightening as long as it is held (cut short on letting go).</summary>
         void OnSqueeze()
         {
@@ -174,7 +192,7 @@ namespace SlugExtract
         {
             var e = Pick(keys);
             if (e == null) return;
-            if (other) { PlayEntry(e, transform.position + Vector3.up * 0.3f, 2f, 60f, loudness); return; }
+            if (other) { PlayEntry(e, transform.position + Vector3.up * 0.3f, 2f, 60f * RainHush, loudness); return; }
             _source.pitch = 1f + Random.Range(-e.pitchJitter, e.pitchJitter);
             _source.PlayOneShot(e.clips[Random.Range(0, e.clips.Length)], e.volume * bank.masterVolume * loudness);
         }

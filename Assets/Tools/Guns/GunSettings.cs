@@ -42,8 +42,9 @@ namespace SlugMove
         [Tooltip("散弾の広がり（度）。粒ごとにこの円錐の中へ散る")] public float pelletSpread = 0f;
 
         [Header("射撃")]
-        [Tooltip("連射の速さ（発/分）")] public float fireRate = 600f;
-        [Tooltip("マガジンに入る塩の数")] public int magazineSize = 30;
+        [Tooltip("連射の速さ（発/分）")] public float fireRate = 300f;
+        [Tooltip("マガジンに入る塩の数")] public int magazineSize = 20;
+        [Tooltip("持ち込む弾：マガジン何本ぶんか（銃に入っている1本を含む）。0 なら限りなし（試す場面用）")] public int magazinesCarried = 3;
         [Tooltip("塩の粒の速さ（m/s）")] public float muzzleSpeed = 140f;
         [Tooltip("重力の効き（1 = そのまま）。遠くを狙うと少し落ちる")] public float gravityScale = 1f;
         [Tooltip("塩の粒が消えるまでの時間（秒）")] public float roundLife = 1.2f;

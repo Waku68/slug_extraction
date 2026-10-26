@@ -27,6 +27,13 @@ namespace SlugMove
         public event System.Action<string> Cue;
 
         public int Ammo { get; private set; }
+        /// <summary>Rounds carried outside the gun (spec 9章: only what was made at the base and brought along). Reloads
+        /// draw on it; with none left the gun cannot be filled again. Ignored when the gun carries no limit.</summary>
+        public int Reserve { get; private set; }
+        /// <summary>The gun brings no limit (<see cref="GunSettings.magazinesCarried"/> 0: test scenes).</summary>
+        public bool Unlimited => settings.magazinesCarried <= 0;
+        /// <summary>Everything carried for it: in the gun and outside.</summary>
+        public int Carried => Ammo + Reserve;
         public int ShotsInBurst { get; private set; }
         /// <summary>0 = carried, 1 = at the shoulder (eased).</summary>
         public float Raise => Smooth(_raise);
@@ -92,6 +99,7 @@ namespace SlugMove
         public void Reset()
         {
             Ammo = settings.magazineSize;
+            Reserve = Unlimited ? 0 : settings.magazineSize * (settings.magazinesCarried - 1);
             _raise = 0f; _equip = 1f; _scope = 0f;
             _kick = _kickV = _pitch = _pitchV = _yaw = _yawV = _roll = _rollV = _lean = _leanV = 0f;
             _squeeze = _bloom = _cool = _queued = 0f;
@@ -145,8 +153,13 @@ namespace SlugMove
             _queued = pressed ? ClickBuffer : Mathf.Max(0f, _queued - dt);
             if (!trigger) ShotsInBurst = 0;
 
-            // the trigger with an empty gun: reload. During a one-at-a-time reload: stop after the round in hand.
-            if (pressed && Ammo <= 0 && !Reloading && _equip >= 1f) StartReload();
+            // the trigger with an empty gun: reload (nothing left to load: a dry click). During a one-at-a-time reload:
+            // stop after the round in hand.
+            if (pressed && Ammo <= 0 && !Reloading && _equip >= 1f)
+            {
+                if (CanLoad) StartReload();
+                else Cue?.Invoke("dry");
+            }
             if (pressed && (_stage == Stage.Open || _stage == Stage.Insert || _stage == Stage.Pour) && Ammo > 0) _stopLoading = true;
 
             bool hasScope = s.scopeFov > 0f;
@@ -220,9 +233,27 @@ namespace SlugMove
         /// <summary>One round at a time: the moment within an insert when the round goes in.</summary>
         public const float InsertAt = 0.72f;
 
+        /// <summary>There is salt left to put in the gun.</summary>
+        public bool CanLoad => Unlimited || Reserve > 0;
+
+        /// <summary>Takes up to <paramref name="want"/> rounds from what is carried (all of them when there is no limit).</summary>
+        int Take(int want)
+        {
+            if (Unlimited) return want;
+            int n = Mathf.Clamp(want, 0, Reserve);
+            Reserve -= n;
+            return n;
+        }
+
+        /// <summary>Rounds picked up (a fallen slug's, spec 8章【仮】): added to what is carried.</summary>
+        public void AddRounds(int n)
+        {
+            if (n > 0 && !Unlimited) Reserve += n;
+        }
+
         public void StartReload()
         {
-            if (Reloading || Ammo >= settings.magazineSize) return;
+            if (Reloading || Ammo >= settings.magazineSize || !CanLoad) return;
             _cycling = false;
             _stage = settings.reloadStyle == ReloadStyle.Magazine ? Stage.Magazine : Stage.Open;
             _stageT = 0f;
@@ -238,7 +269,7 @@ namespace SlugMove
             switch (_stage)
             {
                 case Stage.Magazine:
-                    if (u >= 0.5f && Ammo < s.magazineSize) Ammo = s.magazineSize;      // the magazine comes back full of salt
+                    if (u >= 0.5f && Ammo < s.magazineSize) Ammo += Take(s.magazineSize - Ammo);     // it comes back filled with what is left
                     if (u >= SeatAt && !_seated) { _seated = true; Jolt(); Cue?.Invoke("seat"); }
                     if (u >= 1f) Finish();
                     break;
@@ -252,8 +283,8 @@ namespace SlugMove
                 case Stage.Pour:
                     // the salt runs in at a steady rate; the trigger stops it at once
                     _poured += s.pourRate * dt;
-                    while (_poured >= 1f && Ammo < s.magazineSize) { Ammo++; _poured -= 1f; }
-                    if (Ammo >= s.magazineSize || _stopLoading) Next(Stage.Close);
+                    while (_poured >= 1f && Ammo < s.magazineSize && CanLoad) { Ammo += Take(1); _poured -= 1f; }
+                    if (Ammo >= s.magazineSize || _stopLoading || !CanLoad) Next(Stage.Close);
                     break;
                 case Stage.Insert:
                     // stopping before the hand has reached the gun drops this round
@@ -261,13 +292,13 @@ namespace SlugMove
                     if (u >= InsertAt && !_inserted)
                     {
                         _inserted = true;
-                        Ammo = Mathf.Min(Ammo + 1, s.magazineSize);
+                        if (Ammo < s.magazineSize) Ammo += Take(1);
                         _squeeze = 0.4f;
                         Cue?.Invoke("insert");
                     }
                     if (u >= 1f)
                     {
-                        if (Ammo >= s.magazineSize || _stopLoading) Next(Stage.Close);
+                        if (Ammo >= s.magazineSize || _stopLoading || !CanLoad) Next(Stage.Close);
                         else { _stageT = 0f; _inserted = false; }
                     }
                     break;

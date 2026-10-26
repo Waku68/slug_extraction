@@ -98,6 +98,14 @@ namespace SlugMove
         /// </summary>
         public bool TryStowPose(Object holder, out ToolPose pose) => _poses.TryGetValue(holder, out pose);
 
+        /// <summary>The renderers of the guns riding on the body now (not the pickaxe or the knife), for leaving them
+        /// behind when the slug falls.</summary>
+        public void CollectGuns(List<Renderer> into)
+        {
+            foreach (var g in _guns.Values)
+                if (g && g.gameObject.activeInHierarchy) into.AddRange(g.GetComponentsInChildren<Renderer>());
+        }
+
         // ------------------------------------------------------------------ every frame: follow the body
         void LateUpdate()
         {

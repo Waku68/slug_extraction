@@ -53,6 +53,7 @@ namespace SlugWorld
             if (sun) RenderSettings.sun = sun;
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
             BuildRain();
+            if (!GetComponent<SunShafts>()) gameObject.AddComponent<SunShafts>();
             Step(0f);
         }
 

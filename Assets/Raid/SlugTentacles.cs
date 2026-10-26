@@ -49,13 +49,37 @@ namespace SlugExtract
         void OnEnable()
         {
             if (_hitboxes) _hitboxes.Hit += OnHit;
+            if (!_moisture) _moisture = transform.root.GetComponentInChildren<SlugMoisture>(true);
+            if (_moisture) { _moisture.DryingStarted += OnDrying; _moisture.StageChanged += OnStage; }
             UnityEngine.Rendering.RenderPipelineManager.beginCameraRendering += OnBeginCamera;
         }
 
         void OnDisable()
         {
             if (_hitboxes) _hitboxes.Hit -= OnHit;
+            if (_moisture) { _moisture.DryingStarted -= OnDrying; _moisture.StageChanged -= OnStage; }
             UnityEngine.Rendering.RenderPipelineManager.beginCameraRendering -= OnBeginCamera;
+        }
+
+        SlugMoisture _moisture;
+
+        /// <summary>Out into the sun or onto salt: both tentacles flinch in a little ("ジュッ", spec 4章 Oct 10).</summary>
+        void OnDrying() => Twitch(0.45f);
+
+        /// <summary>Moisture crossed into a drier stage: a flinch, harder the drier (into the wet: none, the sound says it).</summary>
+        void OnStage(int now, int was)
+        {
+            if (now > was) Twitch(now >= 3 ? 0.8f : 0.55f);
+        }
+
+        /// <summary>Both tentacles pull in by <paramref name="amount"/> (0..1) for a moment, as a hit does but evenly.</summary>
+        public void Twitch(float amount)
+        {
+            for (int i = 0; i < 2; i++)
+            {
+                _pullTo[i] = Mathf.Max(amount, _since[i] < retractIn + retractHold ? _pullTo[i] : 0f);
+                _since[i] = 0f;
+            }
         }
 
         bool Helmeted => _gear && _gear.helmet && _gear.tentacleHelmet;

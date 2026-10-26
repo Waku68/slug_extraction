@@ -80,6 +80,7 @@ namespace SlugExtract
         Vector3 _ownMouth;
         bool _ownMouthValid;
         float _gHeld = -1f, _peek, _lastSwell = -1f;
+        float _eHeld = -1f;      // E held since (spec 4章 Oct 18: hold E to put things straight into the bag, one after another)
         BagKind _lastLook = (BagKind)(-1);
         string _message;
         float _messageUntil;
@@ -543,18 +544,25 @@ namespace SlugExtract
                         _gHeld = -1f;
                     }
                 }
-                // E: empty hands take what lies in front; with a thing in the hands, put it in the bag
+                // E: empty hands take what lies in front; with a thing in the hands, put it in the bag.
+                // Held down: what is taken goes on into the bag without stopping in the hands, then the next thing near,
+                // for as long as it is held (a tap still leaves the thing in the hands)
                 if (kb.eKey.wasPressedThisFrame)
                 {
+                    _eHeld = Carry == CarryPhase.Hold ? -1f : 0f;
                     if (Carry == CarryPhase.Hold) Stow();
-                    else if (!Holding)
+                    else if (!Holding) TakeNearest();
+                }
+                if (_eHeld >= 0f)
+                {
+                    if (!kb.eKey.isPressed) _eHeld = -1f;
+                    else
                     {
-                        var p = ItemPickup.Nearest(PickupPoint(), settings.pickupReach);
-                        if (p) Grab(p);
-                        else
+                        _eHeld += dt;
+                        if (_eHeld >= EHoldToBag)
                         {
-                            var plant = Pickable.Nearest(PickupPoint(), settings.pickupReach);
-                            if (plant) Pick(plant);
+                            if (Carry == CarryPhase.Hold) Stow();
+                            else if (!Holding) TakeNearest();
                         }
                     }
                 }
@@ -566,12 +574,25 @@ namespace SlugExtract
                     else if (!Holding && HasHidden) TakeOutHidden();
                 }
             }
-            else _gHeld = -1f;
+            else _gHeld = _eHeld = -1f;
 
             float speed = settings.SpeedFor(Weight);
             if (_peek > 0f) speed *= Mathf.Lerp(1f, settings.peekSpeed, _peek);
             if (BagAction) speed *= 0.3f;
             controller.speedMultiplier = speed;
+        }
+
+        /// <summary>How long E must be held before what is taken goes straight on into the bag (shorter is a tap).</summary>
+        const float EHoldToBag = 0.25f;
+
+        /// <summary>Takes the nearest thing lying in front (or picks the nearest soft plant). False when nothing is near.</summary>
+        bool TakeNearest()
+        {
+            var p = ItemPickup.Nearest(PickupPoint(), settings.pickupReach);
+            if (p) { Grab(p); return true; }
+            var plant = Pickable.Nearest(PickupPoint(), settings.pickupReach);
+            if (plant) { Pick(plant); return true; }
+            return false;
         }
 
         Vector3 PickupPoint()

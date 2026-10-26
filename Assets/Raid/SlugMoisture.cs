@@ -33,8 +33,23 @@ namespace SlugExtract
         /// <summary>Why it changes right now (for development).</summary>
         public string Reason { get; private set; } = "";
         public float RatePerMinute { get; private set; }
+        /// <summary>The sun is on the slug (a sunny day, out of the shade). <see cref="SunGlare"/> shows it.</summary>
+        public bool InSun { get; private set; }
+        /// <summary>0..1: how hard the sun dries the slug right now (soil 0.5, salt 1; 0 in the shade, under cloud, at dawn
+        /// and dusk, at night). The light streaks on the view follow it.</summary>
+        public float SunDrying { get; private set; }
 
-        bool _inSun, _underSky;
+        /// <summary>The four looks of moisture (spec 4章 Oct 18): 0 glossy (past full), 1 plain, 2 drying (dull, shrunk,
+        /// blotched), 3 in danger (wrinkled, the view's edges blur).</summary>
+        public int Stage { get; private set; } = 1;
+        /// <summary>Once, the moment the stage changes (new stage, old stage): a sound and the tentacles go with it.</summary>
+        public event System.Action<int, int> StageChanged;
+        /// <summary>Once, the moment the ground starts drying the slug hard (out into the sun, onto salt): "ジュッ".</summary>
+        public event System.Action DryingStarted;
+        /// <summary>Once, the moment it gets into the wet (water, rain under the open sky): "ぬちゃっ".</summary>
+        public event System.Action WettingStarted;
+
+        bool _inSun, _underSky, _wasDrying, _wasWetting;
         float _probe, _use, _refill;
         Texture2D _edge, _drop;
         GUIStyle _dev;
@@ -43,6 +58,7 @@ namespace SlugExtract
         {
             Value = settings.moistureMax;
             MossBalls = settings.mossBalls;
+            if (!GetComponent<SunGlare>()) gameObject.AddComponent<SunGlare>().moisture = this;
         }
 
         void Update()
@@ -95,6 +111,19 @@ namespace SlugExtract
             else _refill = 0f;
             RatePerMinute = gain / Mathf.Max(dt, 1e-5f) * 60f;
 
+            // the sun's share of it: only a sunny day out of the shade (cloud counts as shade), not at dawn and dusk
+            InSun = !raining && !water && sky == Sky.Sunny && _inSun && t.daylightAmount > 0.5f;
+            float sunRate = Mathf.Max(-s.sunnyInSun, 1e-3f);
+            SunDrying = InSun ? Mathf.Clamp01(-perMinute / sunRate * 0.5f) * (1f - t.twilight) : 0f;
+
+            // the moment it changes, said once (spec 4章 Oct 10): out into the sun or onto salt, into the wet
+            bool drying = InSun || (salt && !water && !raining);
+            bool wetting = water || raining;
+            if (drying && !_wasDrying) DryingStarted?.Invoke();
+            if (wetting && !_wasWetting) WettingStarted?.Invoke();
+            _wasDrying = drying;
+            _wasWetting = wetting;
+
             // rain and water can soak it past full; the extra seeps away again
             bool soaking = water || raining;
             float cap = soaking ? s.moistureOverfill : Mathf.Max(s.moistureMax, Value);
@@ -121,6 +150,32 @@ namespace SlugExtract
             if (slug) slug.SetDryness(dry, soaked);
             controller.bodyScale = 1f - 0.06f * dry;
             controller.conditionSpeed = Value <= 0f ? s.zeroSpeed : 1f;
+
+            // the four stages (a little give at each line, so standing on it does not flicker)
+            int stage = StageFor(Value, Stage);
+            if (stage != Stage) { int old = Stage; Stage = stage; StageChanged?.Invoke(stage, old); }
+        }
+
+        int StageFor(float v, int current)
+        {
+            var s = settings;
+            const float give = 1.5f;
+            // glossy | plain | drying | danger: the stage is how many of these lines it is under
+            float line0 = s.moistureMax + give, line1 = s.looksDryBelow, line2 = s.warnBelow;
+            int stage = 0;
+            // past a line downward needs a little under it, back upward a little over it
+            if (v < line0 + (current > 0 ? give : -give) * 0.5f) stage = 1;
+            if (v < line1 + (current > 1 ? give : -give)) stage = 2;
+            if (v < line2 + (current > 2 ? give : -give)) stage = 3;
+            return stage;
+        }
+
+        /// <summary>A moss ball found lying about goes onto the belt when there is room (spec 4章 Oct 18). False when full.</summary>
+        public bool AddMossBall()
+        {
+            if (MossBalls >= settings.mossBalls) return false;
+            MossBalls++;
+            return true;
         }
 
         void UseMoss(float dt)

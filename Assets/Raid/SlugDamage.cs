@@ -53,6 +53,9 @@ namespace SlugExtract
             if (!vanishOnFall) return;
             Vector3 at = transform.position + Vector3.up * 0.3f;
             PickaxeEffects.Chips(at, Vector3.up, new Color(0.43f, 0.48f, 0.3f), 24, 1.2f);
+            // the gear stays in the shape it fell in, the small things beside it (spec 8章, Oct 25)
+            var bag = GetComponentInChildren<SlugBag>(true);
+            SlugHusk.Leave(gameObject, bag && bag.settings ? bag.settings.droppedLifetime : 2700f);
             Destroy(gameObject);     // at the end of the frame: the bag has dropped by then (SlugBag hears Died too)
         }
     }

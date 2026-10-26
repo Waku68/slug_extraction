@@ -149,6 +149,18 @@ namespace SlugDesign
 
         T Own<T>(T o) where T : Object { o.hideFlags = HideFlags.DontSave; _owned.Add(o); return o; }
 
+        /// <summary>The renderers of the gear being worn (helmet, armour, the bag's belts), the bag itself only with
+        /// <paramref name="withBag"/>. For leaving the gear behind when the slug falls.</summary>
+        public void CollectGear(List<Renderer> into, bool withBag)
+        {
+            foreach (var o in _owned)
+            {
+                if (!(o is GameObject go) || !go) continue;
+                if (!withBag && (go == _bagGo || go == _bagMouth || _bagFixed.Contains(go) || _bagLidParts.Contains(go))) continue;
+                into.AddRange(go.GetComponentsInChildren<Renderer>());
+            }
+        }
+
         /// <summary>
         /// Poses the bag for the camera about to draw: the lid opened by <paramref name="open"/> (0..1) about its hinge
         /// (the edge away from the back, falling open outward), and by <paramref name="look"/> (0..1) the whole bag grown out from the back and tipped with
