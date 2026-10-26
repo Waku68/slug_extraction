@@ -20,6 +20,16 @@ namespace SlugMove
         [Tooltip("体の向きが視点の向きに追いつく、いちばん遅い速さ（度/秒）")] public float bodyTurnSpeed = 120f;
         [Tooltip("体の向きが視点に追いつく時間（秒）。ずれが大きいほど速く回り、この時間で約6割追いつく")] public float bodyTurnLag = 0.07f;
 
+        [Header("切り返し（這っている向きの逆へキーを入れ直すと、止まりかけをとばして新しい向きへ少し勢いがつく）")]
+        [Range(60f, 180f), Tooltip("切り返しになる、キーの向きの変わり方（度）。視点を回しただけでは出ない")] public float turnKickAngle = 100f;
+        [Tooltip("切り返した瞬間に最高速へ上乗せする速さ（m/s）。turnKickTime で最高速まで戻る")] public float turnKickSpeed = 0.5f;
+        [Tooltip("上乗せが抜けるまでの時間（秒）")] public float turnKickTime = 0.15f;
+        [Tooltip("次の切り返しまでの時間（秒）。ジグザグがまっすぐより速くならないように")] public float turnKickCooldown = 0.5f;
+        [Tooltip("切り返したときに、お尻が外へ振られる強さ（度/秒）。0 でなし")] public float turnKickTail = 220f;
+
+        [Header("覗いている間（照準器・スコープ。切り返しの勢いはつかない）")]
+        [Range(0f, 1f), Tooltip("覗いている間の、這う速さの倍率")] public float aimSpeedMultiplier = 0.8f;
+
         [Header("向きを変えるとき（お尻が遅れてついてくる）")]
         [Tooltip("止まっているときに、お尻が体の向きに追いつく速さ（Hz）。小さいほど、ぬるっと遅れてついてくる")] public float tailFollowHz = 0.75f;
         [Tooltip("這う速さ 1 m/s あたりに足す、追いつく速さ（Hz）。進むと、お尻は通った跡をなぞるように早くそろう")] public float tailFollowPerSpeed = 1.2f;
@@ -39,7 +49,7 @@ namespace SlugMove
 
         [Header("よじ登り（壁を這い上がる）")]
         [Tooltip("よじ登れる段差の高さ（m）。目の高さは約 0.47 m")] public float climbHeight = 0.45f;
-        [Tooltip("よじ登る速さ（m/s、上向き）")] public float climbSpeed = 0.3f;
+        [Tooltip("よじ登る速さ（m/s、上向き）")] public float climbSpeed = 0.5f;
         [Range(0f, 90f), Tooltip("よじ登るときに体を起こす最大の角度（度）")] public float climbTilt = 50f;
 
         [Header("縮んで伸びる（スペースを押すと少し縮んで伸びる。長押しで大きく溜める）")]
@@ -58,6 +68,12 @@ namespace SlugMove
         [Range(0f, 0.5f), Tooltip("伸びるときに体が伸びる割合（前後の長さ）")] public float lungeStretch = 0.3f;
         [Tooltip("体の伸び縮みが戻るばねの速さ（Hz）と減衰。減衰が小さいほど、着地でぷるんと揺れる")] public float lungeSpringHz = 3f;
         public float lungeSpringDamping = 0.35f;
+        [Range(0f, 1f), Tooltip("押した瞬間に縮む割合（いちばん縮んだ形に対して）。押した手ごたえ。残りは溜めに合わせてじわじわ縮む")] public float lungePressSnap = 0.4f;
+        [Tooltip("縮むときと、離して伸びる瞬間の体のばねの速さ（Hz）。大きいほどパチンと速い。着地の揺れは lungeSpringHz のまま")] public float lungeSnapHz = 8f;
+        [Tooltip("離してから、縮んだ形のまま止まる時間（秒）。ためを見せてからパチンと伸びる（動き出しは遅らせない）")] public float lungeReleaseHold = 0.04f;
+        [Range(0f, 2f), Tooltip("縮んで伸びるときのカメラの反応の強さ（0 でなし）：押すと沈み、溜めると少し狭まり、伸びると広がって少し遅れてついてくる、着地で沈む")] public float lungeCamKick = 1f;
+        [Tooltip("溜めきって伸びたときに、視野角がいっとき広がる量（度）")] public float lungeFovKick = 6f;
+        [Tooltip("跳ぶときと着地で粘液のしぶきを飛ばし、着地した所に跡を残す（仮の見た目）")] public bool lungeSplash = true;
 
         [Header("背中を覗く（Q）")]
         [Tooltip("覗くときの目の位置（顔の真ん中から、見ている向き基準：右, 上, 前, m）。右肩の上から斜めにバッグを見下ろす")]
@@ -90,5 +106,8 @@ namespace SlugMove
         [Header("三人称（V キー）")]
         [Tooltip("体からカメラまでの距離（m）")] public float thirdPersonDistance = 1.8f;
         [Tooltip("注視点の高さ（m）")] public float thirdPersonHeight = 0.45f;
+        [Tooltip("右後ろ（肩ごし）のとき、注視点を右へずらす量（m）")] public float shoulderSide = 0.4f;
+        [Tooltip("右後ろ（肩ごし）のときの、体からカメラまでの距離（m）")] public float shoulderDistance = 1.0f;
+        [Tooltip("右後ろ（肩ごし）のとき、注視点をさらに上げる量（m）")] public float shoulderUp = 0.2f;
     }
 }

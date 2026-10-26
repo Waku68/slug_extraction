@@ -1,0 +1,340 @@
+<title>問屋の5案</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* layout: one column. option tabs, a full-width 3D view of the wholesaler's niche (slug scale), then the selected option's notes and colours */
+:root{
+  --bg:#f1f0ea; --paper:#fbfaf6; --ink:#232d29; --muted:#5d6a63; --line:#d5d2c6; --accent:#2f7a80; --warm:#b5762f; --warn:#b5473a;
+  --font:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#141917;--paper:#1c221f;--ink:#e3e9e4;--muted:#9eaba3;--line:#323c36;--accent:#79c2c8;--warm:#e2a75e;--warn:#ee7a6c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#141917;--paper:#1c221f;--ink:#e3e9e4;--muted:#9eaba3;--line:#323c36;--accent:#79c2c8;--warm:#e2a75e;--warn:#ee7a6c;color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.65;margin:0}
+.wrap{max-width:62rem;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 40px;display:flex;flex-direction:column;gap:12px}
+h1{font-size:1.35rem;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:.9rem;margin:0}
+.tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+@media (max-width:720px){.tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tab{font:inherit;text-align:left;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:8px 10px;cursor:pointer;display:flex;flex-direction:column;gap:2px;min-width:0}
+.tab b{font-size:.95rem}
+.tab span{font-size:.78rem;color:var(--muted)}
+.tab .tag{font-size:.72rem;color:var(--warm);letter-spacing:.04em}
+.tab.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.tab.on b{color:var(--accent)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:13px;color:var(--muted)}
+.row .gap{width:8px}
+.btn{font:inherit;font-size:13px;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:4px 10px;cursor:pointer}
+.btn.on{border-color:var(--accent);color:var(--accent)}
+#variant[hidden]{display:none}
+#view{position:relative;width:100%;height:min(64vh,520px);min-height:330px;border-radius:12px;overflow:hidden;touch-action:none;cursor:grab;background:#3a3631}
+canvas{width:100%;height:100%;display:block}
+#labels{position:absolute;inset:0;pointer-events:none}
+.lb{position:absolute;transform:translate(-50%,-100%);font-size:12px;line-height:1.35;padding:2px 7px;border-radius:6px;background:var(--paper);color:var(--ink);border:1px solid var(--line);white-space:nowrap}
+.lb.hi{border-color:var(--warm);color:var(--warm)}
+.one{font-size:1.05rem;margin:0}
+.one b{color:var(--accent)}
+.note{font-size:.88rem;color:var(--warm);margin:0}
+.notes{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+@media (max-width:640px){.notes{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 14px;min-width:0}
+.card h2{font-size:.85rem;letter-spacing:.06em;margin:0 0 4px;color:var(--muted)}
+.card ul{margin:0;padding-left:1.1em}
+.card li{margin:2px 0}
+.cols{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px}
+.chip{display:inline-flex;align-items:center;gap:6px}
+.sw{width:14px;height:14px;border-radius:3px;display:inline-block;border:1px solid var(--line)}
+.legend{font-size:12px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap}
+#err{color:var(--warn);font-size:13px}
+</style>
+<div class="wrap">
+  <h1>問屋の5案</h1>
+  <p class="sub">拠点の1階、6時（海側の口のすぐ東）の問屋の横穴。いまは幅 2.6 × 奥 1.5 × 高さ 1.5 m（人なら 幅 9.4 × 奥 5.4 × 高さ 5.4 m の店）。手前の緑のナメクジは体長 1.1 m・目の高さ 0.47 m。灰色のカタツムリが問屋（どの案も年寄り）。話し合い：<code>docs/discussions/base_shop_discussion.md</code></p>
+  <div class="tabs" id="tabs"></div>
+  <div class="row" id="variant" hidden>
+    <span>案3の場所：</span><button class="btn on" id="v3a">横穴を広げる</button><button class="btn" id="v3b">海側の口のトンネルへ移す</button>
+  </div>
+  <div class="row">
+    <button class="btn on" id="cOrb">斜めから</button><button class="btn" id="cEye">ナメクジの目（店の前）</button><button class="btn" id="cTbl">地図の台から</button>
+    <span class="gap"></span>
+    <button class="btn on" id="tDay">昼</button><button class="btn" id="tNight">夜</button>
+    <span class="gap"></span>
+    <button class="btn" id="zin">寄る</button><button class="btn" id="zout">引く</button>
+  </div>
+  <div id="view"><canvas id="cv"></canvas><div id="labels"></div></div>
+  <p id="err" hidden></p>
+  <p class="one" id="one"></p>
+  <p class="note" id="wnote"></p>
+  <div class="notes">
+    <div class="card"><h2>形と材料</h2><ul id="shape"></ul></div>
+    <div class="card"><h2>ナメクジの目で見えるもの</h2><ul id="see"></ul></div>
+    <div class="card"><h2>よい所</h2><ul id="pros"></ul></div>
+    <div class="card"><h2>気になる所</h2><ul id="cons"></ul></div>
+  </div>
+  <div class="card"><h2>色</h2><div class="cols" id="cols"></div></div>
+  <div class="legend"><span>ドラッグで回す・ホイールで寄る。手前が広間（北）、奥の壁の向こうが海（南）。左（西）が海側の口</span></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+try{
+const $=id=>document.getElementById(id);
+const W=$('view'),LB=$('labels');
+const R=new THREE.WebGLRenderer({canvas:$('cv'),antialias:true});R.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+const S=new THREE.Scene(),C=new THREE.PerspectiveCamera(55,1,.03,200);
+const BG_DAY=0x4a453e,BG_NIGHT=0x1d1b19;
+const hemi=new THREE.HemisphereLight(0xfff4e2,0x5a5248,.42);S.add(hemi);
+const sea=new THREE.DirectionalLight(0xcfe6f2,.3);sea.position.set(-3.2,4,-9);sea.target.position.set(-2,0,1);S.add(sea);S.add(sea.target);
+const sky=new THREE.DirectionalLight(0xffffff,.12);sky.position.set(3,9,6);S.add(sky);
+const reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// materials (colours from docs/modeling/base_furniture.md)
+const mats={};
+function T(c,o){const k=c+JSON.stringify(o||{});if(!mats[k])mats[k]=new THREE.MeshToonMaterial(Object.assign({color:c},o||{}));return mats[k]}
+const LIME=0xd9d2c0,LIMEW=0xa9a390,DRIFT=0xb9ae98,DRIFTD=0x8e7f68,VINE=0x6b6a45,COIR=0x8a6e4e,THATCH=0xa39466,MOSS=0x6e7c4a,BARK=0xd8cba8,SALT=0xeeebe4,CLAY=0xb5876a,BRASS=0xa8873e,CHAR=0x3a3634,CLAMIN=0xeee8dd,NOREN=0xa8655a,OCHRE=0xb39a5a,PILE=0xc9c2b0;
+const PLANTS=[0x7d9a55,0xa8655a,0xc2a55e,0x8fa070,0x9b7aa0,0x6f8f6a];
+const flame=new THREE.MeshBasicMaterial({color:0xffb860});
+const water=new THREE.MeshPhongMaterial({color:0x3f7f86,shininess:90,specular:0x99bbbb,transparent:true,opacity:.92});
+const sheen=new THREE.MeshPhongMaterial({color:CLAMIN,shininess:70,specular:0xb8c4cc});
+
+function mesh(g,m,x,y,z,p){const o=new THREE.Mesh(g,m);o.position.set(x||0,y||0,z||0);(p||S).add(o);return o}
+const box=(w,h,d,x,y,z,c,p)=>mesh(new THREE.BoxGeometry(w,h,d),typeof c==='number'?T(c):c,x,y,z,p);
+const cyl=(rt,rb,h,x,y,z,c,p,seg,open)=>mesh(new THREE.CylinderGeometry(rt,rb,h,seg||14,1,!!open),typeof c==='number'?T(c,open?{side:THREE.DoubleSide}:undefined):c,x,y,z,p);
+const ball=(r,x,y,z,c,p,sx,sy,sz)=>{const o=mesh(new THREE.SphereGeometry(r,16,12),typeof c==='number'?T(c):c,x,y,z,p);o.scale.set(sx||1,sy||1,sz||1);return o};
+const cord=(x,y0,y1,z,p)=>cyl(.008,.008,Math.abs(y1-y0),x,(y0+y1)/2,z,VINE,p,4);
+
+// labels
+let labels=[];
+function L(t,x,y,z,hi){const d=document.createElement('div');d.textContent=t;d.className='lb'+(hi?' hi':'');LB.appendChild(d);labels.push({d:d,p:new THREE.Vector3(x,y,z)})}
+const v3=new THREE.Vector3();
+function place(){const w=W.clientWidth,h=W.clientHeight;labels.forEach(l=>{v3.copy(l.p).project(C);if(v3.z>1||Math.abs(v3.x)>1.1||Math.abs(v3.y)>1.1){l.d.hidden=true;return}l.d.hidden=false;l.d.style.left=((v3.x+1)/2*w).toFixed(1)+'px';l.d.style.top=((1-v3.y)/2*h).toFixed(1)+'px'})}
+
+// ---- the fixed world: hall floor (y 0 = ground floor), the south wall, the sea mouth, the pier, the map table, the pool
+// axes: x = east, y = up, z = north (into the hall). The wall is z -3..0, the niche is cut into it.
+mesh(new THREE.PlaneGeometry(22,16),T(0xcfc7b4),0,0,4).rotation.x=-Math.PI/2;
+// the sea seen through the mouth
+mesh(new THREE.PlaneGeometry(10,4),new THREE.MeshBasicMaterial({color:0x9fc3d4}),-3.2,4,-9);
+mesh(new THREE.PlaneGeometry(10,6),new THREE.MeshBasicMaterial({color:0x4f8ea3}),-3.2,-1,-8.9).rotation.x=-.25;
+box(3.0,.12,6,-3.2,-.06,-6,DRIFT); // pier
+[-4.5,-1.9].forEach(x=>[-4,-6,-8].forEach(z=>cyl(.1,.1,2,x,-1,z,DRIFTD)));
+// noren at the mouth's outer end (the player's own dyed one)
+for(let i=0;i<5;i++)box(.44,.8,.03,-4.24+i*.52,2.05,-2.9,NOREN);
+box(2.8,.06,.06,-3.2,2.47,-2.9,DRIFTD);
+// map table and pool in the hall (about 5 m north)
+const tbl=new THREE.Group();S.add(tbl);tbl.position.set(-1.2,0,5.2);
+cyl(1.1,1.1,.08,0,.34,0,0xd8cba8,tbl,28);cyl(1.12,1.12,.06,0,.41,0,DRIFTD,tbl,28,true);cyl(.22,.5,.3,0,.15,0,DRIFTD,tbl,10);
+L('地図の台',-1.2,.9,5.2);
+mesh(new THREE.CircleGeometry(1.6,32),water,3.4,.02,4.6).rotation.x=-Math.PI/2;L('池',3.4,.5,4.6);
+// a lamp post by the map table
+cyl(.03,.03,1.2,0,.6,3.6,DRIFTD);ball(.06,0,1.24,3.6,flame);
+const hallLamp=new THREE.PointLight(0xffb860,.35,6);hallLamp.position.set(0,1.3,3.6);S.add(hallLamp);
+
+// ---- the player's slug (moss green, bag on its back), facing the shop
+const slug=new THREE.Group();S.add(slug);
+ball(.24,0,.24,0,0x7fa35a,slug,1,1,2.3);ball(.2,0,.38,-.42,0x86ab60,slug);
+[-.07,.07].forEach(x=>{cyl(.012,.012,.16,x,.58,-.47,0x5e7f45,slug,5);ball(.025,x,.66,-.47,0x5e7f45,slug)});
+box(.32,.26,.3,0,.56,.12,0x8c7f5e,slug);
+slug.position.set(.2,0,1.5);
+
+// ---- the wholesaler: an old snail (thick turned-out lip, moss, things tied to its shell)
+function snail(x,z,ry,p,shellOnly){
+  const g=new THREE.Group();(p||S).add(g);g.position.set(x,0,z);g.rotation.y=ry||0;
+  if(!shellOnly){ball(.2,0,.16,0,0x8b8174,g,1,.85,2.1);ball(.14,0,.3,.36,0x93897b,g);
+    [-.06,.06].forEach(xx=>{cyl(.011,.011,.14,xx,.46,.4,0x6f665b,g,5);ball(.022,xx,.54,.4,0x6f665b,g)})}
+  ball(.3,0,.5,-.1,0xa48c6c,g,1,1,.95);
+  const lip=mesh(new THREE.TorusGeometry(.19,.07,8,18),T(0xcbb995),0,.42,.12,g);
+  const sp=mesh(new THREE.TorusGeometry(.14,.06,8,16),T(0x8a7457),.27,.52,-.1,g);sp.rotation.y=Math.PI/2;
+  [[-.12,.79,-.1],[.06,.8,-.2],[.15,.74,0],[-.2,.66,-.24]].forEach(q=>ball(.07,q[0],q[1],q[2],MOSS,g,1,.5,1));
+  [[-.3,.42,-.05],[-.3,.36,-.12],[-.3,.38,.02]].forEach(q=>box(.02,.09,.06,q[0],q[1],q[2],BARK,g));
+  box(.12,.04,.09,.05,.82,-.05,BARK,g);ball(.03,.18,.84,-.02,flame,g);
+  return g}
+
+// ---- shared props
+function lamp(x,y,z,p){cyl(.03,.03,.12,x,y-.08,z,BRASS,p,6);ball(.045,x,y+.02,z,flame,p);const l=new THREE.PointLight(0xffb860,.35,3.5);l.position.set(x,y+.05,z);(p||S).add(l);lamps.push(l)}
+function roundBasket(r,h,x,y,z,fill,col,p){cyl(r,r*.9,h,x,y+h/2,z,VINE,p,16,true);cyl(r*.9,r*.9,.02,x,y+.01,z,VINE,p,16);if(fill>0)ball(r*.85,x,y+h*.55,z,col||PILE,p,1,fill*.5,1)}
+function longBasket(x,y,z,col,p,front){box(.68,.2,.34,x,y+.1,z,VINE,p);box(.62,.02,.28,x,y+.17,z,0x4b4a32,p);[-.21,0,.21].forEach((dx,i)=>ball(.1,x+dx,y+.18,z,i?col:col,p,1,.45,1.2));
+  if(front){cord(x,y+.22,y+.36,z+.19,p);ball(.05,x,y+.15,z+.19,col,p,1,1.3,1)}}
+function counter(x,z,w,p){box(w,.3,.5,x,.15,z,LIME,p);box(.3,.08,.22,x-.3,.34,z,BARK,p);for(let i=0;i<3;i++)box(.2,.05,.07,x+.25,.33+i*.05,z+.05,SALT,p)}
+function standScale(x,z,p){cyl(.04,.05,.9,x,.45,z,DRIFT,p,8);box(1.1,.05,.05,x,.9,z,DRIFTD,p);[-.5,.5].forEach(d=>{cord(x+d,.52,.9,z,p);mesh(new THREE.SphereGeometry(.17,14,6,0,Math.PI*2,Math.PI/2,Math.PI/2),T(0xe3dccb,{side:THREE.DoubleSide}),x+d,.52,z,p)})}
+function hangScale(x,z,top,w,p){cord(x,1.0,top,z,p);box(w,.05,.05,x,1.0,z,DRIFTD,p);[-w/2+.06,w/2-.06].forEach(d=>{cord(x+d,.55,1.0,z,p);mesh(new THREE.SphereGeometry(.17,14,6,0,Math.PI*2,Math.PI/2,Math.PI/2),T(0xe3dccb,{side:THREE.DoubleSide}),x+d,.55,z,p)});
+  for(let i=0;i<3;i++)box(.18,.05,.07,x+w/2-.06,.42+i*.05,z,SALT,p)}
+function shelves(x0,x1,back,p,upperCovered){box(x1-x0-.1,.12,.4,(x0+x1)/2,.06,back+.2,LIME,p);box(x1-x0-.1,.07,.3,(x0+x1)/2,.6,back+.15,LIME,p);
+  const n=4,step=(x1-x0-.3)/n;for(let i=0;i<n;i++){const x=x0+.3+step*(i+.5)-.15;longBasket(x,.12,back+.22,PLANTS[i%6],p,true);longBasket(x,.64,back+.17,PLANTS[(i+2)%6],p,true);
+    if(upperCovered)box(.7,.03,.36,x,.86,back+.17,0xb9b09c,p)}}
+// the rock around one niche (and the sea-mouth tunnel to the west)
+function rock(n,p){const H=4.2,T3=3;const M=LIME;
+  box(9-4.6,H,T3,-(9+4.6)/2,H/2,-1.5,M,p);                      // west of the mouth
+  box(2.8,H-2.5,T3,-3.2,2.5+(H-2.5)/2,-1.5,M,p);                // over the mouth
+  box(n.x0+1.8,H,T3,(-1.8+n.x0)/2,H/2,-1.5,M,p);                // pillar between mouth and niche
+  box(n.x1-n.x0,H-n.h,T3,(n.x0+n.x1)/2,n.h+(H-n.h)/2,-1.5,M,p); // over the niche
+  box(n.x1-n.x0,n.h,T3-n.d,(n.x0+n.x1)/2,n.h/2,-n.d-(T3-n.d)/2,M,p); // behind the niche
+  box(9-n.x1,H,T3,(9+n.x1)/2,H/2,-1.5,M,p);                    // east
+  box(n.x1-n.x0+.1,.08,.12,(n.x0+n.x1)/2,n.h+.04,.02,LIMEW,p); // worn lip of the cut
+}
+
+// ---- the options
+let lamps=[],anim=[],cur=0,variant='a',night=false;
+const grp=new THREE.Group();S.add(grp);
+const OPTS=[
+ {name:'蔀戸の見世',tag:'推し 3（Claude・辛口・町家）',one:'毎朝、問屋が戸を押し上げて店を開ける',
+  note:'',
+  shape:['横穴の口の上に、ヤシの葉で葺いた流木の戸（2.6 × 1.2 m）。朝はつっかえ棒で押し上げてひさしに、夜は下ろして口をふさぐ','口の下に折りたたみの見世棚（高さ 0.2 m、奥 0.35 m）。朝に下ろして見本を並べる','岩の窓口と籠の棚は今のまま。秤は窓口の真ん中の上に吊るす','口の脇に、流木を大きな葉の形に彫った吊るし看板'],
+  see:['地図の台から南を見ると、斜めに上がった戸の影の下に、見本の列が目の高さで並ぶ','店の前では、見世棚の見本が鼻先に。その奥の窓口に問屋の顔、頭の上に秤の皿','夜は戸が閉じて、すき間から橙の灯が線になって漏れる（「夜」で見られる）'],
+  pros:['作る量が一番小さい（戸・見世棚・看板）。今の物をほぼ使う','毎日のショー（朝に開く、夜に閉じる）','見本が目の高さに来る'],
+  cons:['上の段の籠の中は、今のまま見えにくい（吊るす籠を足すなら 2-2）'],
+  cols:[['ヤシの葉の戸','#A39466'],['流木の棚と看板','#B9AE98'],['岩','#D9D2C0'],['看板の葉の縁','#7D8A5A']],
+  eye:[0,.47,1.15],eyeT:[0,.45,-.6],
+  build(g){const n={x0:-1.3,x1:1.3,d:1.5,h:1.5};rock(n,g);counter(-.4,-.45,1.6,g);shelves(-1.3,1.3,-1.5,g);hangScale(.25,-.05,1.5,1.0,g);snail(-.4,-1.0,0,g);lamp(1.15,1.05,-.4,g);
+    // shutter (hinged at the top of the mouth) and the fold-down shelf
+    const sh=new THREE.Group();sh.position.set(0,1.5,.02);g.add(sh);box(2.6,1.2,.06,0,-.6,0,THATCH,sh);[-1,0,1].forEach(i=>box(.06,1.2,.08,i*1.1,-.6,.02,DRIFTD,sh));
+    const stick=cyl(.025,.025,1.5,0,0,0,DRIFTD,g,6);
+    const sf=new THREE.Group();sf.position.set(0,.02,.04);g.add(sf);box(2.4,.35,.05,0,.175,0,DRIFT,sf);
+    const samples=new THREE.Group();g.add(samples);for(let i=0;i<6;i++){ball(.06,-.95+i*.38,.29,.2,PLANTS[i],samples,1,1.4,1);cyl(.05,.04,.06,-.95+i*.38,.23,.2,0x6e5240,samples,8)}
+    const legs=new THREE.Group();g.add(legs);[-1,1].forEach(s=>cyl(.02,.02,.2,s*1.0,.1,.32,DRIFTD,legs,5));
+    // sign: a carved leaf
+    cord(1.7,1.3,1.55,.25,g);box(.04,.04,.4,1.7,1.55,.08,DRIFTD,g);ball(.22,1.7,1.1,.25,DRIFT,g,.55,1,.12);ball(.2,1.7,1.1,.255,0x7d8a5a,g,.42,.85,.1);
+    let k=night?0:1;
+    anim.push(dt=>{const want=night?0:1;k+=(want-k)*Math.min(1,dt*2.5);const a=k*1.15;sh.rotation.x=-a;   // up and out over the hall
+      const tip=new THREE.Vector3(0,-1.2,0).applyAxisAngle(new THREE.Vector3(1,0,0),-a).add(sh.position);
+      stick.visible=k>.5;stick.position.set(.9,tip.y/2,tip.z);stick.scale.y=Math.max(.01,tip.y/1.5);
+      sf.rotation.x=(1-k)*-Math.PI/2+k*Math.PI/2;sf.position.y=.02+k*.18;samples.visible=legs.visible=k>.8});
+    L('つっかえ棒で上げた戸',0,1.95,.9,true);L('見世棚の見本',-.6,.55,.25);L('吊るした秤',.25,1.15,-.05);L('葉の看板',1.7,1.45,.25);L('問屋',-.4,1.05,-1.0);L('海側の口',-3.2,2.9,-.4)}},
+ {name:'舟の帳場',tag:'推し 3（スプラ・民具・美術監督）',one:'年を取った行商人が、乗ってきた舟を店にした',
+  note:'わくさん：問屋は年寄り',
+  shape:['長さ 2.4 m のアウトリガーのくり舟を、横穴の口に引き上げる。舳先は吹き抜けへ斜めに突き出す','舟の胴（深さ 0.3 m）が窓口。問屋は舟の中にいる','浮き木（細い丸太）は腕木ごと奥の壁に立てかけて、籠を掛ける柱に','帆（樹皮布）は畳んでひさしに。舳先に彫った目'],
+  see:['舟の縁（0.3 m）がちょうど胸の高さの窓口。縁に手をかけると、舟の底に問屋の殻と帳面','地図の台から見ると「舟が刺さった店」','夕方と朝に桟橋へ来る行商人の舟と同じ形なので、昔の仲間だと分かる'],
+  pros:['筋書きが一目で分かる（行商人だった年寄りの問屋）','シルエットが一番強い','行商人の舟（あとで作る）と同じ形を使い回せる'],
+  cons:['岩の窓口は舟の後ろに隠れる（作り直し）','籠の棚の見えにくさは変わらない'],
+  cols:[['使い込んだ舟','#8E7F68'],['くすんだ黄土の帆','#A88F55'],['舳先の目（炭）','#3A3634'],['浮き木の流木','#B9AE98']],
+  eye:[.2,.47,1.3],eyeT:[0,.4,-.5],
+  build(g){const n={x0:-1.3,x1:1.3,d:1.5,h:1.5};rock(n,g);shelves(-1.3,1.3,-1.5,g);lamp(-1.1,1.05,-.6,g);
+    const boat=new THREE.Group();g.add(boat);boat.position.set(.15,0,-.1);boat.rotation.y=-.3;
+    const hull=mesh(new THREE.SphereGeometry(1,24,10,0,Math.PI*2,Math.PI/2,Math.PI/2),T(DRIFTD,{side:THREE.DoubleSide}),0,.34,0,boat);hull.scale.set(1.25,.34,.36);
+    const rim=mesh(new THREE.TorusGeometry(1,.035,6,40),T(0x6f624f),0,.34,0,boat);rim.rotation.x=Math.PI/2;rim.scale.set(1.25,.36,1);
+    [-1,1].forEach(s=>{ball(.09,s*1.18,.42,0,DRIFTD,boat,1.5,1,.9)});
+    [.06,-.06].forEach(dz=>ball(.035,1.18,.45,dz+(dz>0?.1:-.1),CHAR,boat,1,1,.4));
+    snail(-.2,-.02,Math.PI/2,boat).position.y=.08;
+    box(.3,.06,.22,.45,.36,0,BARK,boat);
+    // outrigger float and booms leaning on the back wall, the folded sail as an awning
+    const fl=cyl(.08,.08,2.0,.2,1.0,-1.38,DRIFT,g,10);fl.rotation.z=Math.PI/2-.08;
+    [-.6,.7].forEach(x=>{const b=cyl(.03,.03,1.2,x,.75,-1.25,DRIFTD,g,6);b.rotation.x=.25});
+    box(2.4,.08,.55,0,1.42,.12,OCHRE,g);[-1.1,1.1].forEach(x=>cord(x,1.42,1.5,.12,g));
+    L('引き上げたくり舟（窓口）',.9,.95,.3,true);L('舳先の目',1.4,.7,.6);L('浮き木の棚の柱',.2,1.35,-1.2);L('畳んだ帆のひさし',-.8,1.62,.2);L('年寄りの問屋',-.2,1.1,-.1);L('海側の口',-3.2,2.9,-.4)}},
+ {name:'吊り市',tag:'推し 2（廃人・仲卸）',one:'籠も秤も見本も、全部天井から下がっている市場',
+  note:'',
+  shape:[],see:[],pros:[],cons:[],cols:[['籠と綱のつる','#6B6A45'],['真鍮の滑車（緑青）','#A8873E'],['流木の梁','#8E7F68'],['見本の植物','差し色']],
+  variants:{
+   a:{note:'わくさん：やるなら問屋の場所を広げたい → 横穴を東へ広げた（幅 2.6 → 4.4 m、奥 1.5 → 2.2 m、高さ 1.5 → 2.0 m）',
+      shape:['横穴を東へ広げる（幅 4.4 × 奥 2.2 × 高さ 2.0 m、人なら 幅 16 × 高さ 7 m）。東どなりの染め場の横穴の手前まで','天井に流木の梁を2本。植物の籠 12 が、真鍮の滑車つきの綱で下がる。高さはばらばら','近づくと自分の籠がゆっくり目の高さまで下りてくる','窓口は低い岩の台（0.2 m）だけ。秤は真ん中に吊るす'],
+      see:['入ると、頭の上に籠の林。見上げると籠の底と見本の束','目の前には、下りてきた自分の籠の中身（山の大きさが見える）','海側の口から風が入ると、籠がかすかに揺れる'],
+      pros:['在庫が一番よく見える。上の段が見えない問題が形でなくなる','広げたぶん、4人で来ても店の前が混まない'],
+      cons:['横穴を掘り直す（殻の作り直し）。岩の厚みは 1.5 m 以上残す決まり','吊り籠 12 と綱の動き。動かすのは近づいた籠だけにしたい（辛口）']},
+   b:{note:'わくさん：場所をずらすのもいい → 籠を海側の口のトンネルの天井へ移した（問屋の横穴は窓口と秤だけ）',
+      shape:['海側の口のトンネル（幅 2.8 × 高さ 2.5 × 長さ 2.5 m）の天井に梁を渡し、植物の籠 12 を吊るす。市場の通り（アーケード）','行商人は桟橋から、籠の下をくぐって入ってくる','問屋の横穴は、窓口・秤・問屋だけ。トンネルの出口から窓口が見える'],
+      see:['トンネルの中に入ると、頭の上に籠の列。向こうに暖簾と海','籠は近づくと目の高さまで下りてくる','広間から見ると、海側の口の明るさの中に籠のシルエットが並ぶ'],
+      pros:['掘り直さなくていい。トンネルは天井が高い（2.5 m）','店の顔が、行商人の入ってくる口になる。桟橋から見ても「店」'],
+      cons:['嵐の日、口から入る海のしぶき（塩）が籠に当たる。見た目だけでも気になる（院生）','問屋の窓口と籠が少し離れる（約 2 m）']}},
+  eye:[.3,.47,1.4],eyeT:[.3,.7,-.8],
+  build(g){
+   if(variant==='a'){const n={x0:-1.3,x1:3.1,d:2.2,h:2.0};rock(n,g);
+    box(4.2,.08,.12,.9,1.92,-.6,DRIFTD,g);box(4.2,.08,.12,.9,1.92,-1.5,DRIFTD,g);
+    box(1.6,.2,.5,.0,.1,-.4,LIME,g);hangScale(.0,-.15,1.92,1.0,g);snail(.0,-1.0,0,g);lamp(2.9,1.3,-.5,g);lamp(-1.1,1.3,-1.4,g);
+    const hs=[1.15,.9,1.3,1.05,.8,1.2,1.0,1.35,.95,1.25,1.1,.85];
+    for(let i=0;i<12;i++){const row=i%2,x=-1.0+Math.floor(i/2)*.75,z=row?-1.5:-.6;let y=hs[i];
+      if(i===8){y=.22;}
+      const bg=new THREE.Group();g.add(bg);bg.position.set(x,0,z);cord(0,y+.35,1.9,0,bg);roundBasket(.25,.32,0,y,0,i===8?1:.8,PLANTS[i%6],bg);mesh(new THREE.TorusGeometry(.05,.015,6,10),T(BRASS),0,1.86,0,bg);
+      if(i!==8)anim.push((dt,t)=>{bg.rotation.z=Math.sin(t*.0009+i)*.02});}
+    L('広げた横穴（幅 4.4 m）',.9,2.2,0,true);L('下りてきた自分の籠',1.25,.75,-.6,true);L('吊り籠の林',2.2,1.75,-1.0);L('吊るした秤',0,1.25,-.15);L('問屋',0,1.05,-1.0);L('海側の口',-3.2,2.9,-.4);
+   }else{const n={x0:-1.3,x1:1.3,d:1.5,h:1.5};rock(n,g);counter(.0,-.45,1.6,g);hangScale(.0,-.05,1.5,1.0,g);snail(.0,-1.0,0,g);lamp(1.15,1.05,-.4,g);lamp(-1.95,1.6,-.3,g);
+    box(.1,.08,2.6,-4.0,2.42,-1.5,DRIFTD,g);box(.1,.08,2.6,-2.4,2.42,-1.5,DRIFTD,g);
+    for(let i=0;i<12;i++){const x=i%2?-2.4:-4.0,z=-.35-Math.floor(i/2)*.42;let y=1.45+((i*37)%5)*.12;if(i===4)y=.25;
+      const bg=new THREE.Group();g.add(bg);bg.position.set(x,0,z);cord(0,y+.35,2.4,0,bg);roundBasket(.2,.3,0,y,0,i===4?1:.8,PLANTS[i%6],bg);
+      if(i!==4)anim.push((dt,t)=>{bg.rotation.x=Math.sin(t*.0011+i)*.03});}
+    L('トンネルの天井の吊り籠',-3.2,2.25,-1.2,true);L('下りてきた自分の籠',-4.0,.75,-1.2,true);L('問屋の窓口と秤だけ',0,1.4,-.2);L('暖簾と桟橋',-3.2,2.6,-2.9);
+   }}},
+ {name:'夜光貝の店',tag:'推し 0',one:'地面に寝かせた大きな夜光貝の殻の口が、問屋の帳場',
+  note:'わくさん：夜光貝は地面にいてほしい（窓口の上ではなく）。見た目は好き',
+  shape:['大きな夜光貝の殻（差し渡し 1.3 m、高さ 0.9 m）を、横穴の口の地面に寝かせ、殻の口を広間へ向ける','問屋は殻の口に体を半分入れて座る（カタツムリが、もっと大きな巻き貝の中にいる。殻の中の殻）','殻の口のふち（高さ 0.3 m）が窓口。帳面とアモレはふちに置く。秤の重りは夜光貝の重いふた','岩の窓口はやめる。奥の岩の棚と籠は今のまま'],
+  see:['地図の台から南を見ると、灯を受けて内側がにぶく光る、大きな殻の口が地面にある','店の前では、殻のふちが胸の高さ。らせんの奥から問屋の触角がのぞく','ふちの横に、石のような丸いふたが重りとして置いてある'],
+  pros:['貝の島らしい。交易品の夜光貝が問屋の印になる','形が単純で強い（ポップ）'],
+  cons:['1.3 m の夜光貝は「ばかでかい物」（目印としてならあり、の決まり）','殻が横穴の口をふさぐので、奥の籠へは殻の脇から（脇に 0.6 m あける）'],
+  cols:[['殻の外の縞','#7A7A5A'],['殻の外の地','#9C8F6E'],['真珠の内側（少しつや）','#EEE8DD'],['ふた','#BDB29A']],
+  eye:[.1,.47,1.5],eyeT:[0,.35,-.4],
+  build(g){const n={x0:-1.3,x1:1.3,d:1.5,h:1.5};rock(n,g);shelves(-1.3,1.3,-1.5,g);lamp(1.15,1.05,-.6,g);
+    const sh=new THREE.Group();g.add(sh);sh.position.set(-.15,0,-.35);
+    ball(.62,0,.45,-.1,0x9c8f6e,sh,1.05,.75,1.0);
+    [.0,.22,.42].forEach((dz,i)=>{const r=mesh(new THREE.TorusGeometry(.6-i*.08,.035,6,30),T(0x7a7a5a),0,.45,-.1-dz,sh);r.scale.set(1.05,.75,1)});
+    const spire=mesh(new THREE.ConeGeometry(.32,.6,16),T(0x8d8263),.25,.62,-.62,sh);spire.rotation.x=-1.1;spire.rotation.z=-.4;
+    const lip=mesh(new THREE.TorusGeometry(.42,.09,10,28),T(0xcfc3a3),0,.42,.42,sh);lip.scale.set(1.05,.78,1);
+    const inner=mesh(new THREE.CircleGeometry(.42,28),sheen,0,.42,.4,sh);inner.scale.set(1.05,.78,1);
+    snail(0,.0,0,sh).position.set(0,.1,.05);
+    box(.28,.06,.2,-.35,.33,.62,BARK,sh);for(let i=0;i<3;i++)box(.18,.05,.07,.35,.32+i*.05,.62,SALT,sh);
+    cyl(.17,.17,.08,.85,.04,.25,0xbdb29a,g,20);cyl(.13,.13,.02,.85,.09,.25,0xd6ceb8,g,20);
+    standScale(.95,-.6,g);
+    L('地面に寝かせた夜光貝',-.15,1.2,-.35,true);L('真珠の内側と問屋',-.15,.85,.4);L('重りにする殻のふた',.85,.35,.25);L('海側の口',-3.2,2.9,-.4)}},
+ {name:'濡れ店',tag:'推し 1（院生）',one:'天井のしずくを集めて、品物をいつも濡らしておく店',
+  note:'わくさん：そのまま',
+  shape:['横穴の天井のつらら石から落ちるしずくを、割った流木の樋で集め、窓口の上へ細い水を流す','窓口は、岩を彫った浅い水盤（深さ 0.05 m）。見本の植物はヤシの実の器に立てて並べる','棚の上の段の籠には、濡らした樹皮布をかぶせる。問屋は濡れた壁に殻をぴったり付けている','傷みは夕方に一段のまま（濡らしても止まらない。見た目だけ）'],
+  see:['店の前の床がしっとり光っていて、近づくだけで気持ちいい（島の「光って濡れた地面は乾かない」と同じ見た目）','水盤に灯が映り、しずくの音が一定に鳴る','暗く濡れた岩の中で、見本の緑と赤が引き立つ'],
+  pros:['ナメクジとカタツムリの店らしい「湿り気のもてなし」（花屋のバケツ、魚屋の水槽と同じ）','生きてる感じ（しずくの合奏）とつながる'],
+  cons:['窓口を彫り直す。水面と樋が増える','籠の見えにくさは変わらない'],
+  cols:[['濡れた石灰岩','#A9A390'],['水','#3F7F86'],['ヤシの実の器','#6E5240'],['濡れた樹皮布','#B9B09C']],
+  eye:[0,.47,1.2],eyeT:[0,.4,-.6],
+  build(g){const n={x0:-1.3,x1:1.3,d:1.5,h:1.5};rock(n,g);shelves(-1.3,1.3,-1.5,g,true);lamp(1.15,1.05,-.4,g);
+    box(1.8,.28,.55,-.2,.14,-.45,LIMEW,g);const wat=mesh(new THREE.PlaneGeometry(1.6,.42),water,-.2,.285,-.45,g);wat.rotation.x=-Math.PI/2;
+    for(let i=0;i<5;i++){const x=-.85+i*.33;cyl(.06,.045,.08,x,.33,-.38,0x6e5240,g,10);ball(.06,x,.42,-.38,PLANTS[i],g,1,1.5,1)}
+    // stalactites and the gutter
+    [[-.7,-.8],[.1,-1.0],[.6,-.7]].forEach(q=>{const c=mesh(new THREE.ConeGeometry(.06,.3,8),T(LIMEW),q[0],1.36,q[1],g);c.rotation.x=Math.PI});
+    const gut=mesh(new THREE.CylinderGeometry(.05,.05,1.4,10,1,true,0,Math.PI),T(DRIFT,{side:THREE.DoubleSide}),-.1,.95,-.85,g);gut.rotation.z=Math.PI/2+.12;
+    const drop=ball(.02,-.75,.6,-.85,water,g);anim.push((dt,t)=>{const k=((t*.0009)%1);drop.position.y=.9-k*.6});
+    // wet floor in front
+    const wf=mesh(new THREE.CircleGeometry(1.4,28),new THREE.MeshPhongMaterial({color:0x8f8a7a,shininess:80,specular:0x777777}),0,.005,.35,g);wf.rotation.x=-Math.PI/2;wf.scale.set(1.2,.6,1);
+    standScale(.85,.1,g);
+    const s=snail(1.12,-.75,-Math.PI/2,g);
+    L('しずくを集める樋',-.1,1.2,-.85,true);L('水盤の窓口',-.2,.6,-.3);L('しっとり光る床',0,.15,.6);L('布をかぶせた籠',.3,1.05,-1.33);L('壁に付く問屋',1.12,1.05,-.75);L('海側の口',-3.2,2.9,-.4)}}
+];
+
+// ---- view
+const Vw={t:new THREE.Vector3(0,.6,-.6),th:.55,ph:.38,r:5.2};
+const goal={t:Vw.t.clone(),th:Vw.th,ph:Vw.ph,r:Vw.r};let camMode='orb';
+function setGoalFrom(pos,tg){const d=new THREE.Vector3().subVectors(new THREE.Vector3(...pos),new THREE.Vector3(...tg));goal.t.set(...tg);goal.r=d.length();goal.ph=Math.asin(d.y/goal.r);goal.th=Math.atan2(d.x,d.z)}
+function camPreset(m){camMode=m;slug.visible=m!=='eye';['cOrb','cEye','cTbl'].forEach(id=>$(id).classList.toggle('on',id==={orb:'cOrb',eye:'cEye',tbl:'cTbl'}[m]));
+  const o=OPTS[cur];if(m==='orb'){goal.t.set(o===OPTS[2]&&variant==='b'?-1.6:0,.6,-.6);goal.th=.55;goal.ph=.38;goal.r=o===OPTS[2]?6.2:5.2}
+  else if(m==='eye'){setGoalFrom(o===OPTS[2]&&variant==='b'?[-3.0,.47,1.6]:o.eye,o===OPTS[2]&&variant==='b'?[-3.2,1.0,-1.2]:o.eyeT)}
+  else setGoalFrom([-.9,.47,4.0],[o===OPTS[2]&&variant==='b'?-1.6:0,.5,-.6])}
+function cam(dt){const k=reduce?1:Math.min(1,dt*4);Vw.t.lerp(goal.t,k);Vw.th+=(goal.th-Vw.th)*k;Vw.ph+=(goal.ph-Vw.ph)*k;Vw.r+=(goal.r-Vw.r)*k;
+  C.position.set(Vw.t.x+Vw.r*Math.cos(Vw.ph)*Math.sin(Vw.th),Vw.t.y+Vw.r*Math.sin(Vw.ph),Vw.t.z+Vw.r*Math.cos(Vw.ph)*Math.cos(Vw.th));C.lookAt(Vw.t)}
+function zoom(f){goal.r=Math.max(.6,Math.min(14,goal.r*f))}
+let drag=null;W.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY};W.setPointerCapture(e.pointerId);W.style.cursor='grabbing'});
+W.addEventListener('pointermove',e=>{if(!drag)return;goal.th-=(e.clientX-drag.x)*.008;goal.ph=Math.max(-.25,Math.min(1.45,goal.ph+(e.clientY-drag.y)*.006));drag={x:e.clientX,y:e.clientY}});
+W.addEventListener('pointerup',()=>{drag=null;W.style.cursor='grab'});W.addEventListener('pointercancel',()=>{drag=null});
+W.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY>0?1.1:.9)},{passive:false});
+$('zin').onclick=()=>zoom(.8);$('zout').onclick=()=>zoom(1.25);
+$('cOrb').onclick=()=>camPreset('orb');$('cEye').onclick=()=>camPreset('eye');$('cTbl').onclick=()=>camPreset('tbl');
+function setNight(v){night=v;$('tDay').classList.toggle('on',!v);$('tNight').classList.toggle('on',v);
+  R.setClearColor(v?BG_NIGHT:BG_DAY);S.fog=new THREE.Fog(v?BG_NIGHT:BG_DAY,9,24);hemi.intensity=v?.12:.42;sea.intensity=v?.05:.3;sky.intensity=v?.02:.12;hallLamp.intensity=v?.8:.35;lamps.forEach(l=>l.intensity=v?.9:.35)}
+$('tDay').onclick=()=>setNight(false);$('tNight').onclick=()=>setNight(true);
+
+function list(id,arr){const u=$(id);u.innerHTML='';arr.forEach(s=>{const li=document.createElement('li');li.textContent=s;u.appendChild(li)})}
+function build(){while(grp.children.length)grp.remove(grp.children[0]);labels.forEach(l=>l.d.remove());labels=[];lamps=[];anim=[];
+  L('地図の台',-1.2,.9,5.2);L('池',3.4,.5,4.6);
+  const o=OPTS[cur];o.build(grp);
+  const d=o.variants?Object.assign({},o,o.variants[variant]):o;
+  $('one').innerHTML='';const b=document.createElement('b');b.textContent='案'+(cur+1)+' '+o.name+'：';$('one').append(b,document.createTextNode(o.one));
+  $('wnote').textContent=d.note||'';$('wnote').hidden=!d.note;
+  list('shape',d.shape);list('see',d.see);list('pros',d.pros);list('cons',d.cons);
+  const cc=$('cols');cc.innerHTML='';d.cols.forEach(c=>{const s=document.createElement('span');s.className='chip';const w=document.createElement('span');w.className='sw';if(c[1][0]==='#')w.style.background=c[1];else w.style.background='linear-gradient(90deg,#7d9a55,#a8655a,#c2a55e)';s.append(w,document.createTextNode(c[0]+(c[1][0]==='#'?' '+c[1]:'')));cc.appendChild(s)});
+  $('variant').hidden=cur!==2;setNight(night)}
+function select(i){cur=i;[...$('tabs').children].forEach((t,k)=>t.classList.toggle('on',k===i));build();camPreset(camMode);try{localStorage.setItem('shopOpt',i)}catch(e){}}
+OPTS.forEach((o,i)=>{const t=document.createElement('button');t.className='tab';t.id='tab'+i;const b=document.createElement('b');b.textContent='案'+(i+1)+' '+o.name;const s=document.createElement('span');s.textContent=o.one;const g=document.createElement('span');g.className='tag';g.textContent=o.tag;t.append(b,s,g);t.onclick=()=>select(i);$('tabs').appendChild(t)});
+$('v3a').onclick=()=>{variant='a';$('v3a').classList.add('on');$('v3b').classList.remove('on');build();camPreset(camMode)};
+$('v3b').onclick=()=>{variant='b';$('v3b').classList.add('on');$('v3a').classList.remove('on');build();camPreset(camMode)};
+
+function resize(){const w=W.clientWidth,h=W.clientHeight;R.setSize(w,h,false);C.aspect=w/h;C.updateProjectionMatrix()}
+window.addEventListener('resize',resize);resize();
+let start=0;try{start=+localStorage.getItem('shopOpt')||0}catch(e){}
+if(!(start>=0&&start<5))start=0;
+select(start);Vw.t.copy(goal.t);Vw.th=goal.th;Vw.ph=goal.ph;Vw.r=goal.r;
+let last=performance.now();
+function tick(now){const dt=Math.min(.1,(now-last)/1000);last=now;anim.forEach(f=>f(dt,reduce?0:now));cam(dt);R.render(S,C);place();requestAnimationFrame(tick)}
+requestAnimationFrame(tick);
+}catch(e){const p=document.getElementById('err');p.hidden=false;p.textContent='3D の表示に失敗しました：'+e.message}
+</script>

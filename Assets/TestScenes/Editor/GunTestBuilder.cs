@@ -12,7 +12,7 @@ namespace SlugExtract
     /// </summary>
     public static class GunTestBuilder
     {
-        const string ScenePath = "Assets/Scenes/GunTest.unity";
+        const string ScenePath = "Assets/Scenes/Tests/GunTest.unity";
 
         [MenuItem("Slug/GunTest Build Scene")]
         public static void Build()

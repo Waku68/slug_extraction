@@ -13,8 +13,9 @@ namespace SlugDesign
     ///    from the skin itself, so it bends exactly like the body.
     ///  - snail shell: a coiled shell on the back, its opening turned in against the body as a snail's rests on its
     ///    foot. The shell is what marks a snail (the scavs); a slug carries a bag.
-    ///  - bag: a canvas backpack with a flap and a pocket, belted round the body above the arms. It sits on the armour
-    ///    when both are worn. It rides the back rigidly.
+    ///  - bag: a canvas backpack that swells with what is in it (slumped and folded when empty, round and taut when
+    ///    crammed), with a lid buckled down the front, straps, a pocket and piped seams (<see cref="CanvasBag"/>), belted
+    ///    round the body above the arms. It sits on the armour when both are worn. It rides the back rigidly.
     /// The armour wears the camouflage (a skin: the owner's look, whatever armour it is), woodland by default.
     /// </summary>
     [ExecuteAlways]
@@ -23,7 +24,8 @@ namespace SlugDesign
         public enum Armor { None, ShellPlate, SnailShell }
 
         public SlugPop slug;
-        [Tooltip("触角を出すヘルメット")] public bool helmet = true;
+        [Tooltip("ヘルメット（ふつうは触角を出す鉄の鍋）")] public bool helmet = true;
+        [Tooltip("触角の形の兜：鍋から触角を包む角が2本伸びる。触角の弱点が消え、音がこもる")] public bool tentacleHelmet;
         [Tooltip("胴の防具（カタツムリの殻はカタツムリ用）")] public Armor armor = Armor.ShellPlate;
         [Tooltip("背中のバッグ（ナメクジ用）")] public bool bag;
 
@@ -33,6 +35,8 @@ namespace SlugDesign
         [Tooltip("頭とのすき間（m）")] public float helmetGap = 0.016f;
         [Tooltip("つばの長さ：目の上（m）と、ほかのところ（m）")] public float brimFront = 0.035f;
         public float brimSide = 0.014f;
+        [Tooltip("触角の形の兜：角と触角のすき間（m）と、触角の先からさらに伸ばす長さ（m）")] public float hornGap = 0.006f;
+        public float hornExtend = 0.012f;
 
         [Header("迷彩（スキン）")]
         [Tooltip("地の色（枯れ草）。体の苔色から浮くように、明るめにする")] public Color camoBase = new Color(0.62f, 0.57f, 0.38f);
@@ -51,7 +55,8 @@ namespace SlugDesign
         [System.NonSerialized] public float bagSwell = 1f;
         [Tooltip("背中を覗いたとき、自分の画面だけでバッグを大きくする倍率")] public float bagLookScale = 1.6f;
         [Range(0f, 1f), Tooltip("背中を覗いたとき、自分の画面だけでバッグの口を目のほうへ傾ける割合（1 = 真っすぐ目に向ける）")] public float bagLookTilt = 0.45f;
-        [Tooltip("ふたを開けきったときの角度（度）。ふたは背中から遠いほうのふちを軸に、外側へ開く")] public float bagLidAngle = 140f;
+        [Tooltip("ふたを開けきったときの角度（度）。ふたは前（背中から遠い面）の終わりの縫い目を軸に、外側へ開く")] public float bagLidAngle = 140f;
+        [Tooltip("留め具の色")] public Color buckleColor = BuckleColor;
         [Range(0f, 1f), Tooltip("背中を覗いたとき、自分の画面でふたも大きくする割合（0 = 大きくしない、1 = バッグと同じだけ）")] public float bagLidGrow = 0.3f;
 
         readonly List<Object> _owned = new List<Object>();
@@ -76,9 +81,13 @@ namespace SlugDesign
         public Quaternion BagMouthRotation { get; private set; }
         public float BagPoseScale { get; private set; } = 1f;
 
-        // the bag's parts and where it sits (body space), for posing it
-        GameObject _bagGo, _bagLid, _bagPocket, _bagMouth;
-        Vector3 _bagP, _bagN, _bagC, _bagX, _bagUp, _bagOut, _bagSz, _bagHinge;
+        /// <summary>The buckles' dull metal, also for a bag set down on the ground.</summary>
+        public static readonly Color BuckleColor = new Color(0.3f, 0.29f, 0.26f);
+
+        // the bag's parts (those sewn on it, and the lid with what goes with it) and where it sits (body space), for posing it
+        GameObject _bagGo, _bagMouth;
+        readonly List<GameObject> _bagFixed = new List<GameObject>(), _bagLidParts = new List<GameObject>();
+        Vector3 _bagP, _bagN, _bagX, _bagUp, _bagOut, _bagSz, _bagHinge, _bagMouthPoint;
         float _bagT;
 
         /// <summary>
@@ -132,6 +141,9 @@ namespace SlugDesign
             }
             _owned.Clear();
             _helmetRenderers.Clear();
+            _bagFixed.Clear();
+            _bagLidParts.Clear();
+            _bagGo = _bagMouth = null;
             HasBackItem = false;
         }
 
@@ -163,20 +175,18 @@ namespace SlugDesign
                 rot = Quaternion.Slerp(Quaternion.identity, Quaternion.FromToRotation(mouthDir, toEye.normalized), bagLookTilt * look);
                 pos = attach - rot * (s * attach);
             }
-            Place(_bagGo, pos, rot, s);
-            Place(_bagPocket, pos, rot, s);
-            Place(_bagMouth, pos, rot, s);
+            foreach (var go in _bagFixed) Place(go, pos, rot, s);
             var mouthR = _bagMouth ? _bagMouth.GetComponent<Renderer>() : null;
             if (mouthR && mouthR.enabled != open > 0.02f) mouthR.enabled = open > 0.02f;
 
-            // the lid swings up about its hinge (its top edge away from the back) and falls open outward
+            // the lid (with the straps over it) swings about its hinge across the front and falls open outward
             Vector3 hinge = slug.FollowerLocal(_bagHinge, _bagT, _bagP, _bagN);
             Quaternion swing = Quaternion.AngleAxis(bagLidAngle * open, bend * _bagX);
             // (in the own view the lid grows less than the bag, so it does not stand up across the mouth)
             float lid = Mathf.Lerp(1f, s, bagLidGrow) / s;
-            Place(_bagLid, pos + rot * (s * (hinge - lid * (swing * hinge))), rot * swing, s * lid);
+            foreach (var go in _bagLidParts) Place(go, pos + rot * (s * (hinge - lid * (swing * hinge))), rot * swing, s * lid);
 
-            Vector3 mouth = slug.FollowerLocal(_bagC + _bagUp * _bagSz.y, _bagT, _bagP, _bagN);
+            Vector3 mouth = slug.FollowerLocal(_bagMouthPoint, _bagT, _bagP, _bagN);
             BagMouthPosition = vis.TransformPoint(pos + rot * (s * mouth));
             BagMouthRotation = vis.rotation * rot * bend * Quaternion.LookRotation(_bagOut, _bagUp);
             BagPoseScale = s;
@@ -297,6 +307,8 @@ namespace SlugDesign
             var follower = slug.GearFollower(mat, Mathf.Min(topT, 0.97f), top, axis);
             Add("Helmet", Own(mb.ToMesh("Helmet")), follower, true);
 
+            if (tentacleHelmet) { BuildHorns(mat); return; }
+
             // grommets where the tentacles come out through the steel
             var steel = new GearMesh();
             foreach (float side in new[] { -1f, 1f })
@@ -315,6 +327,24 @@ namespace SlugDesign
             }
             var ringMat = Own(slug.GearMaterial(Color.Lerp(helmetColor, Color.black, 0.45f)));
             Add("HelmetGrommets", Own(steel.ToMesh("HelmetGrommets")), slug.GearFollower(ringMat, Mathf.Min(topT, 0.97f), top, axis), true);
+        }
+
+        /// <summary>
+        /// The tentacle helmet's two horns: steel shells the shape of the tentacles, from their roots inside the pot to a
+        /// little past their tips. The tentacle moves inside, so each horn droops and draws in with it (SlugPop.RideEar).
+        /// </summary>
+        void BuildHorns(Material mat)
+        {
+            foreach (float side in new[] { -1f, 1f })
+            {
+                slug.EarRoot(side, out var root, out var earAxis, out _, out _);
+                var mesh = Own(slug.EarShell(side, hornGap, hornExtend, side < 0 ? "HelmetHorn_L" : "HelmetHorn_R"));
+                var go = slug.AddGear(mesh.name, mesh, slug.GearFollower(mat, 0.93f, root, earAxis), root);
+                if (!go) continue;
+                _owned.Add(go);
+                _helmetRenderers.Add(go.GetComponent<Renderer>());
+                slug.RideEar(side, mesh);
+            }
         }
 
         // ------------------------------------------------------------------ shell plate armour (cut from the skin)
@@ -472,34 +502,38 @@ namespace SlugDesign
             Vector3 sz = SwollenSize(bagSize, bagSwell);
             Vector3 c = p + nOut * (standOff + sz.z);      // it stands on the back and piles up away from it
 
-            var body = new GearMesh();
-            body.RoundedBox(c, x, up, nOut, sz, SwollenRoundness(bagSwell));
-            // the lid over the top (the end toward the head), a little bigger than the bag, hinged on its edge away
-            // from the back; a pocket low on the outside; and the dark mouth under the lid
-            Vector3 lidHalf = LidHalf(bagSize);              // (the lid and the mouth keep their size however full the bag is)
-            var lid = new GearMesh();
-            lid.RoundedBox(c + up * (sz.y * 0.79f) + nOut * 0.004f, x, up, nOut, lidHalf, 0.42f);
-            var pocket = new GearMesh();
-            pocket.RoundedBox(c + nOut * (sz.z * 0.92f) - up * (sz.y * 0.38f), x, up, nOut, new Vector3(sz.x * 0.58f, sz.y * 0.32f, 0.02f), 0.45f);
-            var mouth = new GearMesh();
-            mouth.RoundedBox(c + up * (sz.y * 0.97f), x, up, nOut, MouthHalf(bagSize), 0.5f);
-            _bagGo = AddGo("Bag", Own(body.ToMesh("Bag")), slug.GearFollower(Own(slug.GearMaterial(bagColor)), th, p, nrm));
+            var bag = CanvasBag.Make(new CanvasBag.Frame(c, x, up, nOut), bagSize, sz, Fill(bagSwell));
+            GameObject Part(string name, GearMesh mesh, Material mat, List<GameObject> into)
+            {
+                var go = AddGo(name, Own(mesh.ToMesh(name)), slug.GearFollower(mat, th, p, nrm));
+                if (go && into != null) into.Add(go);
+                return go;
+            }
+            Material flapMat = Own(slug.GearMaterial(bagFlapColor)), beltMat = Own(slug.GearMaterial(strapColor));
+            _bagGo = Part("Bag", bag.body, Own(slug.GearMaterial(bagColor)), _bagFixed);
             SetBackItem(c, nrm, th, Quaternion.LookRotation(nOut, up), new Vector3(sz.x, sz.y, sz.z) * 1.05f);
-            Material flapMat = Own(slug.GearMaterial(bagFlapColor));
-            _bagLid = AddGo("BagLid", Own(lid.ToMesh("BagLid")), slug.GearFollower(flapMat, th, p, nrm));
-            _bagPocket = AddGo("BagPocket", Own(pocket.ToMesh("BagPocket")), slug.GearFollower(flapMat, th, p, nrm));
-            _bagMouth = AddGo("BagMouth", Own(mouth.ToMesh("BagMouth")), slug.GearFollower(Own(slug.GearMaterial(new Color(0.07f, 0.055f, 0.045f))), th, p, nrm));
+            Part("BagSeams", bag.trim, Own(slug.GearMaterial(Color.Lerp(bagFlapColor, Color.black, 0.3f))), _bagFixed);
+            Part("BagPocket", bag.pocket, flapMat, _bagFixed);
+            Part("BagStraps", bag.straps, beltMat, _bagFixed);
+            Part("BagBuckles", bag.buckles, Own(slug.GearMaterial(buckleColor)), _bagFixed);
+            Part("BagLid", bag.lid, flapMat, _bagLidParts);
+            Part("BagLidStraps", bag.lidStraps, beltMat, _bagLidParts);
+            _bagMouth = Part("BagMouth", bag.mouth, Own(slug.GearMaterial(new Color(0.07f, 0.055f, 0.045f))), _bagFixed);
             if (_bagMouth) _bagMouth.GetComponent<Renderer>().enabled = false;
-            _bagP = p; _bagN = nrm; _bagT = th; _bagC = c; _bagX = x; _bagUp = up; _bagOut = nOut; _bagSz = sz;
-            _bagHinge = c + up * (sz.y * 0.79f + lidHalf.y * 0.92f) + nOut * (lidHalf.z + 0.004f);
+            _bagP = p; _bagN = nrm; _bagT = th; _bagX = x; _bagUp = up; _bagOut = nOut; _bagSz = sz;
+            _bagHinge = bag.hinge;
+            _bagMouthPoint = bag.mouthCenter;
 
             // belts round the body, above the arms (and over the armour when worn)
             var belts = new GearMesh();
             float gap = armor == Armor.ShellPlate ? ShieldStandOff - 0.012f : 0.004f;
             Plate(belts, 0.66f, 0.685f, 0f, u => 180f, gap, 0.006f, 2, 36);
             Plate(belts, 0.41f, 0.435f, 0f, u => 180f, gap, 0.006f, 2, 36);
-            Add("BagBelts", Own(belts.ToMesh("BagBelts")), Own(slug.GearMaterial(strapColor)));
+            Add("BagBelts", Own(belts.ToMesh("BagBelts")), beltMat);
         }
+
+        /// <summary>How full the bag is by its swell: 0 = empty (1), 1 = crammed (6).</summary>
+        public static float Fill(float swell) => Mathf.InverseLerp(1f, 6f, swell);
 
         /// <summary>
         /// The bag's half size swollen by its contents (1 = empty): a full one spreads wide across the back and piles up away
@@ -512,46 +546,34 @@ namespace SlugDesign
             return Vector3.Scale(bagSize, new Vector3(1f + 0.7f * sw, 1f + 0.35f * sw, 1f + 0.55f * sw));
         }
 
-        /// <summary>The fuller, the rounder (a crammed bag bulges): the edges soften from boxy to puffy.</summary>
-        public static float SwollenRoundness(float swell) => Mathf.Lerp(0.42f, 0.8f, Mathf.InverseLerp(1f, 6f, swell));
-
         /// <summary>
-        /// The bag's own shapes (body, pocket, the dark mouth, and the lid flopped open backward) on their own, standing
-        /// upright with its bottom at <paramref name="parent"/>'s origin and its pocket toward +z: a bag set down on the
-        /// ground looks like the one on the back. <paramref name="swell"/> as on the back (1 = empty). Returns its half size.
+        /// The bag's own shapes on their own, its lid flopped open forward over the pocket, standing upright with its bottom
+        /// at <paramref name="parent"/>'s origin and its front toward +z: a bag set down on the ground looks like the one on
+        /// the back. <paramref name="swell"/> as on the back (1 = empty). Returns its half size, and the middle of its mouth
+        /// (<paramref name="mouth"/>, local: a slack bag's top slumps below its full height).
         /// </summary>
-        public static Vector3 BuildLooseBag(Transform parent, Vector3 bagSize, float swell, Material bagMat, Material flapMat, Material darkMat)
+        public static Vector3 BuildLooseBag(Transform parent, Vector3 bagSize, float swell, Material bagMat, Material flapMat, Material darkMat,
+                                            Material strapMat, Material metalMat, out Vector3 mouth)
         {
             Vector3 sz = SwollenSize(bagSize, swell);
-            Vector3 x = Vector3.right, up = Vector3.up, nOut = Vector3.forward;
-            Vector3 c = up * sz.y;
-            var body = new GearMesh();
-            body.RoundedBox(c, x, up, nOut, sz, SwollenRoundness(swell));
-            var pocket = new GearMesh();
-            pocket.RoundedBox(c + nOut * (sz.z * 0.92f) - up * (sz.y * 0.38f), x, up, nOut, new Vector3(sz.x * 0.58f, sz.y * 0.32f, 0.02f), 0.45f);
-            var mouth = new GearMesh();
-            mouth.RoundedBox(c + up * (sz.y * 0.97f), x, up, nOut, MouthHalf(bagSize), 0.5f);
-            Loose(parent, "Bag", body.ToMesh("Bag"), bagMat);
-            Loose(parent, "BagPocket", pocket.ToMesh("BagPocket"), flapMat);
-            Loose(parent, "BagMouth", mouth.ToMesh("BagMouth"), darkMat);
-            // the lid, hinged on the back edge of the top and flopped open backward
-            Vector3 lidHalf = LidHalf(bagSize);
-            Vector3 hinge = c + up * (sz.y * 0.79f + lidHalf.y * 0.92f) - nOut * lidHalf.z;
-            var lid = new GearMesh();
-            lid.RoundedBox(c + up * (sz.y * 0.79f) + nOut * 0.004f - hinge, x, up, nOut, lidHalf, 0.42f);
+            var bag = CanvasBag.Make(new CanvasBag.Frame(Vector3.up * sz.y, Vector3.right, Vector3.up, Vector3.forward), bagSize, sz, Fill(swell));
+            if (!strapMat) strapMat = flapMat;
+            if (!metalMat) metalMat = darkMat;
+            Loose(parent, "Bag", bag.body.ToMesh("Bag"), bagMat);
+            Loose(parent, "BagSeams", bag.trim.ToMesh("BagSeams"), flapMat);
+            Loose(parent, "BagPocket", bag.pocket.ToMesh("BagPocket"), flapMat);
+            Loose(parent, "BagStraps", bag.straps.ToMesh("BagStraps"), strapMat);
+            Loose(parent, "BagBuckles", bag.buckles.ToMesh("BagBuckles"), metalMat);
+            Loose(parent, "BagMouth", bag.mouth.ToMesh("BagMouth"), darkMat);
             var pivot = new GameObject("BagLidHinge").transform;
             pivot.SetParent(parent, false);
-            pivot.localPosition = hinge;
-            pivot.localRotation = Quaternion.AngleAxis(-150f, x);
-            Loose(pivot, "BagLid", lid.ToMesh("BagLid"), flapMat);
+            pivot.localPosition = bag.hinge;
+            pivot.localRotation = Quaternion.AngleAxis(120f, Vector3.right);
+            Loose(pivot, "BagLid", bag.lid.ToMesh("BagLid", -bag.hinge), flapMat);
+            Loose(pivot, "BagLidStraps", bag.lidStraps.ToMesh("BagLidStraps", -bag.hinge), strapMat);
+            mouth = bag.mouthCenter;
             return sz;
         }
-
-        /// <summary>The lid's half size: as on an empty bag, however full it is.</summary>
-        static Vector3 LidHalf(Vector3 bagSize) => new Vector3(bagSize.x * 0.98f, bagSize.y * 0.25f, bagSize.z * 1.04f);
-
-        /// <summary>The dark mouth under the lid: as on an empty bag.</summary>
-        static Vector3 MouthHalf(Vector3 bagSize) => new Vector3(bagSize.x * 0.8f, bagSize.y * 0.06f, bagSize.z * 0.78f);
 
         static void Loose(Transform parent, string name, Mesh mesh, Material mat)
         {
@@ -576,7 +598,7 @@ namespace SlugDesign
         /// Vertices with the skin's crawl data (uv: round / along the body, uv1.x: ring radius, uv2: ring pivot), quads
         /// wound to face away from (or toward) a point, smooth normals within a surface and crisp edges between surfaces.
         /// </summary>
-        class GearMesh
+        internal class GearMesh
         {
             readonly List<Vector3> _v = new List<Vector3>();
             readonly List<Vector2> _uv = new List<Vector2>(), _uv1 = new List<Vector2>();
@@ -653,9 +675,11 @@ namespace SlugDesign
                     Quad(idx[i, j], idx[i + 1, j], idx[i + 1, (j + 1) % nLon], idx[i, (j + 1) % nLon], c, true);
             }
 
-            public Mesh ToMesh(string name)
+            /// <summary>The mesh, its vertices moved by <paramref name="shift"/> (to hang it from a pivot).</summary>
+            public Mesh ToMesh(string name, Vector3 shift = default)
             {
                 var m = new Mesh { name = name, indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+                if (shift != Vector3.zero) for (int i = 0; i < _v.Count; i++) _v[i] += shift;
                 m.SetVertices(_v);
                 m.SetUVs(0, _uv);
                 m.SetUVs(1, _uv1);

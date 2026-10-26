@@ -14,7 +14,7 @@ description: Blender や Unity の MCP で形を作るときの指示の型と�
 | 植物 | [plant.md](plant.md) | Blender のスクリプト（`Blender/Harvest/<name>_gen.py`） |
 | 鉱石・塩 | [ore.md](ore.md) | Blender のスクリプト（`Blender/Harvest/<name>_gen.py`） |
 
-ツールの癖は memory の Blender MCP・Unity MCP のメモを見る（Blender 5.2 の bpy の落とし穴、再生を止めてからスクリプトを直す、など）。
+モデリングの決まりは `docs/modeling/README.md`（Claude と Argon 共通）。ツールの癖は memory の Blender MCP・Unity MCP のメモを見る（Blender 5.2 の bpy の落とし穴、再生を止めてからスクリプトを直す、など）。
 
 ## 共通の型（わくさんが書く）
 
@@ -75,14 +75,5 @@ description: Blender や Unity の MCP で形を作るときの指示の型と�
 
 ## 共通の決まり
 
-- 1 単位 ＝ 1 m。地面に置く物は **底の真ん中が原点**、上が +Z（Blender）／+Y（Unity）
-- 書き出しは滑らかな法線（Slug/Toon の Flat Facets と輪郭線は滑らかな法線が前提。面ごとの法線だと輪郭線が割れる）
-- 薄い部品（葉、花びら、布）も **厚みを持たせて閉じた形** にする（輪郭線が出るように）
-- 質感はテクスチャを描かず、マテリアルを部品ごとに分けて色で塗る。シェーダーは `Slug/Toon`、世界の物の値は `Assets/Art/Editor/WorldLook.cs`（形はポップ、質感はリアル度 0.2）
-- 世界は雨に濡れたくすんだ色、キャラだけが鮮やか。世界の物の彩度はナメクジより上げない（珍しい物だけ例外）
-- マテリアル名は `<物の名前>_<部品>`（例 `UgoTake_Cap`）。Unity のマテリアルと同じ名前にして、`WorldLook.Remap` でつなぐ
-- Blender の作り方はスクリプトに残す：`Blender/<種類>/<name>_gen.py` と同じ名前の .blend。もう一度実行すれば作り直して書き出せるようにする（手で直した形は残らない前提）。書き出し先は `Assets/Art/Models/<種類>/<Name>/`（種類は `Harvest` 採る物、`Base` 拠点、`Creatures` 生き物、`Landmarks` 名所、`Props` 小物。Blender 側も同じ名前のフォルダ）。使わなくなった試作は消さずに `Assets/_Old/Art/` と `Blender/_Old/` へ
-- 違う形はシードを変えて A／B／C（同じ物を並べたときに同じに見えないように）
-- 三角形の目安：手に持つ物 300〜1,500、採る場所 1,000〜4,000、名所の大物 5,000〜20,000
-- 当たり判定は形に合わせた単純な形（Box・Capsule・凸の MeshCollider）。見た目のメッシュをそのまま当たり判定にしない
-- 作った音・フォント（わくさんの物）はコミットに入れない
+世界観チェック・寸法・書き出し・進め方（読み返し票→灰色ラフの決まった3枚→色→Unity）・トークンの節約は `docs/modeling/README.md` が正。ここには書かない。
+Argon に頼むときは、同じ README の5章の形でモデル票（英語 `docs/modeling/<name>.md`、150 行まで）と訳（`<name>_ja.md`）を書く。

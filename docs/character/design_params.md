@@ -3,7 +3,7 @@
 `SlugPop`（`Assets/Slug/Scripts/Runtime/SlugPop.cs`）の現在値。経緯は `character_design.md`。
 スライダーはすべて 1.0 = ポップ側、0.0 = 本物のナメクジ寄り。一括スライダー `Pop` を動かすと全要素が同じ値に揃い、要素別を動かすとその要素だけが変わる。
 
-- シーン：`Assets/Scenes/SlugLookbook.unity`（雨の暗い背景）
+- シーン：`Assets/Scenes/Preview/SlugLookbook.unity`（雨の暗い背景）
 - スクリーンショット：`Screenshots/Character/`
 
 ![current](../../Screenshots/Character/00_overview.png)

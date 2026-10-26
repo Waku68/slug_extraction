@@ -34,8 +34,10 @@ namespace SlugMove
         public float Equip => Smooth(_equip);
         /// <summary>0..1 through taking it in hand, not eased (the holder splits it into reaching for it and bringing it up).</summary>
         public float EquipLinear => _equip;
-        /// <summary>0..1: how far the scope is up to the eye (eased).</summary>
+        /// <summary>0..1: how far the scope (or the iron sights) is up to the eye (eased).</summary>
         public float Scope => Smooth(_scope);
+        /// <summary>The gun has iron sights to look along on the aim button (set by the holder from the model).</summary>
+        public bool sights;
         public bool Reloading => _stage != Stage.None;
         public Stage ReloadStage => _stage;
         /// <summary>0..1 through the current reload stage (the whole magazine change, or one open / insert / close).</summary>
@@ -130,7 +132,7 @@ namespace SlugMove
 
         /// <summary>
         /// Advances everything by <paramref name="dt"/>. <paramref name="trigger"/> = the fire button is held,
-        /// <paramref name="aim"/> = the aim button is held (only guns with a scope use it).
+        /// <paramref name="aim"/> = the aim button is held (only guns with a scope or iron sights use it).
         /// </summary>
         public void Step(float dt, bool trigger, bool aim)
         {
@@ -147,10 +149,11 @@ namespace SlugMove
             if (pressed && Ammo <= 0 && !Reloading && _equip >= 1f) StartReload();
             if (pressed && (_stage == Stage.Open || _stage == Stage.Insert || _stage == Stage.Pour) && Ammo > 0) _stopLoading = true;
 
-            bool scoped = aim && s.scopeFov > 0f && !Reloading && _equip >= 1f;
+            bool hasScope = s.scopeFov > 0f;
+            bool scoped = aim && (hasScope || sights) && !Reloading && _equip >= 1f;
             bool up = !Reloading && _equip >= 1f && (trigger || scoped || _sinceShot < s.holdTime || _cycling);
             _raise = Mathf.MoveTowards(_raise, up ? 1f : 0f, dt / Mathf.Max(up ? s.raiseTime : s.lowerTime, 1e-3f));
-            _scope = Mathf.MoveTowards(_scope, scoped && _raise > 0.5f ? 1f : 0f, dt / Mathf.Max(s.scopeTime, 1e-3f));
+            _scope = Mathf.MoveTowards(_scope, scoped && _raise > 0.5f ? 1f : 0f, dt / Mathf.Max(hasScope ? s.scopeTime : s.sightTime, 1e-3f));
             _cool = Mathf.Max(0f, _cool - dt);
 
             if (_cycling) StepCycle(dt);

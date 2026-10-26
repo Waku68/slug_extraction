@@ -12,7 +12,7 @@ namespace SlugExtract
     /// </summary>
     public static class SwingTestBuilder
     {
-        const string ScenePath = "Assets/Scenes/SwingTest.unity";
+        const string ScenePath = "Assets/Scenes/Tests/SwingTest.unity";
 
         [MenuItem("Slug/SwingTest Build Scene")]
         public static void Build()

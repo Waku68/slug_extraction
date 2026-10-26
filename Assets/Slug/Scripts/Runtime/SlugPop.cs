@@ -42,6 +42,7 @@ namespace SlugDesign
         [Range(0f, 1f), Tooltip("触角の長さ。1.0 = 短い、0.0 = 長い")] public float tentacleLength = 1f;
         [Range(0f, 1f), Tooltip("触角の太さ。1.0 = 太い、0.0 = 細い")] public float tentacleThickness = 1f;
         [Range(0f, 1f), Tooltip("触角の向き。1.0 = 後ろへ流れる、0.5 = ほぼ真上（少し外向き）、0.0 = 前向き")] public float tentacleDirection = 1f;
+        [Range(0f, 1f), Tooltip("左右の触角の離れ方。0 = 元のまま、1 = 付け根を頭の両はしへ離し、先を外へ開く")] public float tentacleSpread = 0.6f;
         [Range(0f, 1f), Tooltip("口（まっすぐな一本線）。0 でなし")] public float expression = 1f;
         [Range(0f, 1f), Tooltip("手の長さ。1.0 = 短い円錐形、0.0 = さらに短い")] public float hands = 1f;
         [Range(0f, 1f), Tooltip("陰影。1.0 = トゥーン2段のくっきりした影、0.0 = なめらかなグラデーション")] public float shading = 1f;
@@ -100,9 +101,23 @@ namespace SlugDesign
         // lying down (the head sinks) and the head turned round on the neck (see SetProne, SetHeadTwist)
         float _prone, _twistDeg;
         Vector3 _twistPivot;
+        // the rear laid along the crawled path (see SetPath): anchor (body space), knot spacing (0 = off), pitch at the knots
+        Vector3 _pathAnchor;
+        float _pathStep;
+        readonly float[] _pathA = new float[9];
+        // ring pivot z along the body (t = i / 64), so the CPU can find a point's ring quickly
+        readonly float[] _ringZ = new float[65];
         // tentacle roots (body space, rest pose): where they leave the skin, their direction and thickness
         readonly Vector3[] _earRoot = new Vector3[2], _earAxis = new Vector3[2];
         float _earRadius, _earLength;
+        // how each tentacle is posed now (SetEarPose): its mesh at rest, the turn about its root and how far it is drawn in;
+        // meshes that ride on it (a helmet's horn) go with it
+        readonly Quaternion[] _earRot = new Quaternion[2], _earBend = { Quaternion.identity, Quaternion.identity };
+        readonly float[] _earScale = { 1f, 1f };
+        readonly Mesh[] _earMesh = new Mesh[2];
+        readonly Vector3[][] _earRestV = new Vector3[2][], _earRestN = new Vector3[2][];
+        struct EarRider { public int side; public Mesh mesh; public Vector3[] v, n; }
+        readonly List<EarRider> _earRiders = new List<EarRider>();
         SlugMeshFactory.BodyShape _shape;
 
         /// <summary>Middle of the face, in world space. Used to aim close-up cameras.</summary>
@@ -318,9 +333,129 @@ namespace SlugDesign
             return new Vector3(v.x * c + v.z * s, v.y, -v.x * s + v.z * c);
         }
 
-        /// <summary>Body-space point after all the bends (lying down, the head's turn, upright, then the turn), as the shader moves it.</summary>
-        Vector3 Bend(Vector3 p, float t) => TurnDir(Upright(Twist(Drop(p, t), t), t) - _turnPivot, t) + _turnPivot;
-        Vector3 BendDir(Vector3 v, float t) => TurnDir(UprightDir(TwistDir(v, t), t), t);
+        /// <summary>
+        /// Lays the rear (behind the feet) along the path the slug crawled, so the tail follows the body up a wall and over
+        /// an edge. <paramref name="trailWorld"/>: points of that path in the world, from the feet backward (null or fewer
+        /// than two: the rear stays straight).
+        /// </summary>
+        public void SetPath(Vector3 feetWorld, IList<Vector3> trailWorld)
+        {
+            if (_visual == null || _shape == null) return;
+            var vt = _visual.transform;
+            Vector3 anchor = vt.InverseTransformPoint(feetWorld);
+            float rear = anchor.z - _tailPivot.z;
+            bool on = trailWorld != null && trailWorld.Count >= 2 && rear > 0.05f;
+            float step = on ? rear / 8f : 0f;
+            float worldStep = step * vt.lossyScale.z;
+            bool any = false;
+            for (int k = 1; k <= 8; k++)
+            {
+                float a = 0f;
+                // the path's direction around this knot (a chord over one spacing), in body space
+                if (on && TrailPoint(trailWorld, (k - 0.5f) * worldStep, out var p0) && TrailPoint(trailWorld, (k + 0.5f) * worldStep, out var p1))
+                {
+                    Vector3 d = vt.InverseTransformDirection(p1 - p0);
+                    // how far it goes back (sideways counts as back, for a turn). Only where it goes well down can it
+                    // also go forward (under the body, to a wall): a level chord is never read as turned right round
+                    float flat = new Vector2(d.x, d.z).magnitude;
+                    float signedBack = flat * Mathf.Clamp(-3f * d.z / Mathf.Max(flat, 1e-6f), -1f, 1f);
+                    float down = Mathf.SmoothStep(0f, 1f, -2f * d.y / Mathf.Max(d.magnitude, 1e-6f));
+                    if (d.sqrMagnitude > 1e-8f) a = Mathf.Clamp(Mathf.Atan2(d.y, Mathf.Lerp(flat, signedBack, down)), -2.4f, 2.4f);
+                }
+                else if (k > 1) a = _pathA[k - 1];        // past the end of what was crawled: straight on
+                _pathA[k] = a;
+            }
+            // round the corners a little (a body this thick cannot fold sharply; it would crumple)
+            for (int pass = 0; pass < 2; pass++)
+            {
+                float prev = _pathA[0];
+                for (int k = 1; k <= 8; k++)
+                {
+                    float cur = _pathA[k], next = _pathA[Mathf.Min(k + 1, 8)];
+                    _pathA[k] = 0.25f * prev + 0.5f * cur + 0.25f * next;
+                    prev = cur;
+                }
+            }
+            for (int k = 1; k <= 8; k++) any |= Mathf.Abs(_pathA[k]) > 0.002f;
+            _pathAnchor = anchor;
+            _pathStep = any ? step : 0f;
+            var anchorV = new Vector4(anchor.x, anchor.y, anchor.z, _pathStep);
+            var a0 = new Vector4(_pathA[1], _pathA[2], _pathA[3], _pathA[4]);
+            var a1 = new Vector4(_pathA[5], _pathA[6], _pathA[7], _pathA[8]);
+            foreach (var r in _renderers)
+            {
+                if (r == null) continue;
+                var m = r.sharedMaterial;
+                m.SetVector("_PathAnchor", anchorV);
+                m.SetVector("_PathA0", a0);
+                m.SetVector("_PathA1", a1);
+            }
+        }
+
+        /// <summary>The point <paramref name="dist"/> along the polyline from its start (false past its end).</summary>
+        static bool TrailPoint(IList<Vector3> pts, float dist, out Vector3 p)
+        {
+            for (int i = 1; i < pts.Count; i++)
+            {
+                float l = Vector3.Distance(pts[i - 1], pts[i]);
+                if (dist <= l) { p = l > 1e-6f ? Vector3.Lerp(pts[i - 1], pts[i], dist / l) : pts[i]; return true; }
+                dist -= l;
+            }
+            p = pts[pts.Count - 1];
+            return false;
+        }
+
+        /// <summary>Same as PathBend in the shader, for a body-space point on the ring at t.</summary>
+        Vector3 Path(Vector3 p, float t)
+        {
+            if (_pathStep <= 0f) return p;
+            float d = _pathAnchor.z - RingZ(t);
+            if (d <= 0f) return p;
+            PathAt(d, out var s, out float ang);
+            float sn = Mathf.Sin(ang), c = Mathf.Cos(ang);
+            float oy = p.y - _pathAnchor.y, oz = p.z - (_pathAnchor.z - d);
+            return new Vector3(p.x, s.x + oy * c - oz * sn, s.y + oy * sn + oz * c);
+        }
+
+        Vector3 PathDir(Vector3 v, float t)
+        {
+            if (_pathStep <= 0f) return v;
+            float d = _pathAnchor.z - RingZ(t);
+            if (d <= 0f) return v;
+            PathAt(d, out _, out float ang);
+            float sn = Mathf.Sin(ang), c = Mathf.Cos(ang);
+            return new Vector3(v.x, v.y * c - v.z * sn, v.y * sn + v.z * c);
+        }
+
+        /// <summary>Where the curve is (y, z) <paramref name="d"/> behind the anchor, and its pitch there.</summary>
+        void PathAt(float d, out Vector2 s, out float ang)
+        {
+            s = new Vector2(_pathAnchor.y, _pathAnchor.z);
+            ang = _pathA[8];
+            float left = d;
+            for (int i = 0; i < 8 && left > 0f; i++)
+            {
+                float L = Mathf.Min(left, _pathStep);
+                float a0 = _pathA[i], k = (_pathA[i + 1] - a0) / _pathStep;
+                float a1 = a0 + k * L;
+                if (Mathf.Abs(k) > 1e-3f) s += new Vector2(Mathf.Cos(a0) - Mathf.Cos(a1), Mathf.Sin(a0) - Mathf.Sin(a1)) / k;
+                else { float am = 0.5f * (a0 + a1); s += new Vector2(Mathf.Sin(am), -Mathf.Cos(am)) * L; }
+                ang = a1;
+                left -= L;
+            }
+            if (left > 0f) s += new Vector2(Mathf.Sin(ang), -Mathf.Cos(ang)) * left;
+        }
+
+        float RingZ(float t)
+        {
+            float x = Mathf.Clamp01(t) * 64f;
+            int i = Mathf.Min((int)x, 63);
+            return Mathf.Lerp(_ringZ[i], _ringZ[i + 1], x - i);
+        }
+
+        /// <summary>Body-space point after all the bends (the rear along the path, lying down, the head's turn, upright, then the turn), as the shader moves it.</summary>
+        Vector3 Bend(Vector3 p, float t) => TurnDir(Upright(Twist(Drop(Path(p, t), t), t), t) - _turnPivot, t) + _turnPivot;
+        Vector3 BendDir(Vector3 v, float t) => TurnDir(UprightDir(TwistDir(PathDir(v, t), t), t), t);
 
         /// <summary>Same as ProneDrop in the shader.</summary>
         Vector3 Drop(Vector3 p, float t)
@@ -413,6 +548,8 @@ namespace SlugDesign
             _visual = null;
             foreach (var o in _owned) Kill(o);
             _owned.Clear();
+            _winkOpen.Clear();
+            _winkShut = null;
             if (materialsToo)
             {
                 Kill(_sphere); _sphere = null;
@@ -560,6 +697,8 @@ namespace SlugDesign
             _shape = shape;
             _bodyLength = spec.length;
             shape.RingInfo(0f, out _tailPivot, out _);
+            for (int i = 0; i <= 64; i++) { shape.RingInfo(i / 64f, out var rp, out _); _ringZ[i] = rp.z; }
+            _pathStep = 0f;
             // the upright bend pivots at the chest: the neck and head stand up over it on a slope
             float pivotT = Mathf.Max(uprightPivotT, spec.bendStart);
             shape.RingInfo(pivotT, out _uprightPivot, out _);
@@ -593,7 +732,7 @@ namespace SlugDesign
             if (v4) face.ok = false;                       // the v4 face is made of small 3D parts, not painted
             ConfigureMaterials(spec, shape, face);
             Part("Body", shape.mesh, _body, Vector3.zero, Quaternion.identity, Vector3.one);
-            if (v4) BuildV4Face(shape);
+            if (v4) { BuildV4Face(shape); ShowWink(); }
 
             // ---------------- 3D eyeballs (v6 option)
             if (eyeKind != SlugEyeKind.None && shape.RaycastT(origin, dirOf(Mix(48f, 40f, body), Mix(14f, 8f, body)), out var pe0, out var ne0, out var te0))
@@ -606,6 +745,7 @@ namespace SlugDesign
                 float baseR = Mix(0.014f, 0.045f, tentacleThickness), tipR = Mix(0.011f, 0.03f, tentacleThickness), bulb = Mix(0.02f, 0f, tentacleThickness);
                 int radial = Mathf.RoundToInt(Mix(8f, 9f, tentacleThickness));
                 Ring ef = shape.FrameAt(t);
+                _earRiders.Clear();
                 foreach (float side in new[] { -1f, 1f })
                 {
                     // direction: 0 = leaning forward, 0.5 = straight UP in the world (slightly outward), 1 = swept back.
@@ -613,8 +753,11 @@ namespace SlugDesign
                     Vector3 e0 = BodyDir(ef, new Vector3(0.5f, 0.55f, 1f), side), e1 = new Vector3(0.2f * side, 1f, -0.02f), e2 = BodyDir(ef, new Vector3(0.7f, 1f, -0.5f), side);
                     Vector3 a = Blend3(a0.normalized, a1.normalized, a2.normalized, tentacleDirection);
                     Vector3 b = Blend3(e0.normalized, e1.normalized, e2.normalized, tentacleDirection);
+                    // spread: lean both out sideways (the tip a little more than the root)
+                    a = (a.normalized + ef.right * (side * 0.45f * tentacleSpread)).normalized;
+                    b = (b.normalized + ef.right * (side * 0.8f * tentacleSpread)).normalized;
                     // spread the two roots apart when the tentacles stand up, so they do not grow from one point
-                    Vector3 start = ef.center + ef.right * side * (ef.rx * 0.45f * (1f - tentacleDirection));
+                    Vector3 start = ef.center + ef.right * side * (ef.rx * (0.45f * (1f - tentacleDirection) + 0.35f * tentacleSpread));
                     Vector3 hitN = Vector3.up;
                     float hitT = t;
                     if (!shape.RaycastT(start, a.normalized, out var pe, out hitN, out hitT)) { pe = start; hitT = t; }
@@ -622,7 +765,8 @@ namespace SlugDesign
                     // same structure as the arms: a tapering cone (thick root, thin tip), slightly curved outward, no S-wiggle
                     var cone = SlugMeshFactory.ConeHand("Tentacle", length, baseR, baseR * 0.15f, 0.12f, radial);
                     Vector3 axis = ((a + b) * 0.5f).normalized;
-                    var mesh = Own(Rotated(cone, Quaternion.LookRotation(axis, -ef.right * side), "Ear"));
+                    var earRot = Quaternion.LookRotation(axis, -ef.right * side);
+                    var mesh = Own(Rotated(cone, earRot, "Ear"));
                     Kill(cone);
                     var mat = Follower(shape, _app, hitT, pe, hitN);
                     mat.SetFloat("_SwayAmp", 0.012f);                                    // a faint sway that goes with the crawl
@@ -631,6 +775,9 @@ namespace SlugDesign
                     int ei = side < 0 ? 0 : 1;
                     _earRoot[ei] = rootPos; _earAxis[ei] = axis;
                     _earRadius = baseR; _earLength = length;
+                    _earRot[ei] = earRot; _earMesh[ei] = mesh;
+                    _earRestV[ei] = mesh.vertices; _earRestN[ei] = mesh.normals;
+                    _earBend[ei] = Quaternion.identity; _earScale[ei] = 1f;
                 }
             }
 
@@ -750,12 +897,21 @@ namespace SlugDesign
                 {
                     Vector3 Y = (faceU - n * Vector3.Dot(faceU, n)).normalized, X = Vector3.Cross(Y, n).normalized;
                     Vector3 c = p - n * (size.z * 0.4f);
-                    Part("Eye_" + tag, Own(SlugMeshFactory.BakeEllipsoid(_sphere, "Eye", c, X, Y, n, size.x, size.y, size.z)), Follower(shape, eyeT, t, p, n), Vector3.zero, Quaternion.identity, Vector3.one);
+                    var eyeGo = Part("Eye_" + tag, Own(SlugMeshFactory.BakeEllipsoid(_sphere, "Eye", c, X, Y, n, size.x, size.y, size.z)), Follower(shape, eyeT, t, p, n), Vector3.zero, Quaternion.identity, Vector3.one);
+                    if (side < 0f) _winkOpen.Add(eyeGo);
                     float hr = 0.30f * glint * (size.x + size.y) * 0.5f;
                     if (hr > 0.0005f)
                     {
                         Vector3 hc = c + X * (0.30f * size.x) + Y * (0.34f * size.y) + n * (0.89f * size.z);
-                        Part("Eye_" + tag + "_Highlight", Own(SlugMeshFactory.BakeEllipsoid(_sphere, "Highlight", hc, X, Y, n, hr, hr, hr * 0.5f)), Follower(shape, hiT, t, p, n), Vector3.zero, Quaternion.identity, Vector3.one);
+                        var hiGo = Part("Eye_" + tag + "_Highlight", Own(SlugMeshFactory.BakeEllipsoid(_sphere, "Highlight", hc, X, Y, n, hr, hr, hr * 0.5f)), Follower(shape, hiT, t, p, n), Vector3.zero, Quaternion.identity, Vector3.one);
+                        if (side < 0f) _winkOpen.Add(hiGo);
+                    }
+                    if (side < 0f)
+                    {
+                        // the left eye shut (looking along a gun): a short curved line where the eye was
+                        var shut = Own(SlugMeshFactory.Smile("EyeShut", size.x * 1.05f, size.y * 0.3f, Mathf.Max(size.x * 0.16f, 0.0025f), 6));
+                        _winkShut = Part("Eye_L_Shut", Own(SlugMeshFactory.BakeEllipsoid(shut, "EyeShutB", c + n * (size.z * 0.7f), X, Y, n, 1f, 1f, 1f)),
+                                         Follower(shape, eyeT, t, p, n), Vector3.zero, Quaternion.identity, Vector3.one);
                     }
                 }
                 float cs = 0f;   // no cheeks
@@ -887,6 +1043,90 @@ namespace SlugDesign
             point = _earRoot[i]; axis = _earAxis[i]; radius = _earRadius; length = _earLength;
         }
 
+        float _wink;
+        // the round 3D eyes (V4Round): the left eye and its highlight, and the line drawn instead when it is shut
+        readonly List<GameObject> _winkOpen = new List<GameObject>();
+        GameObject _winkShut;
+        /// <summary>Shuts the left eye (0 open .. 1 shut): one eye closed to look along a gun. The painted face squeezes
+        /// it shut; the round 3D eyes swap it for a short line once it is more than half shut.</summary>
+        public void SetWink(float amount)
+        {
+            if (Mathf.Abs(amount - _wink) < 0.01f && (amount > 0f || _wink == 0f)) return;
+            _wink = amount;
+            if (_body != null)
+            {
+                var e = _body.GetVector("_FaceEye");
+                e.w = amount;
+                _body.SetVector("_FaceEye", e);
+            }
+            ShowWink();
+        }
+
+        void ShowWink()
+        {
+            bool shut = _wink > 0.5f && _winkShut != null;
+            foreach (var go in _winkOpen) if (go && go.activeSelf == shut) go.SetActive(!shut);
+            if (_winkShut && _winkShut.activeSelf != shut) _winkShut.SetActive(shut);
+        }
+
+        /// <summary>Where the tip of the left (-1) / right (+1) tentacle is now, posed by <see cref="SetEarPose"/> (body space).</summary>
+        public Vector3 EarTip(float side)
+        {
+            int i = side < 0f ? 0 : 1;
+            return _earRoot[i] + _earBend[i] * _earAxis[i] * (_earLength * _earScale[i]);
+        }
+
+        /// <summary>
+        /// Poses the left (-1) / right (+1) tentacle about its root: turned by <paramref name="bend"/> (body space; drooping)
+        /// and drawn in to <paramref name="length"/> (1 = all out). The mesh itself is moved, so the body shader still sees
+        /// it at its own place; whatever rides on it (<see cref="RideEar"/>) goes with it.
+        /// </summary>
+        public void SetEarPose(float side, Quaternion bend, float length)
+        {
+            int i = side < 0f ? 0 : 1;
+            if (_earMesh[i] == null) return;
+            if (Quaternion.Angle(bend, _earBend[i]) < 0.2f && Mathf.Abs(length - _earScale[i]) < 0.004f) return;
+            _earBend[i] = bend; _earScale[i] = length;
+            PoseMesh(_earMesh[i], _earRestV[i], _earRestN[i], bend, length);
+            for (int k = _earRiders.Count - 1; k >= 0; k--)
+            {
+                var r = _earRiders[k];
+                if (r.mesh == null) { _earRiders.RemoveAt(k); continue; }
+                if (r.side == i) PoseMesh(r.mesh, r.v, r.n, bend, length);
+            }
+        }
+
+        /// <summary>A mesh (body space, its origin at the tentacle's root) that moves with the left (-1) / right (+1) tentacle.</summary>
+        public void RideEar(float side, Mesh mesh)
+        {
+            int i = side < 0f ? 0 : 1;
+            _earRiders.Add(new EarRider { side = i, mesh = mesh, v = mesh.vertices, n = mesh.normals });
+            PoseMesh(mesh, mesh.vertices, mesh.normals, _earBend[i], _earScale[i]);
+        }
+
+        /// <summary>
+        /// A shell over the left (-1) / right (+1) tentacle, the same curve, <paramref name="grow"/> thicker all round and
+        /// <paramref name="extend"/> longer (body space, its origin at the root: put it there with <see cref="AddGear"/>).
+        /// </summary>
+        public Mesh EarShell(float side, float grow, float extend, string name)
+        {
+            int i = side < 0f ? 0 : 1;
+            var cone = SlugMeshFactory.ConeHand(name, _earLength + extend, _earRadius + grow, _earRadius * 0.45f + grow, 0.12f, 12);   // a round end, not a point
+            var m = Rotated(cone, _earRot[i], name);
+            Kill(cone);
+            return m;
+        }
+
+        static void PoseMesh(Mesh m, Vector3[] restV, Vector3[] restN, Quaternion q, float s)
+        {
+            var v = new Vector3[restV.Length];
+            var n = new Vector3[restN.Length];
+            for (int k = 0; k < v.Length; k++) { v[k] = q * (restV[k] * s); n[k] = q * restN[k]; }
+            m.vertices = v;
+            m.normals = n;
+            m.RecalculateBounds();
+        }
+
         /// <summary>
         /// A material for worn gear: the body's crawl, bends and shading, with its own colour and outline, and none of the
         /// skin's own markings (no face, belly, rings, wrinkles or mottling). The caller owns it.
@@ -1015,7 +1255,7 @@ namespace SlugDesign
             m.SetVector("_FaceR", V4(face.r));
             m.SetVector("_FaceU", V4(face.u));
             m.SetVector("_FaceN", V4(face.n));
-            m.SetVector("_FaceEye", new Vector4(hf * 0.45f, hf * 0.30f, eyeR, 0f));              // set a little apart
+            m.SetVector("_FaceEye", new Vector4(hf * 0.45f, hf * 0.30f, eyeR, _wink));           // set a little apart
             m.SetVector("_FaceMuz", new Vector4(-hf * 0.32f, hf * 0.66f, hf * 0.36f, hf * 0.04f)); // lighter ellipse, lower half
             m.SetVector("_FaceNos", new Vector4(hf * 0.13f, -hf * 0.18f, hf * 0.035f, hf * 0.05f)); // two tiny nostrils
             m.SetVector("_FaceMouth", new Vector4(-hf * 0.47f, hf * 0.30f, hf * 0.012f, Mathf.SmoothStep(0f, 1f, expression))); // straight line

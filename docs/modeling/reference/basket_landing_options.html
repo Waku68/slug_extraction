@@ -1,0 +1,220 @@
+<title>籠の発着場の候補</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* layout: one column. option tabs with distance and time, a full-width 3D view of the cenote base, then the selected option's notes */
+:root{
+  --bg:#f1f0ea; --paper:#fbfaf6; --ink:#232d29; --muted:#5d6a63; --line:#d5d2c6; --accent:#2f7a80; --pad:#c9893f; --route:#c2463a;
+  --font:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#141917;--paper:#1c221f;--ink:#e3e9e4;--muted:#9eaba3;--line:#323c36;--accent:#79c2c8;--pad:#e2a75e;--route:#ee7a6c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#141917;--paper:#1c221f;--ink:#e3e9e4;--muted:#9eaba3;--line:#323c36;--accent:#79c2c8;--pad:#e2a75e;--route:#ee7a6c;color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.65;margin:0}
+.wrap{max-width:62rem;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 40px;display:flex;flex-direction:column;gap:12px}
+h1{font-size:1.35rem;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:.9rem;margin:0}
+.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:640px){.tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tab{font:inherit;text-align:left;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:8px 10px;cursor:pointer;display:flex;flex-direction:column;gap:2px;min-width:0}
+.tab b{font-size:.95rem}
+.tab span{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.tab.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.tab.on b{color:var(--accent)}
+.tab .tag{font-size:.72rem;color:var(--pad);letter-spacing:.04em}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:13px;color:var(--muted)}
+.btn{font:inherit;font-size:13px;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:4px 10px;cursor:pointer}
+.btn.on{border-color:var(--accent);color:var(--accent)}
+#view{position:relative;width:100%;height:min(66vh,520px);min-height:340px;border-radius:12px;overflow:hidden;touch-action:none;cursor:grab;background:#b9d3e2}
+canvas{width:100%;height:100%;display:block}
+#labels{position:absolute;inset:0;pointer-events:none}
+.lb{position:absolute;transform:translate(-50%,-100%);font-size:12px;line-height:1.35;padding:2px 7px;border-radius:6px;background:var(--paper);color:var(--ink);border:1px solid var(--line);white-space:nowrap}
+.lb.hi{border-color:var(--pad);color:var(--pad)}
+.status{display:flex;justify-content:space-between;gap:12px;font-size:13px}
+#clk{color:var(--muted);font-variant-numeric:tabular-nums}
+.notes{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+@media (max-width:640px){.notes{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+.card h2{font-size:.85rem;letter-spacing:.06em;margin:0 0 4px;color:var(--muted)}
+.card ul{margin:0;padding-left:1.1em}
+.card li{margin:2px 0}
+.fact{font-size:.82rem;color:var(--muted)}
+#err{color:var(--route);font-size:13px}
+.legend{font-size:12px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px}.sw{width:12px;height:12px;border-radius:3px;display:inline-block}
+</style>
+<div class="wrap">
+  <h1>籠の発着場の候補</h1>
+  <p class="sub">Oct 18 に「2階のデッキ」に決まった（東へ広げて横 7.55 × 奥 4.6 m）。鳥が籠を下ろして、ナメクジ4匹が乗り降りする場所。籠は直径 2.4 m・高さ 0.4 m（ほかの3案の図は直径 1.6 m のまま）（よじ登れる 0.45 m より低くして、どこからでも這って入れる）。時間は籠から地図の台まで、這う速さ 1.2 m/s で数えた。</p>
+  <div class="tabs" id="tabs"></div>
+  <div class="row">
+    <button class="btn on" id="vSide">斜めから</button><button class="btn" id="vTop">真上から</button>
+    <button class="btn" id="replay">もう一度 ▶</button>
+    <button class="btn" id="zin">寄る</button><button class="btn" id="zout">引く</button>
+  </div>
+  <div id="view"><canvas id="cv"></canvas><div id="labels"></div></div>
+  <div class="status"><span id="phase"></span><span id="clk"></span></div>
+  <p id="err" hidden></p>
+  <div class="notes">
+    <div class="card"><h2>よい所</h2><ul id="pros"></ul></div>
+    <div class="card"><h2>気になる所</h2><ul id="cons"></ul></div>
+  </div>
+  <p class="fact" id="fact"></p>
+  <div class="legend">
+    <span>ドラッグで回す・ホイールで近づく。上が北、海は南。洞窟の殻は透かしてある</span>
+    <span class="chip"><span class="sw" style="background:var(--pad)"></span>発着場と籠</span>
+    <span class="chip"><span class="sw" style="background:var(--route)"></span>地図の台までの道</span>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+try{
+const $=id=>document.getElementById(id);
+const W=$('view'),LB=$('labels');
+const R=new THREE.WebGLRenderer({canvas:$('cv'),antialias:true});R.setPixelRatio(Math.min(window.devicePixelRatio||1,2));R.setClearColor(0xb9d3e2);
+const S=new THREE.Scene(),C=new THREE.PerspectiveCamera(45,1,.1,2000);
+S.add(new THREE.HemisphereLight(0xffffff,0x56606c,.65));const sun=new THREE.DirectionalLight(0xffffff,.7);sun.position.set(40,80,30);S.add(sun);
+const M=(c,o)=>new THREE.MeshLambertMaterial(Object.assign({color:c},o||{})),BM=(c,o)=>new THREE.MeshBasicMaterial(Object.assign({color:c},o||{}));
+function add(geo,mat,p,parent){const m=new THREE.Mesh(geo,mat);if(p)m.position.copy(p);(parent||S).add(m);return m}
+// Blender (x, y = north, z = up) as in cenote_base_gen.py  ->  three (x, z, -y)
+const B=(x,y,z)=>new THREE.Vector3(x,z,-y);
+const EX=1.18,EY=.88,F1=2.0,F2=4.6;
+const clk=(c,r,z)=>{const th=(3-c)*Math.PI/6;return B(Math.cos(th)*r*EX,Math.sin(th)*r*EY,z)};
+const prof=[[4.4,2],[4.8,3],[5,4.6],[4.8,6],[4,7],[2.8,7.8],[1.2,8.3],[.01,8.5]];
+const rAt=z=>{if(z<=2)return 4.4;for(let i=1;i<prof.length;i++)if(z<=prof[i][1]){const a=prof[i-1],b=prof[i],k=(z-a[1])/(b[1]-a[1]);return a[0]+(b[0]-a[0])*k}return .01};
+const labels=[];function L(t,p,hi,group){const d=document.createElement('div');d.textContent=t;d.className='lb'+(hi?' hi':'');LB.appendChild(d);const l={d:d,p:p,g:group||null};labels.push(l);return l}
+const lime=0xe4dfd1,drift=M(0xcdbfa6),driftD=M(0x9c8b70),padC=0xc9893f;
+// sea
+add(new THREE.PlaneGeometry(2000,2000),M(0x4f8ea3),new THREE.Vector3(0,0,0)).rotation.x=-Math.PI/2;
+// island: ellipse 11 x 8 m, the south side cut flat at y = -6.2 (the cliff with the sea mouth), 9.5 m high
+const isl=new THREE.Shape();for(let i=0;i<=72;i++){const a=i/72*Math.PI*2;let x=Math.cos(a)*11+.3,y=Math.sin(a)*8.2;if(y<-6.2)y=-6.2;i?isl.lineTo(x,y):isl.moveTo(x,y)}
+const islG=new THREE.ExtrudeGeometry(isl,{depth:9.5,bevelEnabled:false});
+const islM=add(islG,M(0xd8d2c2,{transparent:true,opacity:.16,depthWrite:false,side:THREE.DoubleSide}));islM.rotation.x=-Math.PI/2;
+const islE=new THREE.LineSegments(new THREE.EdgesGeometry(islG,30),new THREE.LineBasicMaterial({color:0x9c9686,transparent:true,opacity:.35}));islE.rotation.x=-Math.PI/2;S.add(islE);
+// hall shell (ellipse lathe) seen through
+const shell=add(new THREE.LatheGeometry(prof.map(p=>new THREE.Vector2(p[0],p[1])),48),M(lime,{transparent:true,opacity:.14,side:THREE.DoubleSide,depthWrite:false}));shell.scale.set(EX,1,EY);
+// hall floor, pool, map table
+const fl=add(new THREE.CylinderGeometry(4.4,4.4,.12,48),M(0xddd6c4),B(0,0,1.94));fl.scale.set(EX,1,EY);
+add(new THREE.CylinderGeometry(1.55,1.55,.05,32),M(0x3f8a94),B(1.8,0,2.01));
+const TBL=B(-1.8,.5,F1);add(new THREE.CylinderGeometry(1.1,1.1,.1,32),M(0xd8cba8),B(-1.8,.5,2.36));add(new THREE.CylinderGeometry(.25,.35,.34,10),driftD,B(-1.8,.5,2.17));
+L('地図の台',B(-1.8,.5,3.0));
+// ramp (8 -> 11 o'clock) and gallery (11 -> 5:51)
+for(let k=0;k<=24;k++){const t=k/24,z=F1+2.6*t,p=clk(8+3*t,rAt(z)-.54,z);const s=add(new THREE.BoxGeometry(1.0,.06,.3),drift,p);s.lookAt(new THREE.Vector3(0,z,0))}
+for(let k=0;k<=40;k++){const c=11+6.85*k/40,p=clk(c,4.25,F2-.03);const s=add(new THREE.BoxGeometry(1.8,.06,.45),drift,p);s.lookAt(new THREE.Vector3(0,F2-.03,0))}
+L('2階の回廊',clk(1,4.25,5.2));
+// lift at 5 o'clock
+const LIFT=clk(5,3.2,F1);add(new THREE.CylinderGeometry(.42,.36,.4,14,1,true),M(0x9a7a52,{side:THREE.DoubleSide}),LIFT.clone().add(new THREE.Vector3(0,.2,0)));
+const liftTop=LIFT.clone();liftTop.y=F2;add(new THREE.CylinderGeometry(.42,.36,.4,14,1,true),M(0x9a7a52,{side:THREE.DoubleSide}),liftTop.clone().add(new THREE.Vector3(0,.2,0)));
+add(new THREE.CylinderGeometry(.02,.02,4.6,4),driftD,LIFT.clone().add(new THREE.Vector3(0,2.6,0)));
+L('釣瓶',LIFT.clone().add(new THREE.Vector3(0,1.2,0)));
+// sea mouth tunnel and pier
+add(new THREE.BoxGeometry(2.8,.2,3.0),M(0xcfc8b6),B(-2.5,-4.75,1.9));
+const arch=add(new THREE.TorusGeometry(1.4,.12,8,20,Math.PI),driftD,B(-2.5,-6.2,F1));
+L('海側の口',B(-2.5,-6.2,3.7));
+add(new THREE.BoxGeometry(3.0,.12,6.0),drift,B(-2.5,-9.15,1.94));
+[[-3.82,-6.8],[-1.18,-6.8],[-3.82,-9.2],[-1.18,-9.2],[-3.82,-11.7],[-1.18,-11.7]].forEach(q=>add(new THREE.CylinderGeometry(.11,.1,2,8),driftD,B(q[0],q[1],1.0)));
+add(new THREE.BoxGeometry(.06,.4,5.8),drift,B(-1.08,-9.15,2.2));
+const gate=new THREE.Group();[-1,1].forEach(s=>{const r=add(new THREE.TorusGeometry(1.3,.08,6,16,Math.PI*.55),M(0xe4dcc8),new THREE.Vector3(0,0,0),gate);r.rotation.z=s>0?0:Math.PI*.45;r.position.x=s*.1});S.add(gate);
+// deck and observatory roof, the bird's nest
+add(new THREE.BoxGeometry(1.5,.12,3.2),drift,B(1.15,-4.75,F2-.06));
+const DECK=B(2.8,-8.5,F2);add(new THREE.BoxGeometry(7.55,.12,4.6),drift,B(2.825,-8.5,F2-.06));{const ne=new THREE.Shape();ne.moveTo(3.2,-6.2);ne.lineTo(6.6,-6.2);ne.lineTo(6.6,-4.4);ne.closePath();const g=add(new THREE.ExtrudeGeometry(ne,{depth:.12,bevelEnabled:false}),drift,B(0,0,F2-.12));g.rotation.x=-Math.PI/2;}
+add(new THREE.BoxGeometry(3.2,.1,1.5),M(0x6e7d4f),B(1.3,-6.95,6.2));
+[-0.92,6.57].forEach(x=>add(new THREE.BoxGeometry(.06,.4,4.6),drift,B(x,-8.5,F2+.2)));add(new THREE.BoxGeometry(7.55,.4,.06),drift,B(2.825,-10.72,F2+.2));
+L('デッキと観測所',B(1.3,-11.0,5.4));
+const NEST=B(-2.5,-6.5,7.5);add(new THREE.TorusGeometry(.6,.2,6,14),M(0x9a8466),NEST).rotation.x=Math.PI/2;L('鳥の巣',B(-2.5,-6.5,8.2));
+// a merchant boat
+const boat=new THREE.Group();add(new THREE.BoxGeometry(.7,.35,1.6),M(0x8d6a48),new THREE.Vector3(0,0,0),boat);boat.position.copy(B(-4.6,-10.2,.25));S.add(boat);
+
+// ---- the options
+const pad=new THREE.Group();S.add(pad);
+const OPTS=[
+ {id:'tip',name:'桟橋の先の丸い発着台',tag:'候補 1',
+  spot:B(-2.5,-13.4,F1),
+  build:g=>{add(new THREE.CylinderGeometry(1.6,1.6,.14,36),drift,B(-2.5,-13.4,1.93),g);[0,1,2,3,4,5].forEach(i=>{const a=i/6*Math.PI*2;add(new THREE.CylinderGeometry(.11,.1,2,8),driftD,B(-2.5+Math.cos(a)*1.45,-13.4+Math.sin(a)*1.45,1.0),g)});gate.position.copy(B(-2.5,-6.6,F1));},
+  route:[[-2.5,-13.4,2],[-2.5,-6.4,2],[-2.5,-4.75,2],[-2.3,-2.0,2],[-1.8,-.7,2]],
+  approach:[[-24,-60,16],[-10,-34,10],[-4,-20,5.5]],
+  pros:['籠のまわりを一周できる。4匹とバッグで乗り降りしても混まない','海から見て「ここに降りる」が一目で分かる丸い形','桟橋を這う数秒が、帰ってきた実感になる（spec の「桟橋の外側」をそのまま広げた形）'],
+  cons:['4つの中でいちばん遠い','桟橋が 1.3 m のびて、丸い台を支える杭が増える'],
+  fact:'丸い台は直径 3.2 m（籠 1.6 m のまわりに 0.8 m の通り道）。桟橋の先に足す。'},
+ {id:'plaza',name:'口の前の広場',tag:'新しい案',
+  spot:B(-2.5,-7.9,F1),
+  build:g=>{const p=add(new THREE.CylinderGeometry(1.9,1.9,.14,36),drift,B(-2.5,-7.9,1.93),g);gate.position.copy(B(-2.5,-10.0,F1));},
+  route:[[-2.5,-7.9,2],[-2.5,-4.75,2],[-2.3,-2.0,2],[-1.8,-.7,2]],
+  approach:[[-24,-60,16],[-10,-34,10],[-3.5,-17,5.5]],
+  pros:['近い。口をくぐればすぐ地図の台','行商人の舟と同じ広場で、桟橋の付け根がにぎわう','クジラの骨の門を広場の海側へ移すと、門をくぐって帰る形になる'],
+  cons:['鳥が崖のすぐ前に降りる。巣の真下で、翼が崖に近い','広場（直径 3.8 m）の分、桟橋の付け根が太く短く見える'],
+  fact:'桟橋の付け根を直径 3.8 m の丸い広場に広げる。桟橋はその先に続く。'},
+ {id:'shelf',name:'口の西どなりの岩棚',tag:'新しい案',
+  spot:B(-6.0,-7.6,F1),
+  build:g=>{const r=add(new THREE.CylinderGeometry(1.7,1.9,1.9,12),M(0xcfc8b6),B(-6.0,-7.6,1.02),g);r.scale.set(1.15,1,.95);add(new THREE.BoxGeometry(1.6,.14,1.2),M(0xcfc8b6),B(-4.3,-6.7,1.93),g);gate.position.copy(B(-2.5,-6.6,F1));},
+  route:[[-6.0,-7.6,2],[-4.4,-6.7,2],[-3.2,-6.0,2],[-2.5,-4.75,2],[-2.3,-2.0,2],[-1.8,-.7,2]],
+  approach:[[-34,-58,16],[-16,-32,10],[-8,-18,5.5]],
+  pros:['近い。作り物の台ではなく、島の岩の上に降りる','桟橋は行商人の舟だけのものになり、場所の役目が分かれる','崖から離れて降りられ、巣からもすぐ'],
+  cons:['口の横から回り込むので、入口の向きが少し分かりにくい','岩棚のまわりは海で、落ちられる所が増える'],
+  fact:'口の西どなり、崖から張り出した平らな石灰岩（差し渡し 3.6 m）。口のトンネルへ短い岩の通り道でつなぐ。'},
+ {id:'deck',name:'2階のデッキ',tag:'決定（Oct 18）',
+  spot:B(4.4,-8.5,F2),
+  build:g=>{gate.position.copy(B(-2.5,-6.6,F1));},
+  route:[[4.4,-8.5,4.6],[2.9,-8.6,4.6],[2.0,-6.7,4.6],[1.2,-6.2,4.6],[1.15,-4.4,4.6],[.6,-3.5,4.6],['lift'],[.3,-1.6,2],[-1.8,-.7,2]],
+  approach:[[24,-60,20],[10,-34,12],[3,-18,7]],
+  pros:['釣瓶で地図の台のすぐ横に下りられる','観測所と同じ所。出発前に空と予報を見てから飛び立てる','鳥が崖から離れて、上から降りる'],
+  cons:['釣瓶は上り専用（縁のない板）。帰りは回廊を飛び込み板まで這って池へ飛び込むと、いちばん早い','海側の口と桟橋は、行商人の舟だけのものになる'],
+  fact:'決定：デッキを桟橋と反対の東へ広げ（横 7.55 × 奥 4.6 m、東は崖までのびる）、東の丸に直径 2.4 m の籠を下ろす。図の道は釣瓶で下りた場合（釣瓶は上り専用に決まったので、実際は飛び込み板から池へ）。'},
+];
+const CRAWL=1.2,LIFT_T=4.0;
+function pts(o){const out=[];o.route.forEach(q=>{if(q[0]==='lift'){out.push({lift:true,p:liftTop.clone()});out.push({lift:true,p:LIFT.clone()})}else out.push({p:B(q[0],q[1],q[2])})});return out}
+function measure(o){const P=pts(o);let d=0,t=0;for(let i=1;i<P.length;i++){const s=P[i].p.distanceTo(P[i-1].p);if(P[i].lift&&P[i-1].lift)t+=LIFT_T;else{d+=s;t+=s/CRAWL}}return {d:d,t:t,P:P}}
+OPTS.forEach(o=>{o.m=measure(o)});
+// tabs
+const tabs=$('tabs');
+OPTS.forEach((o,i)=>{const b=document.createElement('button');b.className='tab';b.id='t_'+o.id;b.innerHTML='<span class="tag">'+o.tag+'</span><b>'+o.name+'</b><span>這う道 '+o.m.d.toFixed(1)+' m ・ 約 '+Math.round(o.m.t)+' 秒'+(o.id==='deck'?'（釣瓶こみ）':'')+'</span>';b.onclick=()=>select(i);tabs.appendChild(b)});
+// route line and basket
+let routeLine=null;const basket=new THREE.Group();
+add(new THREE.CylinderGeometry(.8,.7,.4,20,1,true),M(padC,{side:THREE.DoubleSide}),new THREE.Vector3(0,.2,0),basket);add(new THREE.CylinderGeometry(.7,.7,.04,20),M(0x9a6a34),new THREE.Vector3(0,.02,0),basket);
+add(new THREE.TorusGeometry(.8,.04,6,24),M(0xa86e2c),new THREE.Vector3(0,.4,0),basket).rotation.x=Math.PI/2;S.add(basket);
+const bird=new THREE.Group();const bw=M(0xf2ede2);add(new THREE.SphereGeometry(1,16,12),bw,new THREE.Vector3(0,0,0),bird).scale.set(.5,.42,1.05);add(new THREE.SphereGeometry(.32,12,10),bw,new THREE.Vector3(0,.25,.95),bird);
+const beak=add(new THREE.ConeGeometry(.1,.4,8),M(0xe0a43a),new THREE.Vector3(0,.22,1.35),bird);beak.rotation.x=Math.PI/2;
+const wings=[-1,1].map(sd=>{const p=new THREE.Group();p.position.set(sd*.4,.1,0);bird.add(p);add(new THREE.BoxGeometry(1.7,.05,.7),bw,new THREE.Vector3(sd*.85,0,0),p);return {p:p,sd:sd}});S.add(bird);
+const rope=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3(0,1,0)]),new THREE.LineBasicMaterial({color:0x5b4a3a}));S.add(rope);
+function slug(col){const s=new THREE.Group(),m=M(col);add(new THREE.SphereGeometry(1,14,10),m,new THREE.Vector3(0,.2,0),s).scale.set(.18,.17,.45);add(new THREE.SphereGeometry(.13,10,8),m,new THREE.Vector3(0,.33,.33),s);S.add(s);return s}
+const slugs=[0x8fbf6a,0xe08aa8,0x7fa8d8,0xe0b65a].map(slug);
+const slots=[[-.28,-.28],[.28,-.28],[-.28,.28],[.28,.28]];
+const padLabel=L('',new THREE.Vector3(),true);
+let cur=0,t0=performance.now(),inCurve=null,HOLD=1.3;
+function select(i){cur=i;const o=OPTS[i];
+ while(pad.children.length)pad.remove(pad.children[0]);o.build(pad);
+ if(routeLine)S.remove(routeLine);const P=o.m.P.map(q=>q.p.clone().add(new THREE.Vector3(0,.08,0)));
+ routeLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints(P),new THREE.LineDashedMaterial({color:0xc2463a,dashSize:.35,gapSize:.2}));routeLine.computeLineDistances();S.add(routeLine);
+ const ap=o.approach.map(q=>B(q[0],q[1],q[2]));ap.push(o.spot.clone().add(new THREE.Vector3(0,HOLD,0)));inCurve=new THREE.CatmullRomCurve3(ap);
+ basket.scale.setScalar(o.id==='deck'?1.5:1);padLabel.d.textContent=o.name;padLabel.p=o.spot.clone().add(new THREE.Vector3(0,1.4,0));
+ document.querySelectorAll('.tab').forEach((b,k)=>b.classList.toggle('on',k===i));
+ $('pros').innerHTML=o.pros.map(s=>'<li>'+s+'</li>').join('');$('cons').innerHTML=o.cons.map(s=>'<li>'+s+'</li>').join('');
+ $('fact').textContent=o.fact+' 這う道 '+o.m.d.toFixed(1)+' m、約 '+Math.round(o.m.t)+' 秒（1.2 m/s'+(o.id==='deck'?'、釣瓶 4 秒こみ':'')+'）。';
+ try{localStorage.setItem('basketOpt',o.id)}catch(e){}
+ t0=performance.now()}
+const ease=x=>x<0?0:x>1?1:(x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2),cl=x=>x<0?0:x>1?1:x;
+// position along the route after `sec` seconds of crawling (lift segments take LIFT_T)
+function along(P,sec){let t=0;for(let i=1;i<P.length;i++){const a=P[i-1],b=P[i],lift=a.lift&&b.lift,dur=lift?LIFT_T:a.p.distanceTo(b.p)/CRAWL;if(sec<=t+dur){const k=dur?(sec-t)/dur:1;return {p:new THREE.Vector3().lerpVectors(a.p,b.p,k),d:b.p.clone().sub(a.p)}}t+=dur}const n=P.length;return {p:P[n-1].p.clone(),d:P[n-1].p.clone().sub(P[n-2].p),end:true}}
+function setBird(p,dir,now){bird.position.copy(p);if(dir&&dir.lengthSq()>1e-6)bird.lookAt(p.clone().add(dir));const f=Math.sin(now*.012);wings.forEach(w=>w.p.rotation.z=w.sd*(.15+.45*f))}
+function hang(on){rope.visible=on;if(on){const a=rope.geometry.attributes.position;a.setXYZ(0,bird.position.x,bird.position.y-.3,bird.position.z);a.setXYZ(1,basket.position.x,basket.position.y+.4,basket.position.z);a.needsUpdate=true}}
+function apply(t,now){const o=OPTS[cur],P=o.m.P,fly=5;let ph='';
+ if(t<fly){const u=ease(t/fly),p=inCurve.getPoint(u);setBird(p,inCurve.getTangent(u),now);basket.position.copy(p).add(new THREE.Vector3(0,-HOLD,0));hang(true);
+  slugs.forEach((s,i)=>{s.position.copy(basket.position).add(new THREE.Vector3(slots[i][0],.12,slots[i][1]));s.rotation.y=i});ph='海の向こうから、籠をつかんで帰ってくる'}
+ else{basket.position.copy(o.spot);hang(t<fly+.6);const up=o.spot.clone().add(new THREE.Vector3(0,HOLD+Math.min(6,(t-fly-.6)*2.5),0));setBird(t<fly+.6?o.spot.clone().add(new THREE.Vector3(0,HOLD,0)):up,new THREE.Vector3(0,.4,1),now);
+  let done=true;slugs.forEach((s,i)=>{const sec=t-fly-.8-i*.45;if(sec<0){s.position.copy(o.spot).add(new THREE.Vector3(slots[i][0],.12,slots[i][1]));done=false;return}const a=along(P,sec);if(!a.end)done=false;s.position.copy(a.p).add(new THREE.Vector3((i%2?.22:-.22),0,(i<2?.22:-.22)));s.rotation.y=Math.atan2(a.d.x,a.d.z)});
+  ph=done?'地図の台に着いた。バッグを広げる':'籠から降りて、地図の台へ這う'}
+ $('phase').textContent=ph;const crawl=Math.max(0,t-fly-.8);$('clk').textContent=t<fly?'飛んでくる '+t.toFixed(1)+' 秒':'這い始めてから '+Math.min(crawl,o.m.t).toFixed(1)+' 秒'}
+// camera
+const SIDE={tx:-1.5,ty:3.4,tz:5.5,r:26,th:-.5,ph:1.0},TOP={tx:-1,ty:3,tz:5,r:34,th:0,ph:.05};
+let Vw=Object.assign({},SIDE);const cam=()=>{C.position.set(Vw.tx+Vw.r*Math.sin(Vw.ph)*Math.sin(Vw.th),Vw.ty+Vw.r*Math.cos(Vw.ph),Vw.tz+Vw.r*Math.sin(Vw.ph)*Math.cos(Vw.th));C.lookAt(Vw.tx,Vw.ty,Vw.tz)};
+function view(v){Vw=Object.assign({},v==='top'?TOP:SIDE);$('vSide').classList.toggle('on',v!=='top');$('vTop').classList.toggle('on',v==='top')}
+$('vSide').onclick=()=>view('side');$('vTop').onclick=()=>view('top');$('replay').onclick=()=>{t0=performance.now()};
+const zoom=f=>{Vw.r=Math.max(5,Math.min(90,Vw.r*f))};$('zin').onclick=()=>zoom(.8);$('zout').onclick=()=>zoom(1.25);
+let drag=null;W.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY};W.setPointerCapture(e.pointerId);W.style.cursor='grabbing'});W.addEventListener('pointermove',e=>{if(!drag)return;Vw.th-=(e.clientX-drag.x)*.008;Vw.ph=Math.max(.05,Math.min(1.55,Vw.ph-(e.clientY-drag.y)*.006));drag={x:e.clientX,y:e.clientY}});W.addEventListener('pointerup',()=>{drag=null;W.style.cursor='grab'});W.addEventListener('pointercancel',()=>{drag=null});W.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY>0?1.1:.9)},{passive:false});
+function size(){const w=W.clientWidth,h=W.clientHeight;if(!w||!h)return;R.setSize(w,h,false);C.aspect=w/h;C.updateProjectionMatrix()}new ResizeObserver(size).observe(W);size();
+const v3=new THREE.Vector3();function place(){const w=W.clientWidth,h=W.clientHeight;labels.forEach(l=>{v3.copy(l.p).project(C);if(v3.z>1){l.d.hidden=true;return}l.d.hidden=false;l.d.style.left=((v3.x+1)/2*w).toFixed(1)+'px';l.d.style.top=((1-v3.y)/2*h).toFixed(1)+'px'})}
+const reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function tick(now){const o=OPTS[cur],end=5+.8+o.m.t+1.4+2.5;let t=(now-t0)/1000;if(reduce)t=end;if(t>end+1.5&&!reduce){t0=now;t=0}apply(Math.min(t,end),now);boat.position.y=.25+Math.sin(now*.0015)*.05;cam();R.render(S,C);place();requestAnimationFrame(tick)}
+let start=0;try{const s=localStorage.getItem('basketOpt');const k=OPTS.findIndex(o=>o.id===s);if(k>=0)start=k}catch(e){}
+select(start);requestAnimationFrame(tick);
+}catch(e){const el=document.getElementById('err');el.hidden=false;el.textContent='3D を表示できませんでした：'+e.message;}
+</script>

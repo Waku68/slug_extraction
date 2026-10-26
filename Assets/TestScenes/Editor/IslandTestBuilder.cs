@@ -24,7 +24,7 @@ namespace SlugExtract
         static float _width = 1500f;
         static float S => _width / IslandWidth;
         static string Suffix => _width >= IslandWidth ? "" : $"_{_width:0}";
-        static string ScenePath => $"Assets/Scenes/IslandTest{Suffix}.unity";
+        static string ScenePath => $"Assets/Scenes/Tests/IslandTest{Suffix}.unity";
         static string TerrainPath => $"{MoveTestBuilder.GenDir}/IslandTest{Suffix}_Terrain.asset";
         // ---- 数字（m）。変えたら Slug/IslandTest Build Scene で作り直す（手で直した地形は消える。docs/tech/island_test_notes.md）
         const float IslandWidth = 1500f;                       // 島の東西の幅（下の数字はこの幅のとき。小さい島は全部が同じ割合で縮む）

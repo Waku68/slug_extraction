@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: SlugMoveSettings
   m_EditorClassIdentifier: Assembly-CSharp::SlugMove.SlugMoveSettings
   maxSpeed: 1.2
-  acceleration: 1.5
-  deceleration: 0.3
-  slideTime: 0.5
+  acceleration: 7
+  deceleration: 1.4
+  slideTime: 0.2
   strafeMultiplier: 0.6
   backwardMultiplier: 0.5
   bodyTurnSpeed: 120
@@ -32,23 +32,29 @@ MonoBehaviour:
   uprightAmount: 1
   stepHeight: 0.15
   climbHeight: 0.45
-  climbSpeed: 0.3
+  climbSpeed: 0.7
   climbTilt: 50
   lungeChargeTime: 0.4
-  lungeQuickTime: 0.15
-  lungeQuickPower: 0.8
-  lungeTapCharge: 0.1
+  lungeQuickTime: 0.25
+  lungeQuickPower: 1
+  lungeTapCharge: 0.25
   lungeSpeedMin: 1.6
   lungeSpeedMax: 3.3
   lungeUp: 1.15
-  lungeCooldown: 0.7
+  lungeCooldown: 0.5
   lungeChargeMove: 0.25
   lungeChargeBrake: 8
   lungeSlideTime: 0.42
   lungeSquash: 0.28
   lungeStretch: 0.3
   lungeSpringHz: 3
-  lungeSpringDamping: 0.35
+  lungeSpringDamping: 0.33
+  lungePressSnap: 0.4
+  lungeSnapHz: 8
+  lungeReleaseHold: 0.04
+  lungeCamKick: 1
+  lungeFovKick: 6
+  lungeSplash: 1
   peekEye: {x: 0.34, y: 0.2, z: -0.2}
   proneSpeed: 0.35
   proneTime: 0.4
@@ -68,3 +74,6 @@ MonoBehaviour:
   stretchFollow: 0.5
   thirdPersonDistance: 1.8
   thirdPersonHeight: 0.45
+  shoulderSide: 0.3
+  shoulderDistance: 0.8
+  shoulderUp: 0.1

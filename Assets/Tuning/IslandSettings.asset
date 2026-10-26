@@ -12,14 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 722deb53b2016274c9a7401d4f077f0d, type: 3}
   m_Name: IslandSettings
   m_EditorClassIdentifier: Assembly-CSharp::SlugWorld.IslandSettings
-  dayHours: 9
+  dayHours: 9.5
   epochUtc: 2026-10-01
   seasonDays: 14
   dryDaylight: 0.62
   rainyDaylight: 0.42
   twilightHours: 0.6
   noonElevation: 70
-  moonCycleHours: 61
+  moonCycleHours: 72
   tideHours: 4.66
   weatherSeed: 1
   weatherScaleHours: 0.6

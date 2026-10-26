@@ -17,7 +17,7 @@ namespace SlugExtract
     /// </summary>
     public static class RegionTestBuilder
     {
-        const string ScenePath = "Assets/Scenes/RegionTest.unity";
+        const string ScenePath = "Assets/Scenes/Tests/RegionTest.unity";
         const string TerrainPath = MoveTestBuilder.GenDir + "/RegionTest_Terrain.asset";
         const float Size = 800f, MaxHeight = 60f;
         const int Res = 513;

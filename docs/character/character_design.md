@@ -34,7 +34,7 @@ v3〜v6 のスクリーンショットは削除した。v1・v2 は全体図だ�
 ## 3. コンポーネントと使い方
 - `SlugPop`：プレハブ `Assets/Slug/Prefabs/Slug_Pop.prefab`。要素別スライダー＋一括スライダー、`bodyStyle`、`eyeKind`。
 - シェーダー `Slug/Toon`：色・模様・うねり・フェルト・縫い目・凹凸・半透明などのパラメータ。
-- 確認用のシーンとスクショ：`Slug` メニューの `Lookbook Build Scene` → `Lookbook Capture Screenshots`（`SlugLookbook`、シーンは `Assets/Scenes/SlugLookbook.unity`）。決定値は `SlugLookbook.ApplyCurrent`。プレハブを作り直すのは `Lookbook Build Prefab`。
+- 確認用のシーンとスクショ：`Slug` メニューの `Lookbook Build Scene` → `Lookbook Capture Screenshots`（`SlugLookbook`、シーンは `Assets/Scenes/Preview/SlugLookbook.unity`）。決定値は `SlugLookbook.ApplyCurrent`。プレハブを作り直すのは `Lookbook Build Prefab`。
 
 ## 4. 残っている論点
 - 輪郭線・陰影の最終値（0.5 にするか、1.0 のままか）。

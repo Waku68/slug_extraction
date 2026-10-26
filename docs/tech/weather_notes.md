@@ -8,7 +8,7 @@ Oct 5, 2026
 
 | 部品 | どこ | すること |
 | --- | --- | --- |
-| `IslandSettings` | `World/`、アセットは `Tuning/IslandSettings.asset` | 1日の長さ（9時間）、時計の起点（UTC）、季節の長さ（仮 14日）、昼の長さ（乾季 0.62・雨季 0.42）、朝夕の長さ、月と潮の周期（仮）、天気の種、区画ごとの雨の多さ |
+| `IslandSettings` | `World/`、アセットは `Tuning/IslandSettings.asset` | 1日の長さ（9.5時間）、時計の起点（UTC）、季節の長さ（仮 14日）、昼の長さ（乾季 0.62・雨季 0.42）、朝夕の長さ、月の周期（72時間）と潮の周期、天気の種、区画ごとの雨の多さ |
 | `IslandClock` | `World/IslandClock.cs` | 現実の時刻（起点からの時間）だけから、島の時刻・季節・太陽の向き・昼夜・朝夕・月・潮を計算する。状態を持たない |
 | `IslandWeather` | 同じファイル | 現実の時刻と区画から、雨の強さ・雲・空（晴れ・曇り・小雨・大雨）を計算する。予報（何時間先まで、何時間ごと）も出せる |
 | `WeatherPresenter` | `World/WeatherPresenter.cs` | 場面に1つ。光（太陽・月）、朝夕の色、曇り、空の色、霧、雨のつぶを、時刻と天気で動かす。`WeatherPresenter.Current` からほかが今の時刻と天気を読む |

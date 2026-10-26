@@ -43,8 +43,8 @@ namespace SlugWorld
 
         [Header("体力")]
         [Tooltip("満タン")] public float healthMax = 100f;
-        [Tooltip("湿り気がこれ以上あると、体力がほんの少しずつ戻る")] public float regenAbove = 60f;
-        [Tooltip("戻る速さ（1分あたり）")] public float regenPerMinute = 6f;
+        [Tooltip("湿り気がこれ以上あると、体力がだんだん戻る")] public float regenAbove = 70f;
+        [Tooltip("倒れる寸前から満タンまで戻る秒数（180 = 3分）")] public float regenSecondsToFull = 180f;
         [Tooltip("戻るときに使う湿り気（1分あたり）")] public float regenMoistureCost = 3f;
     }
 }

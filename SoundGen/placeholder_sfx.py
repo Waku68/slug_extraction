@@ -250,6 +250,60 @@ def gun_fire(rng, v, length=0.25, low=600, high=7000, pop=900, body=0.4):
     return mix(hiss, p, click * 0.8)
 
 
+def gun_fire_rifle(rng, v):
+    """塩のアサルトライフル（わくさん指定）：短く軽い「ボッ」＋粒度細かく小さな「さらさら…」が0.50秒でフェードアウト。"""
+    total_dur = 0.50
+    p_mul = 2.0 ** ((0.8 + 0.4 * v) / 12.0)
+    lightness = 1.25
+
+    # 1. 短く軽い「ボッ」（約35msでスッと抜ける低中音パフ）
+    d_bo = 0.042
+    t_bo = t_axis(d_bo)
+    raw_n = rng.standard_normal(len(t_bo))
+    f_core = (215.0 * np.exp(-t_bo / 0.0065) + 105.0) * p_mul * lightness
+    wob = biquad(rng.standard_normal(len(t_bo)), "lp", 140.0, q=0.7) * 0.22
+    ph = 2.0 * np.pi * np.cumsum(f_core * (1.0 + wob)) / SR
+    core = np.sin(ph) * env(d_bo, 0.0005, 0.0072 / lightness, hold=0.0008)
+    puff_low = biquad(raw_n, "band", 185.0 * p_mul * lightness, q=1.5) * env(d_bo, 0.0005, 0.0085 / lightness)
+    puff_bo1 = biquad(raw_n, "band", (390.0 * np.exp(-t_bo / 0.007) + 245.0) * p_mul * lightness, q=1.8) * env(d_bo, 0.0004, 0.0075 / lightness)
+    puff_bo2 = biquad(raw_n, "band", (760.0 * np.exp(-t_bo / 0.0055) + 460.0) * p_mul * lightness, q=2.0) * env(d_bo, 0.0003, 0.0060 / lightness)
+    bo = core * 0.65 + puff_low * 0.85 + puff_bo1 * 1.25 + puff_bo2 * 0.65
+    bo = biquad(biquad(bo, "hp", 98.0 * lightness), "lp", 1350.0 * p_mul, q=0.75)
+    bo = np.tanh(bo * 1.35)
+    bo /= np.max(np.abs(bo)) or 1.0
+
+    # 2. 粒度細かく小さな「さらさら…」（0.50秒でフェードアウト）
+    start_sec = 0.016
+    dur_sara = total_dur - start_sec
+    n_sara = int(round(SR * dur_sara))
+    sara = np.zeros(n_sara, dtype=float)
+    t_s = np.arange(n_sara) / SR
+    for bt in np.linspace(0.0, dur_sara - 0.006, 145):
+        g_time = float(np.clip(bt + rng.uniform(-0.0022, 0.0022), 0.0, dur_sara - 0.003))
+        prog = g_time / dur_sara
+        if rng.random() < 0.38 * (prog ** 1.4):
+            continue
+        g_len = max(5, int(SR * rng.uniform(0.00025, 0.00058)))
+        g_raw = rng.standard_normal(g_len) * np.exp(-np.linspace(0.0, 3.8, g_len))
+        f_g = rng.uniform(5200.0, 12200.0) * (1.0 - 0.15 * prog) * p_mul
+        grain = biquad(g_raw, "band", f_g, q=rng.uniform(4.2, 7.5))
+        idx = int(round(g_time * SR))
+        end = min(n_sara, idx + g_len)
+        sara[idx:end] += grain[: end - idx] * rng.uniform(0.35, 1.0)
+        if rng.random() < 0.55 and g_time + 0.0012 < dur_sara - 0.002:
+            idx2 = int(round((g_time + rng.uniform(0.0006, 0.0014)) * SR))
+            end2 = min(n_sara, idx2 + g_len)
+            sara[idx2:end2] += grain[: end2 - idx2] * rng.uniform(0.3, 0.6)
+    norm_t = np.clip(t_s / dur_sara, 0.0, 1.0)
+    fade_out = np.exp(-norm_t * 2.2) * (0.5 * (1.0 + np.cos(np.pi * (norm_t ** 1.1))))
+    ripple = 0.72 + 0.28 * np.sin(2.0 * np.pi * 16.0 * t_s - 0.5)
+    sara *= (np.clip(t_s / 0.020, 0.0, 1.0) ** 1.2) * fade_out * ripple
+    sara = biquad(biquad(sara, "hp", 4200.0 * p_mul), "lp", 13800.0)
+    sara /= np.max(np.abs(sara)) or 1.0
+
+    return pad(mix(bo, at(sara * 0.055, start_sec)), total_dur)
+
+
 def gun_cue(rng, v, f=1800, d=0.08, metal=True):
     c = biquad(noise(0.01, rng), "band", f, q=3) * env(0.01, 0.0003, 0.003)
     ring = tone(d, f * 1.3) * env(d, 0.0005, 0.015) * (0.4 if metal else 0.1)
@@ -291,15 +345,32 @@ def slug_hurt(rng, v):
     return voice
 
 
+def slug_squeeze(rng, v):
+    """押した瞬間に縮む：むにっ（すぐ）、そのまま押していると体が締まっていく、ぎゅうう（離すと途中で切れる）。"""
+    d = 0.6
+    t = t_axis(d)
+    squish = biquad(noise(0.05, rng), "lp", 700 + 200 * v) * env(0.05, 0.002, 0.018)
+    knock = tone(0.06, 150 + 15 * v, 95) * env(0.06, 0.001, 0.02) * 0.7
+    # the tightening: a rubbery creak (stick-slip) whose pitch and grain rise as it is held
+    f = (105 + 10 * v) * (2.1 ** np.clip(t / 0.45, 0, 1))
+    ph = 2 * np.pi * np.cumsum(f) / SR
+    creak = np.sign(np.sin(ph)) * (0.5 + 0.5 * np.sin(2 * np.pi * (28 + 20 * t / d) * t)) ** 3
+    creak = biquad(creak, "band", 650 + 700 * np.clip(t / 0.45, 0, 1), q=1.4)
+    wet = biquad(noise(d, rng), "band", 500 + 500 * t / d, q=2.5) * 0.25
+    swell = np.clip(t / 0.3, 0, 1) ** 1.5 * np.clip((d - t) / 0.08, 0, 1)
+    return mix(squish * 1.3, knock, (creak * 0.55 + wet) * swell * 0.7)
+
+
 def slug_lunge(rng, v):
-    """縮んで伸びる：むにゅっと縮んで、びよーんと伸びる。"""
+    """離して伸びる：ぽんっ（吸いついていた体が離れる）、びよーんと伸びる。縮む音は slug_squeeze。"""
     d = 0.3
     t = t_axis(d)
-    squelch = biquad(noise(0.08, rng), "lp", 900 + 300 * v) * env(0.08, 0.004, 0.025)
-    f = (190 + 20 * v) * (520 / 190) ** np.clip(t / 0.18, 0, 1) * (1 + 0.06 * np.sin(2 * np.pi * 18 * t))
+    pop = tone(0.035, 420 + 30 * v, 140) * env(0.035, 0.001, 0.012)
+    smack = biquad(noise(0.03, rng), "lp", 2200 + 400 * v) * env(0.03, 0.0005, 0.006)
+    f = (210 + 20 * v) * (560 / 210) ** np.clip(t / 0.16, 0, 1) * (1 + 0.06 * np.sin(2 * np.pi * 18 * t))
     ph = 2 * np.pi * np.cumsum(f) / SR
-    boing = (np.sin(ph) + 0.25 * np.sin(2 * ph)) * env(d, 0.03, 0.09, hold=0.04) * 0.5
-    return mix(squelch * 1.2, at(boing, 0.03))
+    boing = (np.sin(ph) + 0.25 * np.sin(2 * ph)) * env(d, 0.012, 0.08, hold=0.03) * 0.5
+    return mix(pop * 1.1, smack * 0.9, at(boing, 0.01))
 
 
 def slug_land(rng, v):
@@ -350,7 +421,7 @@ SOUNDS = {
     "bag_peek": (bag_peek, 1),
     "bag_down": (bag_down, 1),
     "bag_up": (bag_up, 1),
-    "gun_fire_rifle": (lambda r, v: gun_fire(r, v, 0.22, 700, 6500, 950, 0.35), 2),
+    "gun_fire_rifle": (gun_fire_rifle, 2),
     "gun_fire_pistol": (lambda r, v: gun_fire(r, v, 0.16, 900, 7500, 1200, 0.3), 1),
     "gun_fire_shotgun": (lambda r, v: gun_fire(r, v, 0.38, 400, 5000, 520, 0.6), 1),
     "gun_fire_sniper": (lambda r, v: gun_fire(r, v, 0.5, 300, 8000, 380, 0.8), 1),
@@ -363,6 +434,7 @@ SOUNDS = {
     "knife_stab": (knife_stab, 1),
     "slug_hurt": (slug_hurt, 2),
     "tool_switch": (tool_switch, 1),
+    "slug_squeeze": (slug_squeeze, 2),
     "slug_lunge": (slug_lunge, 2),
     "slug_land": (slug_land, 2),
     "bag_rattle": (bag_rattle, 2),

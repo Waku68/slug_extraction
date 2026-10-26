@@ -5,8 +5,8 @@ using UnityEngine.InputSystem;
 namespace SlugMove
 {
     /// <summary>
-    /// Eyes of the slug. First person sits on the face and sways with the crawl wave; V switches to a
-    /// third-person orbit to check the body. Blows shake it (<see cref="Shake"/>).
+    /// Eyes of the slug. First person sits on the face and sways with the crawl wave; V steps on to a
+    /// third-person orbit to check the body, then to one over the right shoulder (<see cref="shoulder"/>), then back. Blows shake it (<see cref="Shake"/>).
     /// Esc frees the cursor, a click locks it again.
     /// </summary>
     public class SlugCameraRig : MonoBehaviour
@@ -16,6 +16,8 @@ namespace SlugMove
         public SlugPop slug;
         public Camera cam;
         public bool thirdPerson;
+        /// <summary>In third person: over the right shoulder (closer, the body on the left of the view) instead of straight behind.</summary>
+        public bool shoulder;
         /// <summary>Magnification (a scope sets it): narrows the view and slows the look to match. 1 = none.</summary>
         [System.NonSerialized] public float zoom = 1f;
         /// <summary>Turned by something else (a bot, later the network) through <see cref="SetLook"/>: no mouse, no cursor lock.</summary>
@@ -51,11 +53,16 @@ namespace SlugMove
         InputAction _look;
         Material _bodyMat;
         float _shakeAmp, _shakeTime, _shakeDuration;
+        // shrink and stretch: a springy offset of the eyes (right, up, forward of the look, m) and their pitch (+ = down),
+        // and the field of view (narrowed while charging, flung wide by the stretch)
+        Vector3 _kickPos, _kickPosV;
+        float _kickPitch, _kickPitchV, _fovAdd, _fovPunch;
 
         void OnEnable()
         {
             _look = InputSystem.actions != null ? InputSystem.actions.FindAction("Player/Look") : null;
             _look?.Enable();
+            if (controller) { controller.Squeezed += OnSqueezed; controller.Lunged += OnLunged; controller.Landed += OnLanded; }
         }
 
         void Start()
@@ -68,7 +75,62 @@ namespace SlugMove
             cam.cullingMask |= 1 << SlugToolHolder.BodyToolLayer;
         }
 
-        void OnDisable() { if (!driven) LockCursor(false); }
+        void OnDisable()
+        {
+            if (!driven) LockCursor(false);
+            if (controller) { controller.Squeezed -= OnSqueezed; controller.Lunged -= OnLunged; controller.Landed -= OnLanded; }
+        }
+
+        // ------------------------------------------------------------------ shrink and stretch
+        /// <summary>The press: the eyes dip and nod a little at once.</summary>
+        void OnSqueezed()
+        {
+            float k = settings.lungeCamKick;
+            _kickPosV.y -= 0.6f * k;
+            _kickPitchV += 45f * k;
+        }
+
+        /// <summary>The stretch: the view widens for a moment, the eyes trail a few cm behind and lift a little.</summary>
+        void OnLunged(float charge)
+        {
+            float k = settings.lungeCamKick, a = Mathf.Lerp(0.4f, 1f, charge);
+            _kickPosV.z -= 2.5f * k * a;
+            _kickPitchV -= 60f * k * a;
+            _fovPunch = Mathf.Max(_fovPunch, settings.lungeFovKick * k * a);
+            _fovAdd = Mathf.Max(_fovAdd, 0f);       // the narrowing of the charge lets go at once
+        }
+
+        /// <summary>Landing: the eyes sink and nod, and bounce back.</summary>
+        void OnLanded()
+        {
+            float k = settings.lungeCamKick;
+            _kickPosV.y -= 1f * k;
+            _kickPitchV += 60f * k;
+        }
+
+        /// <summary>Steps the kick springs (on 1/240 s steps: stiff springs blow up on a long frame).</summary>
+        void StepKick(float dt)
+        {
+            float k = settings.lungeCamKick, charge = controller ? controller.LungeCharge : 0f;
+            bool charging = controller && controller.Charging;
+            // while shrinking: a little lower and nodding, and the view narrows as it charges
+            Vector3 posTarget = charging ? new Vector3(0f, -0.012f * k * (0.4f + 0.6f * charge), 0f) : Vector3.zero;
+            float pitchTarget = charging ? 0.8f * k * charge : 0f;
+            float w = 2f * Mathf.PI * 7f, z = 0.45f;
+            int n = Mathf.Clamp(Mathf.CeilToInt(dt * 240f), 1, 16);
+            for (int i = 0; i < n; i++)
+            {
+                float h = dt / n;
+                _kickPosV += (w * w * (posTarget - _kickPos) - 2f * z * w * _kickPosV) * h;
+                _kickPos += _kickPosV * h;
+                _kickPitchV += (w * w * (pitchTarget - _kickPitch) - 2f * z * w * _kickPitchV) * h;
+                _kickPitch += _kickPitchV * h;
+            }
+            // the punch comes at once and eases back
+            _fovPunch *= Mathf.Exp(-dt / 0.25f);
+            float fovTarget = -2.5f * k * charge + _fovPunch;
+            _fovAdd = Mathf.Lerp(_fovAdd, fovTarget, 1f - Mathf.Exp(-dt * (fovTarget > _fovAdd ? 60f : 12f)));
+        }
 
         static void LockCursor(bool on)
         {
@@ -105,7 +167,13 @@ namespace SlugMove
             if (driven) return;
             var kb = Keyboard.current;
             var mouse = Mouse.current;
-            if (kb != null && kb.vKey.wasPressedThisFrame) thirdPerson = !thirdPerson;
+            if (kb != null && kb.vKey.wasPressedThisFrame)
+            {
+                // first person -> behind -> right shoulder -> first person
+                if (!thirdPerson) { thirdPerson = true; shoulder = false; }
+                else if (!shoulder) shoulder = true;
+                else { thirdPerson = false; shoulder = false; }
+            }
             if (cursorFree)
             {
                 if (Cursor.lockState != CursorLockMode.None) LockCursor(false);
@@ -131,8 +199,9 @@ namespace SlugMove
                 foreach (var r in slug.GetComponentsInChildren<MeshRenderer>(true))
                     if (r.name == "Body") { _bodyMat = r.sharedMaterial; break; }
             }
+            StepKick(dt);
             cam.fieldOfView = zoom > 1.001f && !thirdPerson
-                ? 2f * Mathf.Atan(Mathf.Tan(s.fieldOfView * 0.5f * Mathf.Deg2Rad) / zoom) * Mathf.Rad2Deg : s.fieldOfView;
+                ? 2f * Mathf.Atan(Mathf.Tan(s.fieldOfView * 0.5f * Mathf.Deg2Rad) / zoom) * Mathf.Rad2Deg : s.fieldOfView + _fovAdd;
             Quaternion look = Quaternion.Euler(_pitch, Yaw, 0f);
             Vector3 pos;
             Quaternion rot;
@@ -140,8 +209,23 @@ namespace SlugMove
             if (thirdPerson)
             {
                 Vector3 pivot = controller.transform.position + Vector3.up * s.thirdPersonHeight;
-                Vector3 back = look * Vector3.back;
                 float dist = s.thirdPersonDistance;
+                if (shoulder)
+                {
+                    // move the pivot out to the right first, stopping short of a wall
+                    Vector3 right = Quaternion.Euler(0f, Yaw, 0f) * Vector3.right;
+                    float side = s.shoulderSide;
+                    if (Physics.SphereCast(pivot, 0.1f, right, out var sideHit, side, SlugHitboxes.WorldMask, QueryTriggerInteraction.Ignore))
+                        side = Mathf.Max(0f, sideHit.distance);
+                    pivot += right * side;
+                    // and up, so the camera looks down over the body a little
+                    float up = s.shoulderUp;
+                    if (Physics.SphereCast(pivot, 0.1f, Vector3.up, out var upHit, up, SlugHitboxes.WorldMask, QueryTriggerInteraction.Ignore))
+                        up = Mathf.Max(0f, upHit.distance);
+                    pivot += Vector3.up * up;
+                    dist = s.shoulderDistance;
+                }
+                Vector3 back = look * Vector3.back;
                 if (Physics.SphereCast(pivot, 0.1f, back, out var hit, dist, SlugHitboxes.WorldMask, QueryTriggerInteraction.Ignore))
                     dist = Mathf.Max(0.2f, hit.distance);
                 pos = pivot + back * dist;
@@ -186,6 +270,10 @@ namespace SlugMove
                 pos = Vector3.Lerp(pos, over, w);
                 rot = Quaternion.Slerp(rot, peekRot, w);
             }
+
+            // ---- shrink and stretch
+            pos += rot * _kickPos;
+            rot *= Quaternion.Euler(_kickPitch, 0f, 0f);
 
             // ---- shake: a few millimetres and a degree at most, fading out quickly
             if (_shakeTime < _shakeDuration)

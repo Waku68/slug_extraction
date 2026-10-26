@@ -53,7 +53,8 @@ namespace SlugMove
 
         public GunHandling Handling => _handling;
         /// <summary>The spread right now (cone half-angle, degrees), crawling and the scope included.</summary>
-        public float CurrentSpread => (_handling.Spread + gun.moveSpread * controller.Speed01) * Mathf.Lerp(1f, gun.scopeSpread, _handling.Scope);
+        public float CurrentSpread => (_handling.Spread + gun.moveSpread * controller.Speed01)
+                                      * Mathf.Lerp(1f, gun.scopeFov > 0f ? gun.scopeSpread : gun.sightSpread, _handling.Scope);
         /// <summary>Where the gun points (world): the point under the crosshair, not closer than minAimDistance.</summary>
         public Vector3 AimPoint { get; private set; }
         public Vector3 MuzzleWorld => _bodyMuzzle;
@@ -100,7 +101,8 @@ namespace SlugMove
             UnityEngine.Rendering.RenderPipelineManager.beginCameraRendering -= OnBeginCamera;
             if (!_ready) return;
             _recoverPitch = _recoverYaw = 0f;
-            if (controller) controller.leanDegrees = 0f;
+            if (controller) { controller.leanDegrees = 0f; controller.aiming = 0f; }
+            if (slug) slug.SetWink(0f);
             if (cameraRig) cameraRig.zoom = 1f;
             Show(false);
         }
@@ -194,6 +196,7 @@ namespace SlugMove
         public void Simulate(float dt, bool trigger, bool reload, bool aim = false)
         {
             _handling.settings = gun;
+            _handling.sights = _gun.HasSights;
             if (reload && _handling.EquipLinear >= 1f) _handling.StartReload();
             Recover(dt);
             int n = Mathf.Clamp(Mathf.CeilToInt(dt / SubStep), 1, 32);
@@ -203,9 +206,12 @@ namespace SlugMove
                 while (_handling.TryFire(trigger)) FireRound();
             }
             controller.leanDegrees = _handling.Lean;
-            // the scope narrows the view (and slows the look to match)
+            controller.aiming = _handling.Scope;
+            if (slug) slug.SetWink(_handling.Scope);              // one eye shut while looking along it (everyone sees it)
+            // the scope narrows the view (and slows the look to match); the iron sights a little
             float zoom = gun.scopeFov > 0f
-                ? Mathf.Tan(cameraRig.settings.fieldOfView * 0.5f * Mathf.Deg2Rad) / Mathf.Tan(gun.scopeFov * 0.5f * Mathf.Deg2Rad) : 1f;
+                ? Mathf.Tan(cameraRig.settings.fieldOfView * 0.5f * Mathf.Deg2Rad) / Mathf.Tan(gun.scopeFov * 0.5f * Mathf.Deg2Rad)
+                : _gun.HasSights ? Mathf.Max(gun.sightZoom, 1f) : 1f;
             cameraRig.zoom = Mathf.Lerp(1f, zoom, _handling.Scope);
             _expectedPitch = cameraRig.Pitch;
         }
@@ -308,7 +314,8 @@ namespace SlugMove
 
             // ---- the bore (above the butt) points at it, following the eyes a little late
             Quaternion body = Root.rotation;
-            Vector3 shoulder = slug.HandRootWorld(1f) + body * s.buttOffset;
+            // looking along the iron sights brings the butt up toward the cheek
+            Vector3 shoulder = slug.HandRootWorld(1f) + body * (s.buttOffset + (_gun.HasSights && s.scopeFov <= 0f ? s.sightButtOffset * h.Scope : Vector3.zero));
             Vector3 want = AimPoint - (shoulder + Quaternion.Euler(_aimPitch, _aimYaw, 0f) * new Vector3(0f, boreY, 0f));
             float wantYaw = Mathf.Atan2(want.x, want.z) * Mathf.Rad2Deg;
             float wantPitch = -Mathf.Atan2(want.y, new Vector2(want.x, want.z).magnitude) * Mathf.Rad2Deg;
@@ -382,7 +389,7 @@ namespace SlugMove
             //      the crosshair, lagging and kicking exactly as the body's gun. Low and ready it dips less, so it stays
             //      in view. The whole thing is drawn shrunk toward the eye (the same on screen, but reaching far less
             //      into walls) and pulled back when a wall is closer than the muzzle.
-            bool scopedIn = h.Scope > 0.97f;
+            bool scopedIn = s.scopeFov > 0f && h.Scope > 0.97f;      // through a scope the gun is not seen (iron sights: it is)
             _viewGun.gameObject.SetActive(firstPerson && !scopedIn);
             _arms.ShowView(firstPerson && !scopedIn);
             if (!firstPerson || scopedIn) { _viewMuzzle = _bodyMuzzle; return; }
@@ -405,9 +412,11 @@ namespace SlugMove
             }
             if (h.Scope > 0f)
             {
-                // the scope comes up to the eye: straight ahead, still kicked by the recoil
+                // the scope (or the line over the iron sights) comes up to the eye: straight ahead, still kicked by the recoil
                 Quaternion rotA = Quaternion.Euler(-h.Pitch, h.Yaw, h.Roll);
-                Vector3 posA = new Vector3(0f, 0f, s.scopeEyeRelief) - rotA * _viewGun.ScopeEyeLocal - rotA * Vector3.forward * h.Kick;
+                Vector3 posA = s.scopeFov > 0f
+                    ? new Vector3(0f, 0f, s.scopeEyeRelief) - rotA * _viewGun.ScopeEyeLocal - rotA * Vector3.forward * h.Kick
+                    : -(rotA * _viewGun.SightEyeLocal) - rotA * Vector3.forward * h.Kick;
                 float w = h.Scope;
                 rotV = Quaternion.Slerp(poseV.rotation, rotA, w);
                 poseV = new ToolPose { position = Vector3.Lerp(poseV.position, posA, w), rotation = rotV };
@@ -434,6 +443,7 @@ namespace SlugMove
             Vector3 Map(Vector3 local) => poseV.Point(local) * sc + offset;                    // gun space → drawn
             Vector3 MapBody(Vector3 world) => toCam * (world - camPos) * sc;                   // the real body → drawn
 
+            _viewGun.SetSighting(s.scopeFov > 0f ? 0f : h.Scope);
             _viewGun.Pose(h, s, out var rightV, out var leftV);
             Place(_viewGun, poseV.position * sc + offset, rotV, Vector3.one * sc, ammo, flash, true);
             _viewMuzzle = cam.transform.TransformPoint(Map(_viewGun.MuzzleLocal));
@@ -511,14 +521,14 @@ namespace SlugMove
             var h = _handling;
             float w = Screen.width, hgt = Screen.height, cx = w * 0.5f, cy = hgt * 0.5f;
             var old = GUI.color;
-            if (!cameraRig.ShowsBody && h.Scope > 0.97f) DrawScope(w, hgt, cx, cy - h.Pitch * hgt * 0.01f);
+            if (!cameraRig.ShowsBody && gun.scopeFov > 0f && h.Scope > 0.97f) DrawScope(w, hgt, cx, cy - h.Pitch * hgt * 0.01f);
             else if (!cameraRig.ShowsBody)
             {
                 // a shotgun shows where its grains will scatter, the others how far a round may stray
                 float spread = CurrentSpread + (gun.pellets > 1 ? gun.pelletSpread : 0f);
                 float half = cameraRig.cam.fieldOfView * 0.5f * Mathf.Deg2Rad;
                 float gap = Mathf.Tan(spread * Mathf.Deg2Rad) / Mathf.Tan(half) * hgt * 0.5f + 3f;
-                GUI.color = new Color(1f, 1f, 1f, 0.85f);
+                GUI.color = new Color(1f, 1f, 1f, 0.85f * (1f - h.Scope));      // looking along the sights, the front post is the aim
                 var tex = Texture2D.whiteTexture;
                 GUI.DrawTexture(new Rect(cx + gap, cy - 1f, 9f, 2f), tex);
                 GUI.DrawTexture(new Rect(cx - gap - 9f, cy - 1f, 9f, 2f), tex);

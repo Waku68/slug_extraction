@@ -13,7 +13,7 @@ namespace SlugExtract
     public static class ExtractTestBuilder
     {
         const string SettingsPath = MoveTestBuilder.TuningDir + "/ExtractSettings.asset";
-        const string ScenePath = "Assets/Scenes/ExtractTest.unity";
+        const string ScenePath = "Assets/Scenes/Tests/ExtractTest.unity";
 
         static ExtractSettings _settings;
         static Material _salt, _saltDark, _leaf, _root, _dryGround, _wetGround, _exitMat;

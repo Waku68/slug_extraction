@@ -34,6 +34,6 @@ MonoBehaviour:
   mossUseSeconds: 2
   mossRefillSeconds: 3
   healthMax: 100
-  regenAbove: 60
-  regenPerMinute: 6
+  regenAbove: 70
+  regenSecondsToFull: 180
   regenMoistureCost: 3

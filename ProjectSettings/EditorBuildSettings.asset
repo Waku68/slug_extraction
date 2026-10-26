@@ -35,5 +35,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/IslandTest_800.unity
     guid: cac2a5ae285b95848bb637a5193cffd3
+  - enabled: 1
+    path: Assets/Scenes/CenoteBase.unity
+    guid: c372132aa15215c4799123f4c71a00aa
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 289c1b55c9541489481df5cc06664110, type: 3}

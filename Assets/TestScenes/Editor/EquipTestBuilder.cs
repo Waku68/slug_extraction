@@ -11,7 +11,7 @@ namespace SlugMove
     /// </summary>
     public static class EquipTestBuilder
     {
-        const string ScenePath = "Assets/Scenes/EquipTest.unity";
+        const string ScenePath = "Assets/Scenes/Tests/EquipTest.unity";
 
         [MenuItem("Slug/EquipTest Build Scene")]
         public static void Build()

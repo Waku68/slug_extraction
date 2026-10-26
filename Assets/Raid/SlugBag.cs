@@ -128,8 +128,9 @@ namespace SlugExtract
                 if (!_shown[i] || !_shown[i].activeSelf) continue;
                 foreach (var r in _shownRenderers[i]) if (r) r.enabled = show;
                 if (!show) continue;
-                // chunky, the same size whatever the thing (easy to tell apart), half sunk in the mouth
-                float size = half.x * (crammed ? 0.8f : 0.65f) * s;
+                // chunky, the same size whatever the thing (easy to tell apart), half sunk in the mouth; no bigger than in
+                // a bag about half full, or a crammed one's would fill the view
+                float size = Mathf.Min(half.x * (crammed ? 0.8f : 0.65f), 0.12f) * s;
                 Vector3 at = crammed
                     ? (i == 0 ? new Vector3(0.05f, 0.45f, 0.1f) : i == 1 ? new Vector3(-0.42f, 0.25f, -0.05f) : new Vector3(0.48f, 0.2f, -0.12f))
                     : (i == 0 ? new Vector3(0.12f, 0.25f, 0.12f) : new Vector3(-0.35f, 0.05f, -0.1f));

@@ -17,7 +17,7 @@ namespace SlugDesign
     {
         public const string PrefabPath = "Assets/Slug/Prefabs/Slug_Pop.prefab";
         public const string Dir = "Assets/Slug/Lookbook";
-        public const string ScenePath = "Assets/Scenes/SlugLookbook.unity";
+        public const string ScenePath = "Assets/Scenes/Preview/SlugLookbook.unity";
         const string ShaderName = "Slug/Toon";
         const float FrozenTime = 0.0f;
 

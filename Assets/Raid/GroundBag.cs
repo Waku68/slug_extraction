@@ -44,7 +44,8 @@ namespace SlugExtract
 
         public BagDef Def => settings.Bag(kind);
         public bool Empty => items.Count == 0;
-        public Vector3 MouthWorld => transform.TransformPoint(new Vector3(0f, _half.y * 2f, 0f));
+        Vector3 _mouth = new Vector3(0f, 0.24f, 0f);
+        public Vector3 MouthWorld => transform.TransformPoint(_mouth);
 
         float Volume { get { float v = 0f; foreach (var i in items) v += settings.Def(i).volume; return v; } }
 
@@ -138,7 +139,8 @@ namespace SlugExtract
             var d = Def;
             float swell = settings.Swell(d, Volume);
             if (kind == BagKind.Eco) swell *= 0.75f;
-            _half = SlugEquipment.BuildLooseBag(_look, bagSize, swell, Mat(d.color), Mat(d.flapColor), Mat(new Color(0.07f, 0.055f, 0.045f)));
+            _half = SlugEquipment.BuildLooseBag(_look, bagSize, swell, Mat(d.color), Mat(d.flapColor), Mat(new Color(0.07f, 0.055f, 0.045f)),
+                                                Mat(new Color(0.22f, 0.16f, 0.11f)), Mat(SlugEquipment.BuckleColor), out _mouth);
             if (_box)
             {
                 _box.center = new Vector3(0f, _half.y, 0f);
@@ -149,8 +151,8 @@ namespace SlugExtract
             {
                 var k = items[items.Count - 1 - i];
                 var v = ItemPickup.Visual(settings, k, _look, true);
-                float size = Mathf.Min(_half.x, _half.z) * (i == 0 ? 1.5f : 1.2f);
-                v.transform.localPosition = new Vector3((i == 0 ? 0.25f : -0.35f) * _half.x, _half.y * 2f, (i == 0 ? 0.1f : -0.2f) * _half.z);
+                float size = Mathf.Min(_half.x, _half.z, 0.08f) * (i == 0 ? 1.5f : 1.2f);
+                v.transform.localPosition = _mouth + new Vector3((i == 0 ? 0.25f : -0.35f) * Mathf.Min(_half.x, 0.2f), 0f, (i == 0 ? 0.1f : -0.2f) * size);
                 v.transform.localRotation = Quaternion.Euler(20f + 30f * i, 40f * i, 10f);
                 v.transform.localScale = Vector3.one * (size * ItemPickup.Scale(k));
             }

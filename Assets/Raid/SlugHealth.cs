@@ -22,7 +22,13 @@ namespace SlugExtract
         /// <summary>Called once when the slug falls, with the cause.</summary>
         public event System.Action<string> Died;
 
-        void Awake() => Current = Max;
+        void Awake()
+        {
+            Current = Max;
+            // the tentacles droop as it runs down; the player sees the salt it cost on the edge of the view
+            if (!GetComponent<SlugTentacles>()) gameObject.AddComponent<SlugTentacles>();
+            if (!GetComponent<SaltCrust>()) gameObject.AddComponent<SaltCrust>();
+        }
 
         public void TakeDamage(float amount, string cause)
         {

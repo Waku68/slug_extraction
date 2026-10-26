@@ -28,7 +28,7 @@ namespace SlugExtract
     /// </summary>
     public static partial class IslandTest800Builder
     {
-        const string ScenePath = "Assets/Scenes/IslandTest_800.unity";
+        const string ScenePath = "Assets/Scenes/Game/IslandTest_800.unity";
         static string TerrainPath => MoveTestBuilder.GenDir + "/IslandTest_800_Terrain.asset";
         const string ShotDir = "Screenshots/Island800";
 

@@ -102,12 +102,12 @@ namespace SlugExtract
             if (!soaking && v > s.moistureMax) v = Mathf.Max(s.moistureMax, v - s.overfillDrain / 60f * dt);
             Value = Mathf.Clamp(v, 0f, cap);
 
-            // health: back very slowly while moist enough (using a little of it); away while dried out
+            // health: back little by little while moist enough (using a little of it); away while dried out
             if (health)
             {
                 if (Value >= s.regenAbove && health.Current < health.Max)
                 {
-                    health.Heal(s.regenPerMinute / 60f * dt);
+                    health.Heal(health.Max / Mathf.Max(s.regenSecondsToFull, 1f) * dt);
                     Value = Mathf.Max(0f, Value - s.regenMoistureCost / 60f * dt);
                 }
                 if (Value <= 0f) health.TakeDamage(health.Max / Mathf.Max(s.zeroSecondsToFall, 1f) * dt, "dried");

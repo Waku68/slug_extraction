@@ -12,7 +12,7 @@ namespace SlugMove
     /// filler with a hinged lid sits on the dust cover and feeds the magazine below (it stays on the gun).
     /// The right hand holds the magazine; to reload it grabs a handful of salt from the belt (the gloves keep the salt
     /// off the skin), flips the lid open, and lets a thin stream run from the fist into the filler (as long as it takes,
-    /// or until the trigger is pulled), then goes back to the magazine. The left hand cups the handguard by the muzzle throughout. (Guns set to <see cref="ReloadStyle.Magazine"/>
+    /// or until the trigger is pulled), then goes back to the magazine. The left hand cups the handguard just in front of the magazine throughout. (Guns set to <see cref="ReloadStyle.Magazine"/>
     /// still pull the magazine out and bring it back full.)
     /// </summary>
     public class SlugRifle : SlugGunModel
@@ -24,11 +24,11 @@ namespace SlugMove
         protected override float WidthScale => 1.05f;      // short, but as thick as ever: a chunky little gun
         protected override float HeightScale => 0.85f;
         protected override float BarrelSplit => 0.532f;      // just in front of the handguard
-        protected override float BarrelExtra => 0.1f;
+        protected override float BarrelExtra => 0.02f;
         /// <summary>The top of the magazine, where it turns when pulled out.</summary>
         public static readonly Vector3 MagPivotLocal = new Vector3(0f, 0.016f, 0.322f);
-        /// <summary>The left hand: cupped under the front end of the handguard, close to the muzzle.</summary>
-        public static readonly Vector3 LeftGripLocal = new Vector3(-0.004f, 0.004f, 0.495f);
+        /// <summary>The left hand: cupped under the back end of the handguard, just in front of the magazine.</summary>
+        public static readonly Vector3 LeftGripLocal = new Vector3(-0.004f, 0.006f, 0.41f);
 
         const float MagRadius = 0.26f, MagSweep = 30f, MagHalf = 0.0135f;
         const float WindowFrom = 0.12f, WindowTo = 0.86f;
@@ -42,6 +42,23 @@ namespace SlugMove
         protected override Vector3 RawMuzzle => new Vector3(0f, Bore, Length);
         protected override Vector3 RawRestGrip => MagPivotLocal + MagGripLocal;
         protected override Vector3 RawReloadFocus => FillerTop;
+        /// <summary>The height of the line over the rear notch and the tip of the front post: well above the dust cover,
+        /// so looking along it the cover drops out of the way and the notch stands against the world beyond.</summary>
+        const float SightLine = 0.098f;
+        public override bool HasSights => true;
+        // on the sight line over the bottle, behind the receiver, as a cheek on the stock puts it (from further back the
+        // dust cover looks narrow instead of a floor under the eye)
+        protected override Vector3 RawSightEye => new Vector3(0f, SightLine, 0.07f);
+
+        /// <summary>The filler stands on the sight line right in front of the eye: the own view leaves it out while sighting.</summary>
+        public override void SetSighting(float t)
+        {
+            bool show = t < 0.6f;
+            if (_filler.gameObject.activeSelf == show) return;
+            _filler.gameObject.SetActive(show);
+            _fillerHole.gameObject.SetActive(show);
+            _lid.gameObject.SetActive(show);
+        }
 
         /// <summary>The middle of the filler's mouth, and the lid's hinge at its back edge.</summary>
         static readonly Vector3 FillerTop = new Vector3(0f, 0.112f, 0.255f), LidHinge = new Vector3(0f, 0.112f, 0.234f);
@@ -69,9 +86,9 @@ namespace SlugMove
         }
 
         static Mesh _woodMesh, _steelMesh, _coverMesh, _rubberMesh, _magMesh, _windowMesh, _bottleMesh, _brassMesh;
-        static Mesh _fillerMesh, _fillerHoleMesh, _lidMesh, _pouchMesh, _streamMesh;
+        static Mesh _fillerMesh, _fillerHoleMesh, _lidMesh, _pouchMesh, _streamMesh, _sightTipMesh;
 
-        Transform _mag, _lid, _pouch, _stream;
+        Transform _mag, _lid, _pouch, _stream, _filler, _fillerHole;
         Mesh _fillMesh;
         float _fill = -1f;
 
@@ -84,14 +101,15 @@ namespace SlugMove
             Part(transform, "Rubber", _rubberMesh, Rubber, castShadows);
             Part(transform, "Bottle", _bottleMesh, Bottle, castShadows);
             Part(transform, "Brass", _brassMesh, Brass, castShadows);
+            Part(transform, "SightTip", _sightTipMesh, Salt, castShadows);
             _mag = Moving(Pivot(transform, "Magazine", MagPivotLocal));
             Part(_mag, "MagBody", _magMesh, Steel, castShadows);
             Part(_mag, "MagWindow", _windowMesh, Glass, false);
             _fillMesh = new Mesh { name = "MagSalt", hideFlags = HideFlags.DontSave };
             _fillMesh.MarkDynamic();
             Part(_mag, "MagSalt", _fillMesh, Salt, false);
-            Part(transform, "Filler", _fillerMesh, Brass, castShadows);
-            Part(transform, "FillerHole", _fillerHoleMesh, Rubber, false);
+            _filler = Part(transform, "Filler", _fillerMesh, Brass, castShadows);
+            _fillerHole = Part(transform, "FillerHole", _fillerHoleMesh, Rubber, false);
             _lid = Moving(Pivot(transform, "Lid", LidHinge));
             Part(_lid, "LidSteel", _lidMesh, Steel, castShadows);
             _pouch = Moving(Pivot(transform, "Pouch", PourHand));
@@ -277,12 +295,18 @@ namespace SlugMove
             var steel = new ProfileMesh();
             steel.Extrude(Zy(0.152f, 0.012f, 0.362f, 0.012f, 0.362f, 0.066f, 0.17f, 0.066f, 0.152f, 0.056f), 0.019f, 0.003f);
             steel.Extrude(Zy(0.36f, 0.056f, 0.398f, 0.056f, 0.398f, 0.072f, 0.36f, 0.079f), 0.014f, 0.002f);           // rear sight block
-            steel.Extrude(Zy(0.364f, 0.079f, 0.39f, 0.074f, 0.39f, 0.078f, 0.366f, 0.083f), 0.009f, 0.001f);           // rear sight leaf
+            steel.Extrude(Zy(0.364f, 0.079f, 0.39f, 0.074f, 0.39f, SightLine - 0.008f, 0.366f, SightLine - 0.005f), 0.0115f, 0.001f);   // rear sight leaf
+            for (int side = -1; side <= 1; side += 2)                                                                     // the ears either side of its notch (wider than the post looks)
+                steel.Extrude(Zy(0.364f, 0.079f, 0.373f, 0.079f, 0.373f, SightLine + 0.0005f, 0.364f, SightLine + 0.0005f), 0.0029f, 0.0008f, side * 0.0087f);
             steel.Tube(new Vector3(0f, BoreY, 0.36f), new Vector3(0f, BoreY, 0.59f), 0.0085f);                           // barrel
             steel.Tube(new Vector3(0f, 0.068f, 0.5f), new Vector3(0f, 0.068f, 0.528f), 0.0075f);                        // gas tube (ends at the handguard, so it is not run out with the barrel)
             steel.Extrude(Zy(0.535f, 0.036f, 0.56f, 0.036f, 0.56f, 0.078f, 0.535f, 0.078f), 0.012f, 0.002f);           // gas block
             steel.Tube(new Vector3(0f, BoreY, 0.565f), new Vector3(0f, BoreY, 0.59f), 0.0125f);                          // front sight base
-            steel.Extrude(Zy(0.568f, 0.05f, 0.588f, 0.05f, 0.585f, 0.086f, 0.571f, 0.086f), 0.007f, 0.0015f);           // front sight post
+            steel.Extrude(Zy(0.568f, 0.05f, 0.588f, 0.05f, 0.585f, SightLine, 0.571f, SightLine), 0.0075f, 0.0015f);   // front sight post
+            // its tip painted salt white, easy to find in the notch
+            _sightTipMesh = new ProfileMesh()
+                .Extrude(Zy(0.5705f, SightLine - 0.006f, 0.5855f, SightLine - 0.006f, 0.5855f, SightLine + 0.0005f, 0.5705f, SightLine + 0.0005f), 0.0078f, 0.0015f)
+                .ToMesh("RifleSightTip");
             steel.Tube(new Vector3(0f, BoreY, 0.588f), new Vector3(0f, BoreY, Length), 0.012f, 10, 0.0105f);             // muzzle brake
             TriggerGroup(steel, 0.244f, 0.013f);
             steel.Extrude(Zy(0.25f, 0.044f, 0.335f, 0.034f, 0.338f, 0.041f, 0.252f, 0.051f), 0.0016f, 0f, 0.0205f);   // selector lever

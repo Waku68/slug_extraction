@@ -23,6 +23,7 @@ namespace SlugMove
         [Header("ダメージ倍率（仮）")]
         [Tooltip("むき出しの頭・胸・おなかに当たったときの倍率")] public float bareMultiplier = 1f;
         [Tooltip("触角（弱点）に当たったときの倍率")] public float tentacleMultiplier = 1.4f;
+        [Tooltip("触角の形の兜の上から触角に当たったときの倍率（弱点が消える）")] public float tentacleHelmetMultiplier = 1f;
         [Tooltip("ヘルメットの上から頭に当たったときの倍率（防具ごとに変える予定）")] public float helmetMultiplier = 0.6f;
         [Tooltip("殻板の上から胸に当たったときの倍率（防具ごとに変える予定）")] public float plateMultiplier = 0.6f;
         [Tooltip("背中の物（バッグ／殻）に当たったときの体への倍率（未決定。バッグの耐久値が減って体は無傷、の案が有力）")] public float backItemMultiplier = 1f;
@@ -53,6 +54,7 @@ namespace SlugMove
             public BoxCollider cube;
             public Vector3 a, b, na, nb;      // body space, rest pose (and outward normals for the skin offset)
             public float ta, tb, radius;
+            public float side;                // tentacles: -1 left, +1 right (they follow the tentacle's pose); 0 otherwise
             public Vector3 half; public Quaternion rot;   // boxes
         }
 
@@ -109,11 +111,13 @@ namespace SlugMove
             Capsule("胸", plate ? "殻板" : null, 0.45f, 0.8f, R(0.62f) * 0.92f, S, Up);
             Capsule("頭", helmet ? "ヘルメット" : null, 0.86f, 0.93f, R(0.88f) * (helmet ? 1.02f : 0.9f), S, Up);
 
-            // the tentacles: thin, out through the helmet (never covered)
+            // the tentacles: thin, out through the helmet, or inside the horns of a tentacle helmet
+            bool horns = helmet && _gear.tentacleHelmet;
             foreach (float side in new[] { -1f, 1f })
             {
                 slug.EarRoot(side, out var root, out var axis, out float earR, out float len);
-                var bone = NewBone("触角", null, false);
+                var bone = NewBone("触角", horns ? "ヘルメット" : null, false);
+                bone.side = side;
                 bone.a = root; bone.b = root + axis * len;
                 bone.na = bone.nb = axis;
                 bone.ta = bone.tb = 0.93f;
@@ -166,7 +170,7 @@ namespace SlugMove
         float Multiplier(string part, string armour, bool backItem)
         {
             if (backItem) return backItemMultiplier;
-            if (part == "触角") return tentacleMultiplier;
+            if (part == "触角") return armour == "ヘルメット" ? tentacleHelmetMultiplier : tentacleMultiplier;
             if (armour == "ヘルメット") return helmetMultiplier;
             if (armour == "殻板") return plateMultiplier;
             return bareMultiplier;
@@ -198,7 +202,8 @@ namespace SlugMove
                     b.cube.size = b.half * 2f * scale;
                     continue;
                 }
-                Vector3 pb = slug.FollowPointWorld(b.b, b.tb, b.nb);
+                // a tentacle droops and draws in (SlugPop.SetEarPose): its far end is where its tip is now
+                Vector3 pb = slug.FollowPointWorld(b.side != 0f ? slug.EarTip(b.side) : b.b, b.tb, b.nb);
                 Vector3 d = pb - pa;
                 float len = d.magnitude;
                 t.SetPositionAndRotation((pa + pb) * 0.5f, len > 1e-5f ? Quaternion.FromToRotation(Vector3.up, d / len) : Quaternion.identity);

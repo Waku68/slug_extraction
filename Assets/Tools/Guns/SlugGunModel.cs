@@ -64,6 +64,13 @@ namespace SlugMove
         public Vector3 ReloadFocusLocal => Warp(RawReloadFocus);
         /// <summary>The scope's eyepiece, for guns with a scope.</summary>
         public Vector3 ScopeEyeLocal => Warp(RawScopeEye);
+        /// <summary>The gun can be looked along its iron sights (the aim button brings <see cref="SightEyeLocal"/> to the eye).</summary>
+        public virtual bool HasSights => false;
+        /// <summary>Where the eye goes to look along the iron sights (raw): on the line over the rear notch and the front post.</summary>
+        protected virtual Vector3 RawSightEye => Vector3.zero;
+        public Vector3 SightEyeLocal => Warp(RawSightEye);
+        /// <summary>The own first-person copy only: 0..1 how far it is brought up to look along the sights (parts in the way can step aside).</summary>
+        public virtual void SetSighting(float t) { }
         /// <summary>
         /// How far forward of the origin the butt plate sits (m) when the stock is cut short. The holder puts the butt
         /// plate on the shoulder, so the whole gun, and the hands on it, come that much closer to the body.

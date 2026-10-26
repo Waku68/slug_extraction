@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -27,7 +28,9 @@ namespace SlugMove
         [System.NonSerialized] public float devSpeed = 1f;
         /// <summary>How big the body looks (dried out: a little shrunk). Set by the moisture.</summary>
         [System.NonSerialized] public float bodyScale = 1f;
-        float SpeedFactor => speedMultiplier * conditionSpeed * devSpeed;
+        /// <summary>0..1: how far a gun is brought up to look along its sights or through its scope. Set by the gun.</summary>
+        [System.NonSerialized] public float aiming;
+        float SpeedFactor => speedMultiplier * conditionSpeed * devSpeed * Mathf.Lerp(1f, settings.aimSpeedMultiplier, aiming);
         [Tooltip("false の間は入力を受け付けない（試合の終了後など）")] public bool inputEnabled = true;
         /// <summary>Moved by something else (a bot, later the network) through <see cref="Simulate"/>: no keys are read.</summary>
         [System.NonSerialized] public bool driven;
@@ -60,13 +63,20 @@ namespace SlugMove
         // shrink, then stretch forward
         bool _charging, _lunging, _airborne;
         float _charge, _cooldown, _stretch, _stretchV, _lungeAlong = 1f;
+        Vector3 _lastKey;       // the last direction of the move keys (relative to the eyes), kept a moment after letting go
+        float _lastKeyAge, _kick, _kickCooldown;
         float _pressed;         // a press a moment too early (still shrinking back from the last one) is kept this long
+        float _hold, _snap;     // after letting go: the shrunk shape is held this long, then the body snaps out on a stiff spring
+        float _heldSquash, _pendingKick;
         Vector3 _bodyBaseScale = Vector3.one;
 
         // climbing a step taller than stepHeight
         bool _climbing;
         Vector3 _climbDir, _climbWallPoint;
         float _climbStartY, _climbTopY, _climbProgress;
+
+        // the path the feet crawled (newest first, [0] = the feet now): the rear is laid along it (up a wall, over an edge)
+        readonly List<Vector3> _trail = new List<Vector3>();
 
         /// <summary>Crawl time fed to the slug shader (advances with the distance travelled).</summary>
         public float CrawlTime { get; private set; }
@@ -82,6 +92,10 @@ namespace SlugMove
         public float LungeCharge => _charging ? _charge : 0f;
         /// <summary>True from letting go until the stretch has glided out.</summary>
         public bool Lunging => _lunging;
+        /// <summary>Shrinking (Jump held, or a press still shrinking a little before it stretches).</summary>
+        public bool Charging => _charging;
+        /// <summary>Started shrinking (the press). The body snaps part of the way at once.</summary>
+        public event System.Action Squeezed;
         /// <summary>The body stretched off the ground (how far it was charged, 0..1). Heard: the stretch and what is in the bag.</summary>
         public event System.Action<float> Lunged;
         /// <summary>Back on the ground after a stretch.</summary>
@@ -94,6 +108,7 @@ namespace SlugMove
         {
             _cc = GetComponent<CharacterController>();
             if (body) { _bodyBasePos = body.localPosition; _bodyBaseScale = body.localScale; }
+            if (!GetComponent<SlugSplash>()) gameObject.AddComponent<SlugSplash>();     // slime flung off by the stretch
         }
 
         void OnEnable()
@@ -133,19 +148,22 @@ namespace SlugMove
             // ---- input, relative to where the eyes look
             float yaw = cameraRig ? cameraRig.Yaw : transform.eulerAngles.y;
             float forward = input.y * (input.y < 0f ? s.backwardMultiplier : 1f);
-            Vector3 wish = Quaternion.Euler(0f, yaw, 0f) * new Vector3(input.x * s.strafeMultiplier, 0f, forward);
+            Vector3 key = new Vector3(input.x * s.strafeMultiplier, 0f, forward);
+            Vector3 wish = Quaternion.Euler(0f, yaw, 0f) * key;
             float wishAmount = Mathf.Min(wish.magnitude, 1f);
             Vector3 dir = wishAmount > 1e-4f ? wish.normalized : Vector3.zero;
 
             StepLunge(dt, jumpHeld, dir, yaw);
             if (_charging) wishAmount *= s.lungeChargeMove;
             wishAmount *= Mathf.Lerp(1f, s.proneSpeed, Prone01);
+            StepTurnKick(key, dir, wishAmount, dt);
 
             Vector3 before = transform.position;
             if (!_climbing && !_lunging && !_charging && Prone01 <= 0f && OnGround && input.y > 0.1f) TryStartClimb(dir);
             if (_climbing) Climb(dir, wishAmount, dt);
             else Crawl(dir, wishAmount, dt);
             Speed = Mathf.Lerp(Speed, (transform.position - before).magnitude / dt, 1f - Mathf.Exp(-10f * dt));
+            RecordTrail(before);
 
             // ---- the body turns after the eyes, a little late (and faces the wall while climbing)
             float targetYaw = _climbing ? Quaternion.LookRotation(_climbDir).eulerAngles.y : yaw;
@@ -182,6 +200,7 @@ namespace SlugMove
             if ((held || tapping || _pressed > 0f) && (_charging || canCharge))
             {
                 _pressed = 0f;
+                if (!_charging) { _hold = 0f; _pendingKick = 0f; Squeezed?.Invoke(); }
                 _charging = true;
                 _charge = Mathf.Min(1f, _charge + dt / Mathf.Max(s.lungeChargeTime, 1e-3f));
             }
@@ -200,16 +219,25 @@ namespace SlugMove
                 _vy = s.lungeUp * Mathf.Lerp(0.4f, 1f, c);
                 _lunging = _airborne = true;
                 _cooldown = s.lungeCooldown;
-                _stretchV += Mathf.Lerp(0.5f, 1f, c) * Mathf.Lerp(0.3f, 1f, _lungeAlong) * s.lungeStretch * 2f * Mathf.PI * s.lungeSpringHz * 1.8f;
+                // the body stays shrunk a moment (it already moves), then snaps out long
+                _heldSquash = SquashTarget(_charge);
+                _hold = s.lungeReleaseHold;
+                _snap = s.lungeReleaseHold + 0.12f;
+                _pendingKick = Mathf.Lerp(0.5f, 1f, c) * Mathf.Lerp(0.3f, 1f, _lungeAlong) * s.lungeStretch * 2f * Mathf.PI * s.lungeSpringHz * 1.8f;
                 _charging = false;
                 _charge = 0f;
                 Lunged?.Invoke(c);
             }
 
-            // the body's length: short while charging, long in the air, a wobble on landing
-            float target = _charging ? -s.lungeSquash * ChargePower(_charge)
+            // the body's length: short while charging (part of it at the press), long in the air, a wobble on landing
+            bool holding = _hold > 0f;
+            _hold -= dt;
+            _snap = Mathf.Max(0f, _snap - dt);
+            if (!holding && _pendingKick != 0f) { _stretchV += _pendingKick; _pendingKick = 0f; }
+            float target = _charging ? SquashTarget(_charge)
+                         : holding ? _heldSquash
                          : _airborne ? s.lungeStretch * 0.6f * Mathf.Lerp(0.3f, 1f, _lungeAlong) : 0f;
-            float w = 2f * Mathf.PI * s.lungeSpringHz;
+            float w = 2f * Mathf.PI * (_charging || _snap > 0f ? Mathf.Max(s.lungeSnapHz, s.lungeSpringHz) : s.lungeSpringHz);
             int n = Mathf.Clamp(Mathf.CeilToInt(dt * 240f), 1, 16);
             for (int i = 0; i < n; i++)
             {
@@ -219,6 +247,10 @@ namespace SlugMove
             }
             _stretch = Mathf.Clamp(_stretch, -0.45f, 0.6f);
         }
+
+        /// <summary>How short the body is while shrinking: part of it at the press (lungePressSnap), the rest with the charge.</summary>
+        float SquashTarget(float charge) =>
+            -settings.lungeSquash * Mathf.Lerp(settings.lungePressSnap, 1f, ChargePower(charge));
 
         /// <summary>
         /// How strong a stretch is after shrinking this long (a part of lungeChargeTime): most of it comes quickly
@@ -231,6 +263,37 @@ namespace SlugMove
             if (t <= quick) return s.lungeQuickPower * Mathf.Sin(t / quick * Mathf.PI * 0.5f);     // quick at first, easing in
             float rest = Mathf.Max(s.lungeChargeTime - quick, 1e-3f);
             return Mathf.Lerp(s.lungeQuickPower, 1f, Mathf.SmoothStep(0f, 1f, (t - quick) / rest));
+        }
+
+        // ------------------------------------------------------------------ turning back (a feint)
+        /// <summary>
+        /// Putting the move keys the other way while crawling (turnKickAngle or more, the keys themselves: turning the
+        /// eyes alone does not count) skips the slow stop: the slug is at once going the new way at full speed, a little
+        /// over it (turnKickSpeed, gone in turnKickTime), and the tail is flung out. At most once per turnKickCooldown,
+        /// so zigzagging never gets anywhere faster than crawling straight.
+        /// </summary>
+        void StepTurnKick(Vector3 key, Vector3 dir, float wishAmount, float dt)
+        {
+            var s = settings;
+            _kick = Mathf.Max(0f, _kick - dt / Mathf.Max(s.turnKickTime, 1e-3f));
+            _kickCooldown = Mathf.Max(0f, _kickCooldown - dt);
+            if (key.sqrMagnitude < 1e-6f)
+            {
+                _lastKey = (_lastKeyAge += dt) < 0.25f ? _lastKey : Vector3.zero;     // A, let go, D: still a turn
+                return;
+            }
+            Vector3 prevKey = _lastKey;
+            _lastKey = key.normalized;
+            _lastKeyAge = 0f;
+            if (prevKey == Vector3.zero || Vector3.Angle(prevKey, _lastKey) < s.turnKickAngle) return;
+            if (_kickCooldown > 0f || _charging || _lunging || _airborne || !OnGround || Prone01 > 0f || aiming > 0f) return;
+            float target = s.maxSpeed * SpeedFactor * wishAmount * SlopeFactor(dir);
+            // only when it was crawling the old way, not starting from a standstill
+            if (_velocity.magnitude < target * 0.4f || Vector3.Angle(_velocity, dir) < s.turnKickAngle * 0.7f) return;
+            _kick = 1f;
+            _kickCooldown = s.turnKickCooldown;
+            _velocity = dir * ((s.maxSpeed + s.turnKickSpeed) * SpeedFactor * wishAmount * SlopeFactor(dir));
+            _tailLagVel += Vector3.Dot(dir, transform.right) * s.turnKickTail;
         }
 
         // ------------------------------------------------------------------ crawling on the ground
@@ -251,7 +314,7 @@ namespace SlugMove
             // speed: slow to build up, and a slippery stop (exponential glide + a small constant brake)
             else if (wishAmount > 1e-4f)
             {
-                float target = s.maxSpeed * SpeedFactor * wishAmount * SlopeFactor(dir);
+                float target = (s.maxSpeed + s.turnKickSpeed * _kick) * SpeedFactor * wishAmount * SlopeFactor(dir);
                 float accel = _charging ? s.lungeChargeBrake : s.acceleration;      // shrinking: it all but stops
                 _velocity = Vector3.MoveTowards(_velocity, dir * target, accel * devSpeed * dt);
             }
@@ -313,10 +376,12 @@ namespace SlugMove
             var s = settings;
             Vector3 feet = transform.position;
             float r = _cc.radius;
-            if (!Physics.Raycast(feet + Vector3.up * (_cc.stepOffset + 0.03f), dir, out var wall, r + 0.12f, Mask, NoTriggers)) return;
+            // the ray goes along the input, so it reaches further for a slanted wall (up to about 70 degrees off head-on)
+            if (!Physics.Raycast(feet + Vector3.up * (_cc.stepOffset + 0.03f), dir, out var wall, (r + 0.12f) * 3f, Mask, NoTriggers)) return;
             if (Vector3.Angle(wall.normal, Vector3.up) < 60f) return;               // a slope, not a wall
             Vector3 into = -new Vector3(wall.normal.x, 0f, wall.normal.z).normalized;
-            if (Vector3.Dot(dir, into) < 0.5f) return;                              // only when heading into it
+            if (Vector3.Dot(dir, into) < 0.34f) return;                             // only when heading into it, even at a slant
+            if (Vector3.Dot(wall.point - feet, into) > r + 0.12f) return;           // the wall itself is still a little way off
 
             Vector3 probe = wall.point + into * 0.12f;
             probe.y = feet.y + s.climbHeight + 0.05f;
@@ -339,7 +404,11 @@ namespace SlugMove
             _vy = 0f;
         }
 
-        /// <summary>Up the wall while forward is held (it sticks when let go), then over the edge. Back (S) lets go.</summary>
+        /// <summary>
+        /// Up the wall while forward is held (it sticks when let go), then over the edge. Back (S) lets go.
+        /// Sideways input (A/D, or forward and sideways together) shuffles along the wall while on it,
+        /// as long as the wall and a climbable top go on that way.
+        /// </summary>
         void Climb(Vector3 dir, float wishAmount, float dt)
         {
             var s = settings;
@@ -348,9 +417,18 @@ namespace SlugMove
             push = Mathf.Max(0f, push);
 
             Vector3 feet = transform.position;
-            Vector3 motion = feet.y < _climbTopY + 0.02f
+            bool onWall = feet.y < _climbTopY + 0.02f;
+            Vector3 motion = onWall
                 ? Vector3.up * (s.climbSpeed * SpeedFactor * push) + _climbDir * 0.05f     // up, hugging the wall
                 : _climbDir * (s.climbSpeed * SpeedFactor * push);                          // over the edge
+
+            Vector3 side = dir * wishAmount - _climbDir * Vector3.Dot(dir * wishAmount, _climbDir);
+            side.y = 0f;
+            if (onWall && side.sqrMagnitude > 1e-4f)
+            {
+                Vector3 sideMove = side * (s.climbSpeed * SpeedFactor);
+                if (FollowWall(feet + sideMove * dt, dt)) motion += sideMove;
+            }
             _cc.Move(motion * dt);
 
             _climbProgress = Mathf.InverseLerp(_climbStartY, _climbTopY, transform.position.y);
@@ -363,7 +441,74 @@ namespace SlugMove
             }
         }
 
+        /// <summary>
+        /// Is there still wall in front, with a climbable top, if the feet were at <paramref name="feet"/>?
+        /// If so, the climb takes on that wall (its facing, slowly, and the height of its top).
+        /// </summary>
+        bool FollowWall(Vector3 feet, float dt)
+        {
+            var s = settings;
+            float r = _cc.radius;
+            Vector3 from = feet;
+            from.y = Mathf.Min(feet.y + _cc.stepOffset + 0.03f, _climbTopY - 0.03f);     // below the top edge
+            if (!Physics.Raycast(from, _climbDir, out var wall, r + 0.2f, Mask, NoTriggers)) return false;
+            if (Vector3.Angle(wall.normal, Vector3.up) < 60f) return false;
+            Vector3 into = -new Vector3(wall.normal.x, 0f, wall.normal.z).normalized;
+            if (Vector3.Dot(into, _climbDir) < 0.5f) return false;                       // a sharp corner: stop there
+
+            Vector3 probe = wall.point + into * 0.12f;
+            probe.y = _climbStartY + s.climbHeight + 0.05f;
+            if (Physics.CheckSphere(probe, 0.02f, Mask, NoTriggers)) return false;       // the wall gets too tall
+            if (!Physics.Raycast(probe, Vector3.down, out var top, s.climbHeight + 0.05f, Mask, NoTriggers)) return false;
+            if (top.point.y < feet.y + 0.02f) return false;                              // the top drops below us
+            if (Vector3.Angle(top.normal, Vector3.up) > s.slopeLimit) return false;
+            Vector3 c = top.point + into * (r + 0.05f);
+            if (Physics.CheckCapsule(c + Vector3.up * (r + 0.03f), c + Vector3.up * (_cc.height - r + 0.03f), r * 0.9f, Mask, NoTriggers)) return false;
+
+            _climbDir = Vector3.Slerp(_climbDir, into, 1f - Mathf.Exp(-8f * dt)).normalized;
+            _climbWallPoint = wall.point;
+            _climbTopY = top.point.y;
+            return true;
+        }
+
         // ------------------------------------------------------------------ ground and body
+        /// <summary>
+        /// Keeps the path the feet crawled, about a body length back, for the rear to follow. Off the ground (a stretch,
+        /// a fall) it is forgotten and the rear stays straight. Shuffling sideways along a wall takes the path along, so
+        /// the tail stays below rather than sticking out sideways.
+        /// </summary>
+        void RecordTrail(Vector3 before)
+        {
+            Vector3 pos = transform.position;
+            if (!_climbing && (!OnGround || _airborne)) { _trail.Clear(); return; }
+            if (_trail.Count == 0 || (pos - _trail[0]).sqrMagnitude > 0.25f) { _trail.Clear(); _trail.Add(pos); return; }     // a jump in place (respawn)
+            Vector3 contact = pos;
+            if (_climbing)
+            {
+                Vector3 side = pos - before;
+                side -= _climbDir * Vector3.Dot(side, _climbDir);
+                side.y = 0f;
+                for (int i = 1; i < _trail.Count; i++) _trail[i] += side;
+                // the feet go up a little way off the wall; the body touches the wall lower down, so the path goes
+                // there (slanting in as the slug rises): the tail goes down the wall face and later over the very edge
+                float gap = Mathf.Max(0f, Vector3.Dot(_climbWallPoint - pos, _climbDir));
+                float w = Mathf.Clamp01((pos.y - _climbStartY) / Mathf.Max(gap, 0.05f));
+                contact += (_climbDir + Vector3.down) * (gap * w);
+                contact.y = Mathf.Max(contact.y, _climbStartY);
+            }
+            _trail[0] = pos;
+            // backing up over it: the points now in front of the feet go (on a wall the path goes in front on purpose)
+            while (_trail.Count >= 3 && (contact - _trail[2]).sqrMagnitude < (_trail[1] - _trail[2]).sqrMagnitude) _trail.RemoveAt(1);
+            while (!_climbing && _trail.Count >= 2 && Vector3.Dot(_trail[1] - pos, transform.forward) > 0.005f) _trail.RemoveAt(1);
+            if (_trail.Count == 1 || (contact - _trail[1]).sqrMagnitude >= 0.03f * 0.03f) _trail.Insert(1, contact);
+            float len = 0f;
+            for (int i = 1; i < _trail.Count; i++)
+            {
+                len += Vector3.Distance(_trail[i - 1], _trail[i]);
+                if (len > 1f) { _trail.RemoveRange(i + 1, _trail.Count - i - 1); break; }
+            }
+        }
+
         /// <summary>
         /// The tail trails behind a turn: when the front turns, the tail first stays where it was (the body bends), then
         /// a soft spring draws it around after the front. Crawling makes it catch up sooner, as it follows the trail.
@@ -432,6 +577,7 @@ namespace SlugMove
                 _slug.SetHeadTwist(twistDegrees);
                 _slug.SetUpright(pitchUp * settings.uprightAmount + leanDegrees);
                 _slug.SetTurn(_tailLag, transform.position);     // the slug turns about this point
+                _slug.SetPath(transform.position, _trail);       // the rear follows the way it came (up a wall, over an edge)
             }
         }
     }

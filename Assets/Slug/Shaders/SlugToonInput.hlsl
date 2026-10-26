@@ -116,7 +116,7 @@ CBUFFER_START(UnityPerMaterial)
     float4 _FaceR;           // xyz: lateral axis (+x), w: unused
     float4 _FaceU;           // xyz: up axis
     float4 _FaceN;           // xyz: outward normal (hides the face on the back of the head)
-    float4 _FaceEye;         // x: eye offset (sideways), y: eye height, z: eye radius
+    float4 _FaceEye;         // x: eye offset (sideways), y: eye height, z: eye radius, w: left eye shut (0..1)
     float4 _FaceMuz;         // x: muzzle centre height, y: half width, z: half height, w: edge softness
     float4 _FaceNos;         // x: nostril offset, y: height, z: radius x, w: radius y
     float4 _FaceMouth;       // x: mouth height, y: half length, z: half thickness, w: amount (0 = off)
@@ -151,6 +151,11 @@ CBUFFER_START(UnityPerMaterial)
     float  _TwistAngle;      // radians about the body y axis (+ = to the right)
     float4 _TwistPivot;      // xyz: a point on the neck's axis, in body space
     float4 _TwistRange;      // x..y: the turn fades in along the body (uv.y): none before x, all of it from y on
+
+    // the rear following the path the slug crawled (up a wall, over an edge): it bends in the body's y-z plane
+    float4 _PathAnchor;      // xyz: where the rear starts (body space, under the slug's feet), w: spacing of the knots (0 = off)
+    float4 _PathA0;          // the rear's pitch (radians, + = rising behind) at knots 1..4 behind the anchor (0 at the anchor)
+    float4 _PathA1;          // ... at knots 5..8; straight on from the last one
 CBUFFER_END
 
 // Global overrides so screenshots can freeze the crawl animation at a known time.
@@ -267,6 +272,43 @@ void TurnBend(inout float3 posOS, inout float3 nrmOS, float t)
     nrmOS = float3(nrmOS.x * c + nrmOS.z * s, nrmOS.y, -nrmOS.x * s + nrmOS.z * c);
 }
 
+// Lays the rear (the rings behind the feet) along the path the slug crawled: the pitch goes linearly from knot to knot
+// and every ring moves rigidly to its place on that curve, so the tail goes down a wall and over an edge after the
+// front instead of sticking out. ringZ: body-space z of the ring the point belongs to. Mirrored on the CPU by SlugPop.Path().
+void PathBend(inout float3 posOS, inout float3 nrmOS, float ringZ)
+{
+    float step = _PathAnchor.w;
+    if (step <= 0.0) return;
+    float d = _PathAnchor.z - ringZ;              // how far behind the anchor, along the body
+    if (d <= 0.0) return;
+    float a[9] = { 0.0, _PathA0.x, _PathA0.y, _PathA0.z, _PathA0.w, _PathA1.x, _PathA1.y, _PathA1.z, _PathA1.w };
+    float2 s = float2(_PathAnchor.y, _PathAnchor.z);    // (y, z) on the curve
+    float ang = a[8];
+    float left = d;
+    [unroll] for (int i = 0; i < 8; i++)
+    {
+        if (left > 0.0)
+        {
+            float L = min(left, step);
+            float a0 = a[i], k = (a[i + 1] - a0) / step;
+            float a1 = a0 + k * L;
+            // the backward direction is (sin a, -cos a): integrate it over the piece
+            if (abs(k) > 1e-3) s += float2(cos(a0) - cos(a1), sin(a0) - sin(a1)) / k;
+            else { float am = 0.5 * (a0 + a1); s += float2(sin(am), -cos(am)) * L; }
+            ang = a1;
+            left -= L;
+        }
+    }
+    if (left > 0.0) s += float2(sin(ang), -cos(ang)) * left;
+
+    float sn = sin(ang), c = cos(ang);
+    float3 p = posOS + _PartOffset.xyz;
+    float2 o = float2(p.y - _PathAnchor.y, p.z - (_PathAnchor.z - d));    // off the straight rest line
+    p.yz = s + float2(o.x * c - o.y * sn, o.x * sn + o.y * c);
+    posOS = p - _PartOffset.xyz;
+    nrmOS = float3(nrmOS.x, nrmOS.y * c - nrmOS.z * sn, nrmOS.y * sn + nrmOS.z * c);
+}
+
 // 0..1: how much a body point belongs to the foot fringe (near the sole's edge, on the part lying on the ground)
 float SkirtBand(float2 uv)
 {
@@ -289,6 +331,7 @@ void SlugDeform(inout float3 posOS, inout float3 nrmOS, float3 tanOS, float2 uv,
             float h = uv.y;
             posOS += _SwayDir.xyz * (sin(phs + 1.3 * h) * _SwayAmp * h * h);
         }
+        PathBend(posOS, nrmOS, _FollowPivot.z);
         ProneDrop(posOS, _FollowT);
         HeadTwist(posOS, nrmOS, _FollowT);
         UprightBend(posOS, nrmOS, _FollowT);
@@ -336,6 +379,7 @@ void SlugDeform(inout float3 posOS, inout float3 nrmOS, float3 tanOS, float2 uv,
         posOS += nrmOS * (wave * _SkirtAmp * band);
     }
 
+    PathBend(posOS, nrmOS, pivot.z);
     ProneDrop(posOS, t);
     HeadTwist(posOS, nrmOS, t);
     UprightBend(posOS, nrmOS, t);

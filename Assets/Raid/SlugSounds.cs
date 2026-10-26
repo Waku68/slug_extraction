@@ -15,6 +15,7 @@ namespace SlugExtract
         [Tooltip("ほかのナメクジ（ボット、あとでほかの人）の音：その場所から聞こえ、遠くまで届く（銃声は遠く、ほかは近く）")] public bool other;
 
         AudioSource _source;
+        AudioSource _squeeze;       // the shrink: plays while Jump is held, cut short on letting go
         SlugBag _bag;
         SlugToolHolder _pickaxe;
         SlugGunHolder[] _guns = new SlugGunHolder[0];
@@ -30,6 +31,15 @@ namespace SlugExtract
             _source = gameObject.AddComponent<AudioSource>();
             _source.playOnAwake = false;
             _source.spatialBlend = other ? 1f : 0.3f;     // one's own doings sound close, a little placed
+            _squeeze = gameObject.AddComponent<AudioSource>();
+            _squeeze.playOnAwake = false;
+            _squeeze.spatialBlend = _source.spatialBlend;
+            if (other)
+            {
+                _squeeze.rolloffMode = AudioRolloffMode.Custom;
+                _squeeze.SetCustomCurve(AudioSourceCurveType.CustomRolloff, Fade(2f, 60f));
+                _squeeze.maxDistance = 60f;
+            }
             var root = transform.root;
             _bag = root.GetComponentInChildren<SlugBag>(true);
             _pickaxe = root.GetComponentInChildren<SlugToolHolder>(true);
@@ -57,7 +67,7 @@ namespace SlugExtract
             if (_knife) _knife.Struck += OnKnife;
             if (_loadout) _loadout.Changed += OnSwitch;
             if (_hitboxes) _hitboxes.Hit += OnHurt;
-            if (_move) { _move.Lunged += OnLunge; _move.Landed += OnLand; }
+            if (_move) { _move.Squeezed += OnSqueeze; _move.Lunged += OnLunge; _move.Landed += OnLand; }
             Harvestable.Harvested += OnHarvested;
             Pickable.Crushed += OnCrushed;
             GroundBag.Burst += OnGroundBurst;
@@ -71,7 +81,7 @@ namespace SlugExtract
             if (_knife) _knife.Struck -= OnKnife;
             if (_loadout) _loadout.Changed -= OnSwitch;
             if (_hitboxes) _hitboxes.Hit -= OnHurt;
-            if (_move) { _move.Lunged -= OnLunge; _move.Landed -= OnLand; }
+            if (_move) { _move.Squeezed -= OnSqueeze; _move.Lunged -= OnLunge; _move.Landed -= OnLand; }
             Harvestable.Harvested -= OnHarvested;
             Pickable.Crushed -= OnCrushed;
             GroundBag.Burst -= OnGroundBurst;
@@ -134,6 +144,26 @@ namespace SlugExtract
         }
 
         void OnLand() => Play("slug_land");
+
+        /// <summary>The press: a squeak, then the body tightening as long as it is held (cut short on letting go).</summary>
+        void OnSqueeze()
+        {
+            var e = Pick("slug_squeeze");
+            if (e == null) return;
+            _squeeze.Stop();
+            _squeeze.clip = e.clips[Random.Range(0, e.clips.Length)];
+            _squeeze.pitch = 1f + Random.Range(-e.pitchJitter, e.pitchJitter);
+            _squeeze.volume = e.volume * bank.masterVolume;
+            _squeeze.Play();
+        }
+
+        void Update()
+        {
+            // let go (or lay down): the squeeze dies away in a few hundredths of a second instead of clicking off
+            if (!_squeeze.isPlaying || !_move || _move.Charging) return;
+            _squeeze.volume = Mathf.MoveTowards(_squeeze.volume, 0f, Time.deltaTime / 0.04f);
+            if (_squeeze.volume <= 0f) _squeeze.Stop();
+        }
 
         // ------------------------------------------------------------------ playing
         /// <summary>From the slug's body. The first key that has clips plays (a version for one item, then the plain one).</summary>

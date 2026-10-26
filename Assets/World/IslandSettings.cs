@@ -17,7 +17,7 @@ namespace SlugWorld
     public class IslandSettings : ScriptableObject
     {
         [Header("島の時計")]
-        [Tooltip("ゲームの1日が現実の何時間か（9時間：毎日8時間ぶん早まり3日で一周、毎週もずれる）")] public float dayHours = 9f;
+        [Tooltip("ゲームの1日が現実の何時間か（9.5時間：毎日同じ時刻に入ると島の時刻が約半日ずれて、19日で全部の時間帯を回る）")] public float dayHours = 9.5f;
         [Tooltip("時計の起点（UTC、年-月-日）。全員が同じ時刻の島を見る")] public string epochUtc = "2026-10-01";
         [Tooltip("雨季・乾季それぞれの長さ（現実の日数）。【未決定】仮の値")] public float seasonDays = 14f;
         [Range(0.2f, 0.8f), Tooltip("乾季のいちばん昼が長いときの、1日のうち昼の割合")] public float dryDaylight = 0.62f;
@@ -26,7 +26,7 @@ namespace SlugWorld
         [Tooltip("太陽がいちばん高いときの高さ（度）")] public float noonElevation = 70f;
 
         [Header("月と潮の時計（太陽とは別）")]
-        [Tooltip("月の満ち欠けの一周（現実の時間）。太陽の1日とずらして、満月の夜がたまにだけ来るように。【未決定】仮の値")] public float moonCycleHours = 61f;
+        [Tooltip("月の満ち欠けの一周（現実の時間）。72時間＝3日。島の1日で割り切れないので、満月が島の何時に来るかは毎回ずれる")] public float moonCycleHours = 72f;
         [Tooltip("潮の満ち引きの一周（現実の時間）。1日に約2回")] public float tideHours = 4.66f;
 
         [Header("天気")]

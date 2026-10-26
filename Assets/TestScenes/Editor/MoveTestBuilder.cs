@@ -17,7 +17,7 @@ namespace SlugMove
         internal const string TuningDir = "Assets/Tuning";   // every tuning asset, in one place
         internal const string GenDir = "Assets/TestScenes/Generated";
         const string SettingsPath = TuningDir + "/SlugMoveSettings.asset";
-        const string ScenePath = "Assets/Scenes/MoveTest.unity";
+        const string ScenePath = "Assets/Scenes/Tests/MoveTest.unity";
         const string FontPath = "Assets/Fonts/NotoSansJP SDF.asset";
 
         internal static Material _floorMat, _grayMat, _darkMat;

@@ -55,6 +55,12 @@ namespace SlugMove
         [Range(0f, 1f), Tooltip("覗いているときのばらつきの倍率")] public float scopeSpread = 0.1f;
         [Tooltip("覗いたときの、目からスコープの接眼レンズまでの距離（m, 縮める前）")] public float scopeEyeRelief = 0.07f;
 
+        [Header("照準器で覗く（右クリック、スコープのない銃。いまはアサルトだけ）")]
+        [Tooltip("照準器で覗いたときに寄る倍率（1 = 寄らない）")] public float sightZoom = 1.25f;
+        [Tooltip("照準器で覗くまでの時間（秒）")] public float sightTime = 0.2f;
+        [Range(0f, 1f), Tooltip("照準器で覗いているときのばらつきの倍率")] public float sightSpread = 0.45f;
+        [Tooltip("照準器で覗いたとき、銃床を肩から頬のほうへ寄せる量（体の向き基準, m）。ほかの人から見える構え")] public Vector3 sightButtOffset = new Vector3(-0.012f, 0.03f, 0f);
+
         [Header("ばらつき（度）")]
         [Tooltip("止まって 1 発目を撃ったときのばらつき")] public float spreadBase = 0.3f;
         [Tooltip("1 発ごとに増えるばらつき")] public float spreadPerShot = 0.3f;

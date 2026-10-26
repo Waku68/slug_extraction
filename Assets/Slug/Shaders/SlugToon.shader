@@ -8,6 +8,7 @@ Shader "Slug/Toon"
     {
         [Header(Color)]
         _BaseColor("Base Color", Color) = (1, 0.72, 0.8, 1)
+        _BaseMap("Base Map (optional, multiplies the base color; uv0)", 2D) = "white" {}
         _ShadeColor("Shade Tint (multiplied in shadow)", Color) = (0.72, 0.6, 0.78, 1)
         _BellyColor("Belly Color", Color) = (1, 0.9, 0.85, 1)
         _BellyAmount("Belly Width (0 = off)", Range(0, 1)) = 0
@@ -145,6 +146,9 @@ Shader "Slug/Toon"
         [HideInInspector] _TwistAngle("Twist Angle", Float) = 0
         [HideInInspector] _TwistPivot("Twist Pivot", Vector) = (0, 0, 0, 0)
         [HideInInspector] _TwistRange("Twist Range", Vector) = (0, 1, 0, 0)
+        [HideInInspector] _PathAnchor("Path Anchor", Vector) = (0, 0, 0, 0)
+        [HideInInspector] _PathA0("Path Angles 1-4", Vector) = (0, 0, 0, 0)
+        [HideInInspector] _PathA1("Path Angles 5-8", Vector) = (0, 0, 0, 0)
 
         [HideInInspector] _Surface("Surface", Float) = 0
         [HideInInspector] _SrcBlend("Src Blend", Float) = 1
@@ -177,6 +181,10 @@ Shader "Slug/Toon"
             #include "SlugToonInput.hlsl"
             #include "SlugEye.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+
+            // an optional picture on the surface (white = none). Only the base's map on the map table uses it so far
+            TEXTURE2D(_BaseMap);
+            SAMPLER(sampler_BaseMap);
 
             struct Attributes
             {
@@ -262,7 +270,7 @@ Shader "Slug/Toon"
                 // ---- albedo: base / belly / pattern ----
                 float u = IN.uv.x;
                 float t = IN.uv.y;
-                half3 albedo = _BaseColor.rgb;
+                half3 albedo = _BaseColor.rgb * SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.uv).rgb;
 
                 float belly = 0.0;
                 if (_BellyAmount > 0.0)
@@ -412,8 +420,10 @@ Shader "Slug/Toon"
                     float ne = (length((q - _FaceNos.xy) / nr) - 1.0) * min(nr.x, nr.y);
                     float nos = (1.0 - smoothstep(-aa, aa, ne)) * facing;
 
-                    // small round eyes
-                    float ee = length(q - _FaceEye.xy) - _FaceEye.z;
+                    // small round eyes; the left one squeezes shut into a short line (looking along a gun)
+                    float wink = _FaceEye.w * step(dot(dv, _FaceR.xyz), 0.0);
+                    float2 eab = _FaceEye.z * float2(1.0 + 0.25 * wink, 1.0 - 0.8 * wink);
+                    float ee = (length((q - _FaceEye.xy) / eab) - 1.0) * min(eab.x, eab.y);
                     float eye = (1.0 - smoothstep(-aa, aa, ee)) * facing;
 
                     // straight single-line mouth with rounded ends
