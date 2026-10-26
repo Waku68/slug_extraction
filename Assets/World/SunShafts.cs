@@ -14,16 +14,16 @@ namespace SlugWorld
     /// </summary>
     public class SunShafts : MonoBehaviour
     {
-        [Tooltip("一度に立つ光の筋の数（いちばん多いとき）")] public int count = 80;
+        [Tooltip("一度に立つ光の筋の数（いちばん多いとき）")] public int count = 50;
         [Tooltip("目からの距離（m）：近い・遠い")] public Vector2 range = new Vector2(3f, 45f);
         [Tooltip("1秒に新しく探す数")] public float triesPerSecond = 70f;
-        [Tooltip("影のふちでない、開けた日なたにも立てる割合")] public float openChance = 0.3f;
+        [Tooltip("影のふちでない、開けた日なたにも立てる割合")] public float openChance = 0.15f;
         [Tooltip("筋の高さ（m、太陽に向かう長さ）")] public Vector2 height = new Vector2(5f, 14f);
-        [Tooltip("筋の太さ（m）")] public Vector2 width = new Vector2(0.35f, 1.6f);
+        [Tooltip("筋の太さ（m）")] public Vector2 width = new Vector2(0.25f, 1.0f);
         [Tooltip("1本が立っている時間（秒）")] public Vector2 life = new Vector2(5f, 11f);
         [Tooltip("出る・消える時間（秒）")] public float fade = 1.6f;
         [Tooltip("強さ：土や草の日なた・塩の上")] public float soilStrength = 0.55f, saltStrength = 1f;
-        [Tooltip("全体の明るさ")] public float intensity = 0.55f;
+        [Tooltip("全体の明るさ")] public float intensity = 0.2f;
         public Color color = new Color(1f, 0.93f, 0.7f, 1f);
 
         struct Shaft

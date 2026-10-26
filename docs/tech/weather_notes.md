@@ -21,8 +21,8 @@ Oct 5, 2026
 
 ## 日なたの光の筋（Oct 26）
 
-- `Raid/SunGlare.cs`（プレイヤーにだけ。`SlugMoisture` が付ける）：晴れの昼に日なたにいる間、画面の太陽の側から光の筋。強さは `SlugMoisture.SunDrying`（土・草 0.5、塩 1）。日なたに出た瞬間に一度強く光る。IMGUI で描く（`SaltCrust` と同じ）
-- `World/SunShafts.cs`（`WeatherPresenter` が付ける。みんなに見える）：目のまわり 3〜45 m の日なたの地面から太陽へ向かう光の筋を 80 本まで。影のふちに多く、塩の上は明るい。シェーダーは `World/Shaders/SunShaft.shader`（足し算の半透明）。地形があれば地形の高さ（木の上に立たない）
+- `Raid/SunGlare.cs`（プレイヤーにだけ。`SlugMoisture` が付ける）：晴れの昼に日なたにいる間、画面全体に太陽の側からおおよそ同じ向きの光の帯（Oct 27 に、一点から広がる形から変えた）。強さは `SlugMoisture.SunDrying`（土・草 0.5、塩 1）。日なたに出た瞬間に一度強く光る。IMGUI で描く（`SaltCrust` と同じ）
+- `World/SunShafts.cs`（`WeatherPresenter` が付ける。みんなに見える）：目のまわり 3〜45 m の日なたの地面から太陽へ向かう薄い光の筋を 50 本まで（Oct 27 に弱くした）。影のふちに多く、塩の上は明るい。シェーダーは `World/Shaders/SunShaft.shader`（足し算の半透明）。地形があれば地形の高さ（木の上に立たない）
 - どちらも、曇り・朝夕・夜・雨では出さない。数字は各スクリプトの上のツールチップ
 - **ビルドするとき**：`SunShaft` シェーダーは `Shader.Find` で探すので、Graphics の Always Included Shaders に入れる
 
