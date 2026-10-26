@@ -164,7 +164,7 @@ namespace SlugExtract
             {
                 if (_extractProgress > 0f)
                     GUI.Label(new Rect(0, h * 0.3f, w, 50), $"脱出中… {Mathf.Clamp01(_extractProgress / settings.extractTime) * 100f:0}%", _big);
-                GUI.Label(new Rect(0, h - 40, w, 30), "左クリック 叩く・撃つ・突く（1 ピッケル / 2 背中の銃 / 3 腰の道具）／ E つかむ・バッグに入れる / G バッグから出す・落とす / Q 覗く / X 体に突っ込む / Z 伏せ / F 水の苔玉 ／ 光の柱が脱出口", _small);
+                GUI.Label(new Rect(0, h - 40, w, 30), "左クリック 叩く・撃つ（1 ピッケル / 2 背中の銃 / 3 腰の道具）／ E つかむ・バッグに入れる / G バッグから出す・落とす / Q 覗く / X 体に突っ込む / Z 伏せ / F 水の苔玉 ／ 光の柱が脱出口", _small);
                 return;
             }
 

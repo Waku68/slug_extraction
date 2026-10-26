@@ -4,7 +4,7 @@ using UnityEngine.InputSystem;
 namespace SlugMove
 {
     /// <summary>
-    /// Choosing what to carry before setting out: one big gun for the back and a small gun or a knife for the hip (the
+    /// Choosing what to carry before setting out: one big gun for the back and a small gun for the hip (the knife is not offered; the
     /// pickaxe always goes on the back), and which bag to wear (or none). Until the base exists, it opens over the test scenes: at the start of a raid
     /// (<see cref="openOnStart"/>), or with Tab where changing at any time is allowed. While it is open the cursor is
     /// free and the slug does not move or use anything.
@@ -51,6 +51,7 @@ namespace SlugMove
             IsOpen = true;
             _back = loadout.backGun;
             _hip = loadout.hip;
+            if (_hip == HipTool.Knife && FindSmall()) _hip = HipTool.Pistol;     // (a scene set up with the knife gets the pistol)
             _bagComp = loadout.GetComponent<SlugExtract.SlugBag>();
             if (_bagComp) _bag = _bagComp.kind;
             _moveWas = controller && controller.inputEnabled;
@@ -123,13 +124,11 @@ namespace SlugMove
             GUI.Label(new Rect(x + 190f, y - 6f, PW - 230f, 24f), "<color=#c8c8c8>＋ ピッケル（いつも背中に持つ）</color>", _note);
             y += 34f;
 
-            // ---- the hip: a small gun or the knife
-            GUI.Label(new Rect(x, y, 200f, 30f), "<b>腰</b>（小さい銃かナイフ）", _label);
+            // ---- the hip: a small gun (no knife: spec 8章 Oct 26, the knife is not made; its code stays)
+            GUI.Label(new Rect(x, y, 200f, 30f), "<b>腰</b>（小さい銃）", _label);
             bx = x + 190f;
             var pistol = FindSmall();
             if (pistol && Choice(new Rect(bx, y - 2f, 148f, 34f), pistol.gun.displayName, _hip == HipTool.Pistol)) _hip = HipTool.Pistol;
-            if (pistol) bx += 154f;
-            if (loadout.knife && Choice(new Rect(bx, y - 2f, 148f, 34f), "ナイフ", _hip == HipTool.Knife)) _hip = HipTool.Knife;
             y += 50f;
 
             // ---- the bag (cloth and leather take any amount; the others have a limit)
