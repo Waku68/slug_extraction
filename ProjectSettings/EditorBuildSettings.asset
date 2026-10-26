@@ -6,37 +6,22 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/MoveTest.unity
+    path: Assets/Scenes/Tests/MoveTest.unity
     guid: bf332f540e1ef63489d9aa0499b8ae89
   - enabled: 1
-    path: Assets/Scenes/ExtractTest.unity
+    path: Assets/Scenes/Tests/ExtractTest.unity
     guid: b9c1fde671903d24ab09d3328e082056
   - enabled: 1
-    path: Assets/Scenes/SwingTest.unity
+    path: Assets/Scenes/Tests/SwingTest.unity
     guid: 61733e1dff0e6c243b1c6e60c1ae91fb
   - enabled: 1
-    path: Assets/Scenes/GunTest.unity
+    path: Assets/Scenes/Tests/GunTest.unity
     guid: 91ac69a2c8ce84f4680e12733be7bc8a
   - enabled: 1
-    path: Assets/Scenes/RegionTest.unity
-    guid: bfdacbb4c12450e4e99f24ebec5a5f57
-  - enabled: 1
-    path: Assets/Scenes/IslandTest.unity
-    guid: 960e8d854320ef1489b656c6cc7bc477
-  - enabled: 1
-    path: Assets/Scenes/IslandTest_500.unity
-    guid: f1fb6a204647f9a439432a119464f6fc
-  - enabled: 1
-    path: Assets/Scenes/IslandTest_400.unity
-    guid: 0ff91c8897da95344af703c22ef8683d
-  - enabled: 1
-    path: Assets/Scenes/IslandTest_300.unity
-    guid: 505b569c9456643499d33891de70185e
-  - enabled: 1
-    path: Assets/Scenes/IslandTest_800.unity
+    path: Assets/Scenes/Game/IslandTest_800.unity
     guid: cac2a5ae285b95848bb637a5193cffd3
   - enabled: 1
-    path: Assets/Scenes/CenoteBase.unity
+    path: Assets/Scenes/Game/CenoteBase.unity
     guid: c372132aa15215c4799123f4c71a00aa
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 289c1b55c9541489481df5cc06664110, type: 3}
