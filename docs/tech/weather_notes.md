@@ -19,6 +19,13 @@ Oct 5, 2026
 
 **時刻だけから計算する理由**：全員が同じ時刻に同じ空を見る（共通の予報）。誰もいない場所を止めておいて、入ったときにその時刻の姿で起こせる（`discussions/persistent_island_discussion.md` の 3-1）。
 
+## 日なたの光の筋（Oct 26）
+
+- `Raid/SunGlare.cs`（プレイヤーにだけ。`SlugMoisture` が付ける）：晴れの昼に日なたにいる間、画面の太陽の側から光の筋。強さは `SlugMoisture.SunDrying`（土・草 0.5、塩 1）。日なたに出た瞬間に一度強く光る。IMGUI で描く（`SaltCrust` と同じ）
+- `World/SunShafts.cs`（`WeatherPresenter` が付ける。みんなに見える）：目のまわり 3〜45 m の日なたの地面から太陽へ向かう光の筋を 80 本まで。影のふちに多く、塩の上は明るい。シェーダーは `World/Shaders/SunShaft.shader`（足し算の半透明）。地形があれば地形の高さ（木の上に立たない）
+- どちらも、曇り・朝夕・夜・雨では出さない。数字は各スクリプトの上のツールチップ
+- **ビルドするとき**：`SunShaft` シェーダーは `Shader.Find` で探すので、Graphics の Always Included Shaders に入れる
+
 ## 見え方
 
 - 空は単色（時刻と天気から色を決める）。Unity の標準の空は、曇りでも地平線がオレンジになるのでやめた
