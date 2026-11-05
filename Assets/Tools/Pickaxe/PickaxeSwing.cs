@@ -409,7 +409,39 @@ namespace SlugMove
             if (Phase == SwingPhase.Idle) return restLocal;
             // a wind-up starts from where the tool was (part way back from the previous swing when chained)
             var from = Phase == SwingPhase.Windup ? ToolPose.Lerp(restLocal, _fromSwing, _fromBlend) : restLocal;
-            return ToolPose.Lerp(from, SwingPoseLocal(), Mathf.Clamp01(_beta));
+            return ToolPose.Lerp(from, PoseAt(_theta - DrawnWindExtra, _lambda, _psi), Mathf.Clamp01(_beta));
+        }
+
+        /// <summary>
+        /// How much further back than the swing itself the tool is drawn (degrees): wound deeper over the wind-up and
+        /// unwound early in the strike. Only the look: the head's path that is swept for hits is the swing's own.
+        /// </summary>
+        float DrawnWindExtra
+        {
+            get
+            {
+                var s = settings;
+                if (Phase == SwingPhase.Windup) return s.windupExtra * Smooth(PhaseTime / Mathf.Max(s.windupTime, 1e-3f));
+                if (Phase == SwingPhase.Strike)
+                    return s.windupExtra * (1f - Smooth(PhaseTime / Mathf.Max(s.strikeTime * s.windupExtraUnwind, 1e-3f)));
+                return 0f;
+            }
+        }
+
+        /// <summary>
+        /// How far round the upper body is turned by the swing (for the body to follow it; nothing here depends on it):
+        /// +1 at the top of the wind-up, 0 where the head meets the aimed point, below 0 carried on through. Blended
+        /// in and out with the swing.
+        /// </summary>
+        public float BodyTurn
+        {
+            get
+            {
+                if (Phase == SwingPhase.Idle) return 0f;
+                float from = -settings.anticipation;
+                float p = (_theta - from) / Mathf.Max(_thetaContact - from, 1f);
+                return Mathf.Clamp01(_beta) * Mathf.Clamp(1f - p, -1f, 1f);
+            }
         }
 
         // for debug read-outs and tests

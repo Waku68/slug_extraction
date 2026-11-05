@@ -9,7 +9,7 @@ namespace SlugMove
 {
     /// <summary>
     /// Builds the MoveTest scene: a gray test map (slopes, steps, narrow corridors, bumpy ground) and the
-    /// main slug driven in first person. The settings asset is created once and never overwritten,
+    /// main slug (the two-legged one since Nov 3) driven in first person. The settings asset is created once and never overwritten,
     /// so tuned values survive a rebuild.
     /// </summary>
     public static class MoveTestBuilder
@@ -127,70 +127,12 @@ namespace SlugMove
         }
 
         // ------------------------------------------------------------------ player
-        /// <summary>Where the face sits in front of the capsule's axis (m). The slug turns about that axis.</summary>
-        const float FaceForward = 0.122f;
-
-        /// <summary>The main slug with the first-person controller, camera, debug HUD and the pickaxe.</summary>
-        internal static GameObject BuildPlayer(SlugMoveSettings settings, Vector3 position)
-        {
-            var player = new GameObject("Player");
-            player.transform.position = position;
-            var cc = player.AddComponent<CharacterController>();
-            cc.radius = 0.18f;   // the body is about 0.33 m wide; a 0.36 m capsule passes a 0.45 m corridor
-            cc.height = 0.56f;
-            cc.center = new Vector3(0f, 0.28f, 0f);
-            cc.skinWidth = 0.03f;
-            cc.minMoveDistance = 0f;
-            cc.slopeLimit = settings.slopeLimit;
-            cc.stepOffset = settings.stepHeight;
-
-            // the capsule sits around the head; the body trails behind it (eyes at about +0.16 m, inside the capsule)
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(SlugLookbook.PrefabPath);
-            var slugGo = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
-            slugGo.name = "Body";
-            slugGo.transform.SetParent(player.transform, false);
-            slugGo.transform.localPosition = new Vector3(0f, -cc.skinWidth, -0.31f);
-            var slug = slugGo.GetComponent<SlugPop>();
-            SlugLookbook.ApplyCurrent(slug);
-            PrefabUtility.RecordPrefabInstancePropertyModifications(slug);
-            slug.Rebuild();
-            // keep the face over the front of the capsule whatever the body length (the body is centred on its footprint)
-            float faceZ = player.transform.InverseTransformPoint(slug.FaceCenterWorld).z;
-            slugGo.transform.localPosition += new Vector3(0f, 0f, FaceForward - faceZ);
-
-            var camGo = new GameObject("Main Camera") { tag = "MainCamera" };
-            var cam = camGo.AddComponent<Camera>();
-            cam.nearClipPlane = 0.02f;
-            cam.farClipPlane = 200f;
-            cam.fieldOfView = settings.fieldOfView;
-            camGo.AddComponent<AudioListener>();
-            camGo.transform.SetPositionAndRotation(player.transform.position + new Vector3(0f, 0.47f, 0.3f), Quaternion.identity);
-
-            var move = player.AddComponent<SlugMoveController>();
-            var rig = player.AddComponent<SlugCameraRig>();
-            var hud = player.AddComponent<SlugMoveHud>();
-            var tool = player.AddComponent<SlugToolHolder>();
-            move.settings = settings; move.cameraRig = rig; move.body = slugGo.transform;
-            rig.settings = settings; rig.controller = move; rig.slug = slug; rig.cam = cam;
-            hud.controller = move; hud.cameraRig = rig;
-            tool.pickaxe = LoadPickaxeSettings(); tool.controller = move; tool.cameraRig = rig; tool.slug = slug;
-            // the guns that can be carried: one big gun on the back, the pistol (or the knife) on the hip.
-            // 1 = pickaxe, 2 = the back gun, 3 = the hip tool (or the wheel); only the one in hand is enabled
-            var kinds = new[] { GunKind.Rifle, GunKind.Shotgun, GunKind.Sniper, GunKind.Pistol };
-            var guns = new SlugGunHolder[kinds.Length];
-            for (int i = 0; i < kinds.Length; i++)
-            {
-                var gun = guns[i] = player.AddComponent<SlugGunHolder>();
-                gun.gun = LoadGunSettings(kinds[i]); gun.controller = move; gun.cameraRig = rig; gun.slug = slug;
-                gun.enabled = false;
-            }
-            var loadout = player.AddComponent<SlugLoadout>();
-            loadout.pickaxe = tool; loadout.guns = guns;
-            FitLoadout(player);
-            // what a shot can hit, part by part (the movement capsule is not hit)
-            player.AddComponent<SlugHitboxes>().slug = slug;
-            return player;
-        }
+        /// <summary>
+        /// The player: the two-legged slug with the first-person controller, camera, debug HUD, the tools and its hitboxes
+        /// (<see cref="DinoMoveTestBuilder.BuildPlayer"/>; Nov 3, every scene). The crawling slug it replaced is kept,
+        /// playable, in the lookbook (<see cref="SlugLookbook.BuildPlayer"/>).
+        /// </summary>
+        internal static GameObject BuildPlayer(SlugMoveSettings settings, Vector3 position) => DinoMoveTestBuilder.BuildPlayer(settings, position);
 
         /// <summary>
         /// Gives a player everything it can carry and what goes with it: the pistol and the knife for the hip, the
@@ -202,7 +144,7 @@ namespace SlugMove
             var loadout = player.GetComponent<SlugLoadout>();
             var move = player.GetComponent<SlugMoveController>();
             var rig = player.GetComponent<SlugCameraRig>();
-            var slug = player.GetComponentInChildren<SlugPop>();
+            var slug = player.GetComponentInChildren<SlugBodyBase>();   // the crawling slug or the two-legged one
             var guns = new List<SlugGunHolder>(player.GetComponents<SlugGunHolder>());
             if (!guns.Exists(g => g.gun && g.gun.kind == GunKind.Pistol))
             {
@@ -256,7 +198,7 @@ namespace SlugMove
         }
 
         // ------------------------------------------------------------------ map
-        static void BuildMap()
+        internal static void BuildMap()
         {
             // floor with a 1 m grid so the speed can be read by eye
             var floor = Box("Floor", new Vector3(3f, -0.05f, 6f), new Vector3(50f, 0.1f, 40f), _floorMat);

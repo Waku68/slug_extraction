@@ -11,7 +11,8 @@ namespace SlugMove
     /// a knife (chosen before setting out, <see cref="SetLoadout"/>). 1 = the pickaxe, 2 = the back gun, 3 = the hip tool;
     /// the mouse wheel steps through them. Only the held tool's component is enabled; the others ride on the body
     /// (<see cref="SlugToolRack"/>). Taking a tool off the back is slow, off the hip quick (<see cref="LoadoutSettings"/>);
-    /// it cannot be used until it is in hand. Runs before the tools so the ones not held never show up on the first frame.
+    /// it cannot be used until it is in hand. A tool from the back is put back there first, the way it came
+    /// (<see cref="BackDraw"/>), and only then is the next one taken. Runs before the tools so the ones not held never show up on the first frame.
     /// </summary>
     [DefaultExecutionOrder(-50)]
     public class SlugLoadout : MonoBehaviour
@@ -83,6 +84,7 @@ namespace SlugMove
         {
             get
             {
+                if (_stowTool) return 0f;      // the one before is still being put away
                 var t = CurrentTool;
                 if (t is SlugGunHolder g) return g.Ready ? g.Handling.EquipLinear : 0f;
                 if (t is SlugToolHolder p) return p.DrawProgress;
@@ -91,10 +93,25 @@ namespace SlugMove
             }
         }
 
+        /// <summary>The slot whose tool is in the hands right now: the one being put away while that lasts, else <see cref="Current"/>.</summary>
+        public int InHand => _stowTool ? _stowSlot : Current;
+
+        /// <summary>0..1: how far <paramref name="holder"/>'s tool has been put away onto the back (0 when it is not being put away).</summary>
+        public float PutAway(MonoBehaviour holder) => holder && holder == _stowTool ? _stow : 0f;
+        /// <summary><paramref name="holder"/>'s tool is on its way back onto the body (it cannot be used meanwhile).</summary>
+        public bool PuttingAway(MonoBehaviour holder) => holder && holder == _stowTool;
+
+        // a tool off the back is put away before the next one is taken: back along the way it came, then the hand comes back
+        MonoBehaviour _stowTool;
+        int _stowSlot;
+        float _stow;
+        bool _stowUndo;      // changed mind: the one going away comes back into the hand
+
         void Awake() { Select(startWith, true, true); }
 
         void Update()
         {
+            StepStow(Time.deltaTime);
             if (driven || !inputEnabled || HandsFull || Cursor.lockState != CursorLockMode.Locked || (Rig && Rig.HandsBusy)) return;
             var kb = Keyboard.current;
             if (kb != null)
@@ -125,7 +142,58 @@ namespace SlugMove
         {
             slot = Mathf.Clamp(slot, 0, Count - 1);
             if (!Tool(slot)) return;
+            if (_stowTool)
+            {
+                if (instant || redraw) FinishStow(false);      // put away at once, then taken as usual below
+                else
+                {
+                    // while putting away: the same one again brings it back into the hand, another one waits its turn
+                    _stowUndo = slot == _stowSlot;
+                    if (Current != slot) { Current = slot; Changed?.Invoke(); }
+                    return;
+                }
+            }
             if (slot == Current && !redraw && Tool(slot).enabled) return;
+            // what is in hand now goes back first if it rides on the back (the hip is quick: put away at once)
+            var from = Tool(Current);
+            if (!instant && !HandsFull && settings && settings.backStowTime > 0f && Current != HipSlot && from && from.enabled && from != Tool(slot))
+            {
+                _stow = 1f - DrawProgress;      // still on its way out: it goes back from where it got to
+                _stowTool = from;
+                _stowSlot = Current;
+                _stowUndo = false;
+                Current = slot;
+                Changed?.Invoke();
+                return;
+            }
+            Take(slot, instant, redraw);
+        }
+
+        void StepStow(float dt)
+        {
+            if (!_stowTool) return;
+            _stow = Mathf.MoveTowards(_stow, _stowUndo ? 0f : 1f, dt / Mathf.Max(settings ? settings.backStowTime : 0f, 1e-3f));
+            if (_stowUndo && _stow <= 0f)
+            {
+                // back in the hand as it was, ready at once
+                _stowTool = null;
+                Current = _stowSlot;
+                Changed?.Invoke();
+            }
+            else if (!_stowUndo && _stow >= 1f) FinishStow(true);
+        }
+
+        /// <summary>The tool being put away is on the back now; the chosen one is taken in hand (<paramref name="take"/>).</summary>
+        void FinishStow(bool take)
+        {
+            var t = _stowTool;
+            _stowTool = null;
+            if (t) t.enabled = false;
+            if (take) Take(Current, false, false);
+        }
+
+        void Take(int slot, bool instant, bool redraw)
+        {
             Current = slot;
             var held = Tool(slot);
             float time = instant ? 0f : DrawTime(slot);
@@ -157,6 +225,7 @@ namespace SlugMove
             HandsFull = full;
             if (full)
             {
+                _stowTool = null;
                 if (pickaxe) pickaxe.enabled = false;
                 if (knife) knife.enabled = false;
                 foreach (var g in guns) if (g) g.enabled = false;

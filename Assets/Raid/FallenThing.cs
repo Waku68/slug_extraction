@@ -51,6 +51,7 @@ namespace SlugExtract
             bool moss = kind == Kind.MossBall;
             Color c = moss ? new Color(0.36f, 0.5f, 0.27f) : new Color(0.82f, 0.78f, 0.68f);
             if (_mat.HasProperty("_BaseColor")) _mat.SetColor("_BaseColor", c);
+            if (_mat.HasProperty("_IslandLook")) _mat.SetFloat("_IslandLook", 0f);
             if (_mat.HasProperty("_Color")) _mat.SetColor("_Color", c);
             float r = moss ? 0.04f : 0.035f;
             _mesh = SlugMeshFactory.Sphere(name, r, 14, 10);

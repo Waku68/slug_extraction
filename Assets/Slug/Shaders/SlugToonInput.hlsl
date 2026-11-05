@@ -156,6 +156,11 @@ CBUFFER_START(UnityPerMaterial)
     float4 _PathAnchor;      // xyz: where the rear starts (body space, under the slug's feet), w: spacing of the knots (0 = off)
     float4 _PathA0;          // the rear's pitch (radians, + = rising behind) at knots 1..4 behind the anchor (0 at the anchor)
     float4 _PathA1;          // ... at knots 5..8; straight on from the last one
+
+    // rocks on the island wear the ground of their place on the faces that look up (0 = off)
+    half  _TopCoat;
+    half  _WindAmount;
+    half  _IslandLook;
 CBUFFER_END
 
 // Global overrides so screenshots can freeze the crawl animation at a known time.
@@ -165,6 +170,19 @@ float _SlugTimeValue;
 float SlugTime()
 {
     return _SlugFreeze > 0.5 ? _SlugTimeValue : _Time.y;
+}
+
+// The air (haze, shade colour, valley mist, dawn glow, the ground map, wetness, cloud shadows) and wind
+#include "SlugAir.hlsl"
+#include "SlugWind.hlsl"
+
+// 1 = island world object (rocks, plants, props: wets & shines up close, desaturates in far rain haze)
+// 0 = slug character or worn gear (keeps its colour in the rain so bright bodies stand out afar)
+float SlugIsIslandObject()
+{
+    if (_IslandLook < 0.5 || _BellyAmount > 0.001 || _WrinkleAmount > 0.001 || _FaceC.w > 0.5 || _EyeKind > 0.5 || _FollowMode > 0.5 || _WaveAmp > 0.001)
+        return 0.0;
+    return 1.0;
 }
 
 // ---- noise helpers ----

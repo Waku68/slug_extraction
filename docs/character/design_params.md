@@ -1,5 +1,7 @@
 # キャラデザイン パラメータ一覧（現在値）
 
+**前の体（Nov 1 までの這う体）の値**。Nov 2 から体は2本足で、新しい体の数字は `Assets/Slug/Scripts/Runtime/DinoSlugBody.cs` の冒頭（`dino_slug_impact.md`）。
+
 `SlugPop`（`Assets/Slug/Scripts/Runtime/SlugPop.cs`）の現在値。経緯は `character_design.md`。
 スライダーはすべて 1.0 = ポップ側、0.0 = 本物のナメクジ寄り。一括スライダー `Pop` を動かすと全要素が同じ値に揃い、要素別を動かすとその要素だけが変わる。
 

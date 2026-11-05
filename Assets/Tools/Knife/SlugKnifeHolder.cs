@@ -24,7 +24,7 @@ namespace SlugMove
         public KnifeSettings knife;
         public SlugMoveController controller;
         public SlugCameraRig cameraRig;
-        public SlugPop slug;
+        public SlugBodyBase slug;
         [Tooltip("false の間は突けない（試合の終了後など）")] public bool inputEnabled = true;
         /// <summary>How long the next draw takes (set by the loadout before enabling; 0 or less = at once).</summary>
         [System.NonSerialized] public float drawTime = -1f;

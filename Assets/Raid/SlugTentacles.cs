@@ -29,7 +29,7 @@ namespace SlugExtract
         SlugHealth _health;
         SlugHitboxes _hitboxes;
         SlugCameraRig _rig;
-        SlugEquipment _gear;
+        SlugGearBase _gear;
 
         // per side (0 = left, 1 = right): how far drawn in (0..1), how hard the last hit pulled, the time since it
         readonly float[] _pull = new float[2], _pullTo = new float[2], _since = { 99f, 99f };
@@ -43,7 +43,7 @@ namespace SlugExtract
             _health = GetComponentInChildren<SlugHealth>(true);
             _hitboxes = GetComponentInChildren<SlugHitboxes>(true);
             _rig = GetComponentInChildren<SlugCameraRig>(true);
-            if (_slug) _gear = _slug.GetComponent<SlugEquipment>();
+            if (_slug) _gear = _slug.GetComponent<SlugGearBase>();
         }
 
         void OnEnable()

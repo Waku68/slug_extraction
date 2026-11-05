@@ -116,7 +116,7 @@ namespace SlugExtract
                 moisture.settings = condition;
                 moisture.controller = bag.controller;
                 moisture.cameraRig = root.GetComponent<SlugCameraRig>();
-                moisture.slug = root.GetComponentInChildren<SlugPop>();
+                moisture.slug = root.GetComponentInChildren<SlugBodyBase>();
                 moisture.health = health;
                 moisture.portrait = root.GetComponent<SelfPortrait>();
                 EditorUtility.SetDirty(health);

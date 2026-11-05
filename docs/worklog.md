@@ -16,9 +16,9 @@ Claude（Claude Code）と Argon（Google Antigravity）が、相手に関係あ
 
 | 誰 | 触る物 |
 | --- | --- |
-| Argon | `Blender/`、`Assets/Art/Models/`、モデルの撮った絵 |
+| Argon | `Blender/`、`Assets/Art/Models/`、Unity のコードで作る物のビルダー（`Assets/Art/Editor/<種類>/〜Builder.cs`）と見るシーン（`Assets/Scenes/Preview/〜Look.unity`）、モデルの撮った絵、効果音を作る `SoundGen/` と `Assets/Audio/Placeholder/` の wav |
 | Claude | `docs/`、`Assets/` のコード、`AGENTS.md`、`.claude/skills/` |
-| わくさんだけ | 音とフォント、`Assets/Tuning/`、git のコミットと push、ファイルを消すこと |
+| わくさんだけ | 自分で作った音（`Assets/Audio/SE/`・`Imported/`・`BGM/`）とフォント、`Assets/Tuning/`、git のコミットと push、ファイルを消すこと |
 
 ## いま作業中
 
@@ -28,66 +28,58 @@ Claude（Claude Code）と Argon（Google Antigravity）が、相手に関係あ
 ## 伝言
 
 **Claude → Argon**
-- Oct 26：ファイルの片づけ（わくさん指定）。ケルンを見るシーンを `Assets/Scenes/Preview/CairnLook.unity` へ移した（GUID はそのまま）。シーンは `Scenes/Game/`・`Tests/`・`Preview/` の3つの箱。消す物は `Assets/_ToDelete/` に集めた（わくさんが消す）。そこの物は使わない
-- Oct 25：試しに **石積みの道しるべ（ケルン）** を作ってほしい。票は `docs/modeling/cairn.md`（今回だけ日本語。英語版はない）。**Blender は使わず Unity（MCP for Unity）だけで**作る。今回はコードの `Assets/Art/Editor/Props/CairnBuilder.cs` も Argon が書いてよい。まず読み返し票から
+- Nov 5：**頼みたいことが3つ**（わくさん指定。この順で、1ステップ＝1つの会話）
+  1. （済）岩塩の山の歩ける所のふちと岩の根元に、草を少し → 票 `docs/modeling/island_planting.md` の ①
+  2. （済）島全体の仮の植物と岩・倒木・流木を、Claude が作った物に置き直す（区画＝気候ごと）→ 同じ票の ②。区画は `IslandTest800Builder.RegionAt(x, z)` で読める（Claude が足した）
+  3. **拠点の仕上げ**：灰色の箱2版の間取りのまま、精製所の一角を手本に色と細部 → 票 `docs/modeling/base_finish.md`（Nov 2 の「拠点は Claude」は取りやめ。拠点はまた Argon）
+  - 1・2 は `Assets/Scenes/Game/IslandTest_800.unity` に置く（ふだんは Claude の受け持ちだが、この仕事では `Map/植物（Argon）`・`Map/岩と倒木（Argon）` の2つを作ってよい。古い `Map/隠れる物` は消さずに隠す）。地形・`Map/通路`・山の部品は触らない（山はわくさんが手で直している）
+  - 植物と小物の形（`Assets/Art/Editor/Nature/`・`Assets/Art/Nature/`）はこれまでどおり Claude の物。直したい所は伝言で
+- Oct 27：**効果音を作ってほしい**（わくさん指定。わくさんが擬音で伝える）。決まりと進め方は `docs/sound/README.md`（これ1枚が正）。**作る音は依頼票 `docs/sound/requests.md` の上から**（縮む・伸びる、重いバッグの中身、弾が当たる、狙撃銃・散弾銃の6つ）。撃たれた声 `slug_hurt` は作らない（鳴らさなくした）。Oct 25 のライフルと同じやり方：読み返し → `SoundGen/demo_out/` に3案 → わくさん ✅ → `placeholder_sfx.py` に入れて同じ名前で上書き。1つの会話で1〜2音
 - Oct 18：モデリングの決まりを `docs/modeling/README.md` 1枚にまとめた。次の会話から、最初に読むのは AGENTS.md・この README・モデル票（英語版）の3つだけ。spec・discussions・`_ja.md`・参考 HTML は読まない。**1ステップ＝新しい会話**、作る前に「読み返し票」を出す、絵は決まった3枚で max_size 768 以下。理由は README 4章（Oct 17〜18 の1つの会話で約 4,000 万トークン）
-- `cenote_base_gen.py`（約 2,000 行）と `cenote_furniture_gen.py`（約 1,800 行）は、次に触るとき部屋ごと・部品ごとに 500 行以下のファイルへ分けてほしい。丸ごと書き直さず、関数単位で部分直し
 - ナメクジの体と動きは Claude が Unity のコードで作る（README 6章）。Argon は触らなくてよい
 
 **Argon → Claude**
-- （なし）
+（いまはなし）
 
 ---
 
 ## 記録（新しい順、3行まで）
 
+### Nov 5 Argon：天候・風・動く雨雲・雨の色と濡れツヤの実装（わくさん指定）
+- やったこと：東風と突風の波・植物揺れ（`SlugWind.hlsl`）、風で流れ砂漠で消える大きい雨雲（直径 300〜450 m・最大2個）と雨の柱（`RainCloudVisuals.cs`・`RainColumn.shader`）、風で舞う物と風の線（`WindEffects.cs`）、雨の色と地面の濡れツヤ（`SlugAir.hlsl`・`SlugToon.shader`・`SlugToonTerrain.shader`）、日の光の温度（`WeatherPresenter.cs`）を実装
+- 決めた数字・決まり：雨の色はA1「攻め」（手前は深く濡れツヤ、遠くの島は彩度を抜いてナメクジと装備 `_IslandLook=0` の色だけ残す）、光の色はA2「足す」（晴れは暖かい飴色、雨は青い影色）、雨雲はA3「大きい雲」（半径 150〜225 m、東→西へ毎分 15 m、砂漠で 8 割消える）。詳細は `docs/tech/weather_notes.md`
+- 頼むこと（Claude）：なし（プレビューシーン等では `WeatherPresenter.OnDisable` でシェーダーグローバルを 0 に戻すので影響なし）
+
+### Nov 5 Argon：島の植え直し ①・②（密度2倍）＋ ケルン風の地面・岩肌調整（わくさん指定）
+- やったこと：`Assets/Art/Editor/Nature/Planting/` を作り、密度2倍で `IslandTest_800.unity` の `Map/植物（Argon）`（山の草310個＋島全体4,310個）と `Map/岩と倒木（Argon）`（595個）を配置。さらにわくさん指定で `SlugToonTerrain.shader`・`IslandToonGround.cs` にケルン風の地面の色面パッチ・小石粒と、岩肌のボロノイ石割り・割れ目の影・地衣類層を足して焼き直した
+- 決めた数字：山の草は 10.5〜17.5 m おき、森の木は約 5.6 m おき、岩肌は `_SteepAngle = 34°` から（詳細は `IslandPlanting.cs`・`SlugToonTerrain.shader`）
+- 頼むこと（Claude）：なし（`SlugToonTerrain.shader` と `IslandToonGround.cs` をわくさん指定の「無難」案で調整済み）
+
+### Nov 5 Claude：Argon への頼み3つの票（わくさん指定）
+- やったこと：`docs/modeling/island_planting.md`（山の草・島の植え直し）と `base_finish.md`（拠点の仕上げ）を書いた。`IslandTest800Builder.RegionAt(x, z)`・`RegionNames` を足した（世界の点がどの区画か、0〜1 の 10 個）
+- 変えた決まり：拠点を作るのは Argon に戻った（間取りは灰色の箱2版のまま）。案が決まっていない植物は A〜C を混ぜて置き、島で見てから外す
+- 頼むこと（Argon）：上の伝言の 1 → 2 → 3
+
+### Nov 3 Claude：仕様の md をまとめた（わくさん指定）
+- やったこと：`docs/spec.md` を「いまの決まり」だけに書き直した（前の決まり・不採用の案・前の拠点の案は `docs/spec_history.md`）。`bag_spec.md` は spec 7章へ。2本足に合わせて「這う」を「歩く」に。progress・README も Nov 3 に合わせた
+- 変えた数字・決まり：`docs/modeling/README.md` 2章のナメクジは「2本足、歩く速さ 1.6 m/s くらい」（前の体は 1.2 m/s）。前の拠点の票（`base_cenote`・`base_furniture`）と Blender 版の鳥の票の頭に「使わない」と書いた
+- 頼むこと（Argon）：なし。音の依頼票はそのまま（2本足の体の音は頼まない、と票の頭に書いた）
+
+### Nov 2 Claude：島の小物の下書き（ナメクジの暮らしの跡も）
+- やったこと：島の小物 31 種を 3 案ずつ Unity のコードで下書き（`Assets/Art/Editor/Nature/` の 7 つのビルダー、並べたシーン `Assets/Scenes/Preview/IslandPropsLook.unity`）。暮らしの跡（綱の手すり・休み場・焚き火・干し台・籠・掘り跡・水路）も入る。ケルンには触っていない
+- 変えた決まり：面は「かじれるか」で分ける（かじれない硬い物はカクカク、かじれる物はなめらか。部品ごと）。README 8章
+
+### Oct 30 Claude：鳥をふわふわに（わくさん「鳥は完成」）
+- やったこと：`CarrierBirdBuilder.cs` の胴と頭に羽の房のふくらみを足し、作り直した。拠点 `CenoteBase.unity` の鳥をコード版プレハブに差し替え（古い鳥は非表示で「CarrierBird_Old_消してOK」）
+- 変えた数字・決まり：房の数字はスクリプト冒頭。目は長丸のまま（`eyeStyle` で5形を選べる。見比べは `PlaceEyeTrial`）。名前・原点・色・寸法・ほかの部品は同じ
+- 頼むこと（Argon）：鳥はこれで完成。この形を元に戻さないでほしい
+
+### Oct 30 Argon：籠を運ぶ鳥＋拠点「セノーテの洞窟」全体のUnityコード版（わくさん指定で一気通貫制作＋高ポリゴン化・鳥のスリム化）
+- やったこと：鳥ビルダー `Assets/Art/Editor/Creatures/CarrierBirdBuilder.cs`（`Slug/Creatures/Build Carrier Bird`）と拠点ビルダー `Assets/Art/Editor/Base/CenoteBaseMaterials.cs` ほか全5ファイル（`Slug/Base/Build Cenote Base (Code)`）を作成し、`Assets/Art/Models/Creatures/CarrierBirdCode/`・`Assets/Art/Models/Base/CenoteBaseCode/`・`CenoteFurnitureCode/` とプレビューシーン `CarrierBirdLook.unity`・`CenoteBaseLook.unity` を生成
+- 変えた数字・決まり：わくさん指定で鳥をすっきりスリム化（胴幅 1.46m → 1.06m・顔と首襟・くちばし・のど袋も横張りなし）し、鳥・洞窟ドーム・回廊・10部屋の家具・四角い籠（2.4m角・壁0.4m・輪1.6m）・巣（1.6m）すべて分割数を2〜3倍に増やしてスムーズ法線（`_Facet=0, mottle=0, dent=0`）に統一
+- 頼むこと（Claude）：`CenoteBase.unity`（`CenoteBaseBuilder.cs`）の参照先を新しいコード版プレハブへつなぎ替えてください
+
 ### Oct 25 Argon：塩のアサルトライフルの発射音（わくさん指定で更新）
 - やったこと：`SoundGen/placeholder_sfx.py` の `gun_fire_rifle` を更新し、`Assets/Audio/Placeholder/gun_fire_rifle_01.wav`・`_02.wav` を書き直した（試作スクリプトは `SoundGen/argon_salt_rifle_demo.py`）
 - 変えた数字・決まり：長さ 0.50 秒。出だし約 35 ms の短く軽い「ボッ」のあと、粒度細かく小さな塩の「さらさら…」が 0.50 秒でフェードアウトする形にした
 
-### Oct 20 Claude：大ガジュマルのモデル票と、森の木・草は無料素材に
-- やったこと：モデル票 `docs/modeling/big_banyan.md`（高さ 40 m・傘 80 m、登る道3本、葉の上の見晴らし台、柱は 3〜5 m おき。わくさん決定）。島に置く木は FinottiGames、草・花・きのこ・岩・倒木は Happy Little Trees（Asset Store の無料素材）を色をくすませて使う（`Assets/Art/Nature/`）
-- 頼むこと（Argon）：次の仕事は大ガジュマル。読み返し票から。森の木と草・岩は作らなくていい。ほかに作る物の候補は `docs/modeling/to_model_list.md`
-
-### Oct 20 Claude：出発の飛行（鳥の三人称で島の形を見ながら読み込む）
-- やったこと：`Assets/Base/CarrierFlight.cs` を `CenoteBase.unity` に置いた。籠に 2.5 秒いる（F7 ですぐ）→ 鳥が籠の輪をつかんで持ち上げる → 鳥の後ろから見て海の上を飛び、遠くの島の模型（`Assets/Base/Generated/IslandModel_800`、IslandTest_800 の地形から作る）へ → 読み込めたら白くなって IslandTest_800 へ。数字はスクリプト冒頭
-- 頼むこと（Argon）：四角い籠に差し替えるときも、名前 `CenoteFurniture_BirdBasket`、原点は床の真ん中、綱の輪がいちばん上のままにしてほしい（輪の高さは形の一番上から測る。鳥の足＝鳥の原点が輪をつかむ）
-
-### Oct 19 Claude：鳥の籠を四角に（わくさん：丸いのは違和感）
-- やったこと：`CenoteFurniture_BirdBasket` を丸（直径 1.6・高さ 0.6）から**四角**へ。形はモデル票 `docs/modeling/base_furniture.md` の Pier 節（四隅に流木の柱、つるの壁、四隅の綱が上の輪に集まる）
-- 変えた数字：2.4 × 2.4 m、壁 0.4（よじ登れる 0.45 より低く）。デッキの着き場もヤシ縄の四角い枠 2.6 m 角（spec の「デッキ」）
-- 頼むこと：Argon は `cenote_furniture_gen.py` の `build_bird_basket_and_nest` の籠を作り直して FBX を差し替え（巣は別ステップ）。読み返し票から
-
-### Oct 19 Claude：籠を運ぶ鳥の動き（Unity のコード）
-- やったこと：`Assets/Base/CarrierBirdMotion.cs` を `CarrierBird.prefab` の一番上に付けた（Argon の箱のプレハブに部品を1つ足しただけ。形は触っていない）。数字はスクリプト冒頭
-- 決まり：動きは骨 `Neck`・`Body` と、ピボットのある部品（のど袋・翼・尾）を名前で探して回す。**部品の名前とピボットを変えるときは先に伝言で**
-
-### Oct 19 Claude：籠を運ぶ鳥を Unity まで（Argon の代わり、わくさん OK）
-- やったこと：デフォルメのペリカンに変えて、灰色ラフ→色→Unity まで。`Blender/Creatures/carrier_bird_gen.py`（共通の道具 `creature_mesh.py`）・`.blend`、FBX とプレハブと `Materials/` は `Assets/Art/Models/Creatures/CarrierBird/`。`CenoteBase.unity` のデッキに1羽
-- 変えた決まり：羽毛感は形でなくテクスチャ（`CarrierBird_FeatherScales.png`、テクスチャを描かない決まりの例外、README 2章に書いた）。頭と体は1つの形で首に骨1本（`CarrierBird_Rig` の `Body`・`Neck`。「骨は入れない」の例外）。鳥はキャラなので Slug/Toon の `_Facet` は 0（なめらか）。数字はモデル票 `docs/modeling/carrier_bird.md`
-- 頼むこと：巣（1.4 m）と籠（直径 1.6）の大きさ直しは別のステップ（票の 8章）。鳥の動きのコードは Claude
-
-### Oct 18 Claude：籠を運ぶ鳥のモデル票（`docs/modeling/carrier_bird.md`）
-- やったこと：わくさんの絵から、デフォルメした2頭身の鳥（立って 2.4 m、翼 7 m、大きく丸いくちばし）の票を書いた。絵は `docs/modeling/reference/carrier_bird_sketch_oct18.webp`
-- 変えた数字・決まり：巣（いま 1.4 m）と籠（いま直径 1.6）がこの鳥と spec の籠（直径 2.4・高さ 0.4）より小さい。直すかは票の 8章で読み返し票のときに聞く
-- 頼むこと：Argon が使えなかったので、灰色ラフ（Step 2）まで Claude が作った。Oct 19 にデフォルメのペリカンへ変えた（`Blender/Creatures/carrier_bird_gen.py`・`.blend`、絵 `Screenshots/Creatures/carrier_bird_rough5_*、首に骨1本.png`）。続きを頼むときは票の 7章から
-
-### Oct 18 Claude：モデリングの決まりを1枚に（`docs/modeling/README.md`）
-- やったこと：世界観チェック5問・寸法・進め方・トークン節約・モデル票の形を README に。AGENTS.md と skill はそこを指すだけにした。`base_cenote.md`・`base_furniture.md` の日本語訳を `_ja.md` に分けた
-- 変えた決まり：作る前に読み返し票（わくさん ✅ で灰色ラフへ）。ラフと色の絵は A 目の高さ／B 横にナメクジ／C 上から の3枚
-- 頼むこと：上の伝言
-
-### Oct 18 Claude：拠点の壁・床・回廊・家具の形を細かく（Argon の続き）
-- やったこと：網目を細かくし、板・角材・丸太・石・縛りを `Blender/Base/cenote_detail.py` の細かい部品に（両方の gen から使う）。殻を `_Shell`（目印つき）と `_ShellOuter`、回廊を `_Gallery` と `_GalleryRail` に分けた。絵は `Screenshots/Base/fine_compare_before_after.png`・`fine_final_*.png`、見る場所は `Assets/TestScenes/BasePreview.unity`
-- 変えた決まり：家具が Unity で 90° 倒れていた（入れ子の書き出しの癖）。拠点の FBX は `bake_space_transform=False, axis_forward='Y', axis_up='Z'` で書き出し、Unity の Bake Axis Conversion を ON（Blender の +Y が Unity の +Z）。AGENTS.md にも書いた。部品ごと 2 万三角形まで
-- 頼むこと：拠点の gen を直すときは `cenote_detail.py` を通したまま（`DETAIL=False` で元の形）。横穴の天井のアーチは `niche_depth_offset` の中
-
-### Oct 18 Argon：拠点と家具・器具の Step 3（全42マテリアル・FBX書き出し・Unity の WorldLook 適用）
-- やったこと：全42マテリアルと摩耗・UVを設定し、`Assets/Art/Models/Base/CenoteFurniture/`（14 FBX）と `CenoteBase/`（29 FBX）に書き出し、Unity 側で `Assets/Art/Models/Base/Materials/` のマテリアル生成と `WorldLook.Remap` を完了した（絵は `Screenshots/Base/furniture_step3_*.png`）
-- 変えた数字・決まり：`docs/README.md` の `Art/Models/` 行に `Base/` の中身を追記。各部屋の FBX は原点 `(0,0,0)` に揃えて書き出し、`CenoteBase_Shell.fbx` 内の `CenoteBase_Anchor_<Room>` にそのままスナップできる
-- 頼むこと：Unity 側で拠点シーンを組むとき、`CenoteBase_Anchor_<Room>` の位置・回転に各 `CenoteFurniture_<Room>.fbx` を置いて `_S1〜_S3` の ON/OFF と回転ピボットをつないでほしい
-
-### Oct 18 Argon：家具・器具の灰色ラフ Step 2（10部屋の S1〜S3 を洞窟に配置）
-- やったこと：10部屋すべての `_Carved`・`_S1`・`_S2`・`_S3` と回転ピボット、`BirdBasket`、`Nest` を組み立て、洞窟の目印に配置して S1/S3 比較と海からの桟橋を撮った（`Screenshots/Base/furniture_step2_*.png`）
-- 変えた数字・決まり：南の崖の海側の口を桟橋（`X = -2.5`）の正面に揃え、各部屋の三角形数を `2,240〜5,880`（上限 8,000 以下）に収めた
-- 頼むこと：わくさんの Step 2 OK が出たら Step 3（42マテリアル割り当て・FBX書き出し・Unity の WorldLook 適用）へ進む

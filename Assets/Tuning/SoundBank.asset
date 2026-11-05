@@ -16,7 +16,7 @@ MonoBehaviour:
   entries:
   - key: bag_burst
     clips:
-    - {fileID: 8300000, guid: 4b483ee84f072f349932e850126cbb2c, type: 3}
+    - {fileID: 8300000, guid: fd877a95d7f51024d9114c5a23bbf58f, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: bag_drop
@@ -36,23 +36,22 @@ MonoBehaviour:
     pitchJitter: 0.06
   - key: bag_hide
     clips:
-    - {fileID: 8300000, guid: c67bfa6b21e5c8e409263a7cddee66a7, type: 3}
+    - {fileID: 8300000, guid: f217f10b45e91324c9e207ad6f9f839e, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: bag_peek
     clips:
-    - {fileID: 8300000, guid: 4c19ebd95d616c241b78e117dc24203b, type: 3}
+    - {fileID: 8300000, guid: 5d4e622ec63915b4f86652c275c0eb08, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: bag_stow
     clips:
-    - {fileID: 8300000, guid: 990434be9f7d2394cb361c9ff5dbfe36, type: 3}
-    - {fileID: 8300000, guid: 2c30ec9ff254aaa4c8316611675429c4, type: 3}
+    - {fileID: 8300000, guid: f69fc19da2348fc4fb845208bf31f9d6, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: bag_takeout
     clips:
-    - {fileID: 8300000, guid: 576e5b107985bf044a448bcb949ae688, type: 3}
+    - {fileID: 8300000, guid: 82ae24030c5e6f44cb0c68cf8225c34d, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: bag_throw
@@ -62,64 +61,62 @@ MonoBehaviour:
     pitchJitter: 0.06
   - key: bag_unhide
     clips:
-    - {fileID: 8300000, guid: b3b05d1f3b6f09c4aa2b24fb3fbd9318, type: 3}
+    - {fileID: 8300000, guid: e02c50e8925fe134c8c3f693c520505f, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: crush_squish
     clips:
-    - {fileID: 8300000, guid: 5173a62e7ec2dc8468a5009a76c6c7cd, type: 3}
+    - {fileID: 8300000, guid: 8bb34780ebbed4042b189a2aba71e573, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: gun_fire_pistol
     clips:
-    - {fileID: 8300000, guid: 13773026e05627b47bbc626d3d770fdc, type: 3}
+    - {fileID: 8300000, guid: 938c89f8f4498984a8edcd080da5b7f9, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: gun_fire_rifle
     clips:
-    - {fileID: 8300000, guid: 734799d6e090f79489bbdd15873ad1fb, type: 3}
-    - {fileID: 8300000, guid: d0ef39a95d646c04e9c5ee4fba2908d7, type: 3}
+    - {fileID: 8300000, guid: 837e91e4d7c176f45ae84e77b058598f, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: gun_fire_shotgun
     clips:
-    - {fileID: 8300000, guid: 833e80a794309254ba8a4443895419de, type: 3}
+    - {fileID: 8300000, guid: 0301e9b2319306446a3b302b672a91cc, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: gun_fire_sniper
     clips:
-    - {fileID: 8300000, guid: 979dce7baef506e4d988bd8c88754d25, type: 3}
+    - {fileID: 8300000, guid: 3884ea6e68d60cf4ebccdf9f93a530e3, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: gun_reload_eject
     clips:
-    - {fileID: 8300000, guid: deda14d7a6ead714abe22f4e8c0180ca, type: 3}
+    - {fileID: 8300000, guid: a667bf34fdd22d2488131a2ed5d7fafe, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: gun_reload_insert
     clips:
-    - {fileID: 8300000, guid: 135ae3746289eb542b1212740cdd816b, type: 3}
+    - {fileID: 8300000, guid: 542b20a6633f5ee4fbbcab48ed34f355, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: gun_reload_open
     clips:
-    - {fileID: 8300000, guid: bddb4dc02c6639947a6251a95ab0cbe5, type: 3}
+    - {fileID: 8300000, guid: d02925dcc4d76c940959b084ec1d9512, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: gun_reload_seat
     clips:
-    - {fileID: 8300000, guid: 62cb1d68538b0fb40918e7f26414950c, type: 3}
+    - {fileID: 8300000, guid: bcafbbbca36ef184eb9453ea53d6e1d8, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: harvest_pop
     clips:
-    - {fileID: 8300000, guid: 05ffd44cc5ee7e54491b84403f6cf3a6, type: 3}
-    - {fileID: 8300000, guid: 7ff27047c0a7a754fb982d1afc15521f, type: 3}
+    - {fileID: 8300000, guid: 775dec0ce1443eb4e8daedce5a9ff5ed, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: harvest_stage
     clips:
-    - {fileID: 8300000, guid: 84f268a21664a8744aeb0b8d79275657, type: 3}
+    - {fileID: 8300000, guid: 382313b19171cee4dac2c78a014a7c25, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: knife_stab
@@ -129,45 +126,37 @@ MonoBehaviour:
     pitchJitter: 0.06
   - key: pick_pluck
     clips:
-    - {fileID: 8300000, guid: 9db38a9f605847042beeee4616605e51, type: 3}
-    - {fileID: 8300000, guid: 1096d3374f871d346872776c4c59631d, type: 3}
+    - {fileID: 8300000, guid: abf5ce8a283c6a34aae4750724c33579, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: pickaxe_hit_default
     clips:
-    - {fileID: 8300000, guid: 381e04f5fbb1a9e4cbaf62c9b1eb70ad, type: 3}
-    - {fileID: 8300000, guid: b196fb747f7c52142910e6e09d23d163, type: 3}
+    - {fileID: 8300000, guid: d3d3c1fbfcc5be24fb6fff64014c7c25, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: pickaxe_hit_salt
     clips:
-    - {fileID: 8300000, guid: a9a4f85ec02062a4f845091bfea3c46d, type: 3}
-    - {fileID: 8300000, guid: 7760d2fde8688774eb27351ee5901fa3, type: 3}
-    - {fileID: 8300000, guid: 290803cca8d154d439bed72b4d9e05e7, type: 3}
+    - {fileID: 8300000, guid: 6e325108aeac90848a903900993c29e0, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: pickaxe_hit_soft
     clips:
-    - {fileID: 8300000, guid: 11efb5646edaab940b9770efb65ef35b, type: 3}
-    - {fileID: 8300000, guid: 09313f605c8d5584eba1d5585f55eb88, type: 3}
+    - {fileID: 8300000, guid: 04b0ecbc9817d014c8189885cebdb8f9, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: pickaxe_swing
     clips:
-    - {fileID: 8300000, guid: ad50458b0857a474792e068cd5c804aa, type: 3}
-    - {fileID: 8300000, guid: 62ada0971d7b6f945b1180d8093526f1, type: 3}
+    - {fileID: 8300000, guid: 4b13170c2a9e01947b45925729fe3e25, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: round_hit_slug
     clips:
-    - {fileID: 8300000, guid: 588d37750bf6dd149afa0b205e366bec, type: 3}
-    - {fileID: 8300000, guid: ad973d4df8dde0248924c023c563567d, type: 3}
+    - {fileID: 8300000, guid: e2ce84df9d2c4b240b1c7cfd86a8300d, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: round_hit_world
     clips:
-    - {fileID: 8300000, guid: fd39a143762370d4a81160c8791ca05f, type: 3}
-    - {fileID: 8300000, guid: 58d4a4da4a7e2fb4c87e49290c44128f, type: 3}
+    - {fileID: 8300000, guid: 692eff95004779b45aae9f469feefcf0, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: slug_hurt
@@ -178,7 +167,7 @@ MonoBehaviour:
     pitchJitter: 0.06
   - key: tool_switch
     clips:
-    - {fileID: 8300000, guid: d136c68b5bbb2954688d1fe5c7f0c801, type: 3}
+    - {fileID: 8300000, guid: 13719d07dce02c3468ed7a33c4fa0a95, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: bag_stow_RockSalt
@@ -188,35 +177,181 @@ MonoBehaviour:
     pitchJitter: 0.06
   - key: bag_down
     clips:
-    - {fileID: 8300000, guid: 763e7debf8f7cbe4eba3da641547d997, type: 3}
+    - {fileID: 8300000, guid: c1fc8261fa25b814eb3e64b81fa20427, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: bag_up
     clips:
-    - {fileID: 8300000, guid: a0238569f91aec84ebbe3e54c999e135, type: 3}
+    - {fileID: 8300000, guid: d893fada112544b47a5e15bd4e211962, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: bag_rattle
     clips:
-    - {fileID: 8300000, guid: 58825df294b88b7448341e14d4d02767, type: 3}
-    - {fileID: 8300000, guid: f8ec7ff39e0216a45a606554fe625401, type: 3}
+    - {fileID: 8300000, guid: a7984e4b8bfc84e44bf09716b505e11c, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: slug_land
     clips:
-    - {fileID: 8300000, guid: b62c9de60947ce04cad188c2c2d1dac2, type: 3}
-    - {fileID: 8300000, guid: 63c2020f7a70fb042bc381fdd9538d01, type: 3}
+    - {fileID: 8300000, guid: 148ef9086401e79469ae53f04ebf6945, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: slug_lunge
     clips:
-    - {fileID: 8300000, guid: 09b2f3abe93486a489b3bc03ae09e836, type: 3}
-    - {fileID: 8300000, guid: ba7f63845982bd84a8cf4b16f0346723, type: 3}
+    - {fileID: 8300000, guid: b8b601e2078b7ac488e373602d039475, type: 3}
     volume: 0.8
     pitchJitter: 0.06
   - key: slug_squeeze
     clips:
-    - {fileID: 8300000, guid: 8d4d8a6872733014d95dcc3d14cb8d28, type: 3}
-    - {fileID: 8300000, guid: 508c37f6c25a8b642bb1a5b64e217b36, type: 3}
+    - {fileID: 8300000, guid: 877500b227fa88d45860c0971b74c57f, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: bag_spit
+    clips:
+    - {fileID: 8300000, guid: 646b45864cb7a2849b26be0082f6bbd7, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: gun_fire_far
+    clips:
+    - {fileID: 8300000, guid: 4c8957d3a68bc0e40a4886e08af547b1, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: gun_last_round
+    clips:
+    - {fileID: 8300000, guid: 883375081afceaa48b40a2fd26d5470b, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: gun_low_ammo
+    clips:
+    - {fileID: 8300000, guid: 6c3f2f75e5f309c40a71658b9f2fddd2, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: gun_reload_dry
+    clips:
+    - {fileID: 8300000, guid: 7646b4460062f98458a5c93f8060e623, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: hit_confirm
+    clips:
+    - {fileID: 8300000, guid: e18f9241ed54e4243ac7000621280dca, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: hit_confirm_weak
+    clips:
+    - {fileID: 8300000, guid: 3bf784641df9b1b46960c3e0532c22fa, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: moisture_sizzle
+    clips:
+    - {fileID: 8300000, guid: 589760c0815f0ef4789440821ad82e00, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: moisture_squelch
+    clips:
+    - {fileID: 8300000, guid: 031c48f7d76ff1e468b6757f51b0457b, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: moisture_stage_drier
+    clips:
+    - {fileID: 8300000, guid: a5e7a0cf3a3fffe4db8ef5d61543238d, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: moisture_stage_wetter
+    clips:
+    - {fileID: 8300000, guid: ebbf5dd4f44153347b96ae90d0531975, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: moss_drink
+    clips:
+    - {fileID: 8300000, guid: 672fb201ec040b74bb73e3023358ade2, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: pick_pluck_Tsukishiro
+    clips:
+    - {fileID: 8300000, guid: 92901c5552752824ea15f0a443bdb94a, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: pick_pluck_Tsuyuri
+    clips:
+    - {fileID: 8300000, guid: 409e48d019f10af4588a7dea5b206802, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: pick_pluck_UgoTake
+    clips:
+    - {fileID: 8300000, guid: aee43df916dac684b91eb94bb2473300, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: round_flyby
+    clips:
+    - {fileID: 8300000, guid: 49238927e5f33d749a8519555375d457, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: round_hit_helmet
+    clips:
+    - {fileID: 8300000, guid: 2c8b88a2dddae13469d29496889312c7, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: round_hit_shell
+    clips:
+    - {fileID: 8300000, guid: 9fbcd8b1de684e249be73649885c05b4, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: shell_break
+    clips:
+    - {fileID: 8300000, guid: 907dbb5b1a922a44b807260dd0df11de, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: slug_breath
+    clips:
+    - {fileID: 8300000, guid: 81dbc5274bee64e49afa9d3bdce16cde, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: slug_climb
+    clips:
+    - {fileID: 8300000, guid: d05b59935f6bfc14ab795b18fd1c8a6c, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: slug_dry_danger
+    clips:
+    - {fileID: 8300000, guid: b4c43c96d376bc34dbef1ce96a9521ff, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: slug_fall
+    clips:
+    - {fileID: 8300000, guid: 68b0304fa38d6d5488adf92a2f4b4496, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: slug_prone
+    clips:
+    - {fileID: 8300000, guid: bd99e87dc5aac724288e86ab761cb062, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: slug_step_dry
+    clips:
+    - {fileID: 8300000, guid: b8f28cda81878394a83c8be7ca14f9d3, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: slug_step_grass
+    clips:
+    - {fileID: 8300000, guid: d2ca4a066f6b0d643ae4d4bf743eb685, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: slug_step_puddle
+    clips:
+    - {fileID: 8300000, guid: 5769be471a7084f4cac9ef867665a4e7, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: slug_step_rock
+    clips:
+    - {fileID: 8300000, guid: b997d4e3ac07eaf4d9471df348d51699, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: slug_step_salt
+    clips:
+    - {fileID: 8300000, guid: 557aa8b4e57cb354e8ed5d0de376e90e, type: 3}
+    volume: 0.8
+    pitchJitter: 0.06
+  - key: slug_step_soil
+    clips:
+    - {fileID: 8300000, guid: 7aa8f6e2be50fed44ba3a5aa6908feb8, type: 3}
     volume: 0.8
     pitchJitter: 0.06

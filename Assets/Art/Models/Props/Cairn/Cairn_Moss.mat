@@ -84,6 +84,7 @@ Material:
     - _Surface: 0
     - _SwayAmp: 0
     - _ToonSmooth: 0.17
+    - _TopCoat: 0
     - _TurnAngle: 0
     - _TwistAngle: 0
     - _UprightAngle: 0

@@ -1,7 +1,7 @@
 # AGENTS.md — AI エージェント向けの入口
 
 ナメクジ脱出PvP（Unity 6000.5.4f1、URP 17.5.0）。一人開発（わくさん）。
-このファイルは、Claude 以外の AI（Google Antigravity の Argon など）がこのプロジェクトで働くときに最初に読む入口。Oct 17, 2026 から、**モデリングは Argon が担当**する。
+このファイルは、Claude 以外の AI（Google Antigravity の Argon など）がこのプロジェクトで働くときに最初に読む入口。Oct 17, 2026 からモデリングを、Oct 27 から効果音を **Argon に頼んでいる**（島の植物と小物の形は Claude が Unity のコードで作る。Nov 5 から、それを島に置くことと拠点の仕上げは Argon。いま頼んでいる物は `docs/worklog.md` の伝言）。
 
 ## 最初に読むもの（この3つだけ）
 
@@ -10,6 +10,8 @@
 | `docs/modeling/README.md` | **モデリングの決まり（これ1枚が正）**。世界観チェック、寸法と書き出し、進め方（読み返し票→灰色ラフ→色→Unity）、トークンの節約 |
 | `docs/modeling/<name>.md` | 作る物のモデル票（英語）。`_ja.md` はわくさん用の訳なので読まない |
 | `docs/worklog.md` | **やりとり帳**。先頭 60 行だけ |
+
+**効果音を作るとき**（Oct 27 から。わくさんの擬音から Argon が作る）は、モデリングの2つの代わりに `docs/sound/README.md` を読む（音の決まり・進め方・書き出しはそれ1枚が正）。
 
 `docs/spec.md`・`docs/discussions/`・参考の HTML は読まない（要ることはモデル票にある。足りなければ質問する）。どこに何があるか迷ったときだけ `docs/README.md`。
 
@@ -20,7 +22,7 @@ Claude（Claude Code）と Argon は同じリポジトリで並んで働く。�
 - **作業の前**：`docs/worklog.md` の頭だけ読む（「いま作業中」「伝言」と記録の上から3つ、先頭 60 行くらい）。自分あての伝言があれば先に答える。`docs/worklog_old.md` はふだん読まない
 - **書くのは、相手に関係あるときだけ**：プロンプトや spec と違う数字や形にした、相手の受け持ちに効く、相手に頼みたい。記録は3行まで（やったこと／変えた数字・決まり／頼むこと）。細かい数字はスクリプト冒頭のコメントに書き、記録には場所だけ
 - **札**：相手と同じファイルを触りそうなときだけ「いま作業中」に1行。相手の札のファイルは触らない
-- 受け持ち：Argon は `Blender/` と `Assets/Art/Models/`、Claude は `docs/` とコードと `AGENTS.md`。相手の受け持ちを直すときは、先に伝言で言う
+- 受け持ち：Argon は `Blender/` と `Assets/Art/Models/`、Unity のコードで作る物はそのビルダー（`Assets/Art/Editor/<種類>/〜Builder.cs`）と見るシーン（`Assets/Scenes/Preview/〜Look.unity`）、音は `SoundGen/` と `Assets/Audio/Placeholder/` の wav。Claude は `docs/` とコードと `AGENTS.md`。相手の受け持ちを直すときは、先に伝言で言う
 
 ## わくさんとのやりとり
 

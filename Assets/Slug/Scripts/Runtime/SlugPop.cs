@@ -26,7 +26,7 @@ namespace SlugDesign
     /// Ears and hands follow the skin point they grow from; the tentacles also sway softly.
     /// </summary>
     [ExecuteAlways, DisallowMultipleComponent]
-    public class SlugPop : MonoBehaviour
+    public class SlugPop : SlugBodyBase
     {
         [Header("一括（動かすと下の全スライダーを同じ値に揃える）")]
         [Range(0f, 1f)] public float pop = 1f;
@@ -121,7 +121,7 @@ namespace SlugDesign
         SlugMeshFactory.BodyShape _shape;
 
         /// <summary>Middle of the face, in world space. Used to aim close-up cameras.</summary>
-        public Vector3 FaceCenterWorld => _visual != null ? _visual.transform.TransformPoint(Bend(_faceCenter, FaceT)) : transform.position;
+        public override Vector3 FaceCenterWorld => _visual != null ? _visual.transform.TransformPoint(Bend(_faceCenter, FaceT)) : transform.position;
         /// <summary>Where the middle of the face would be with the head not turned on the neck (<see cref="SetHeadTwist"/>).</summary>
         public Vector3 FaceCenterUnturnedWorld => _visual != null
             ? _visual.transform.TransformPoint(TurnDir(Upright(Drop(_faceCenter, FaceT), FaceT) - _turnPivot, FaceT) + _turnPivot) : transform.position;
@@ -136,7 +136,7 @@ namespace SlugDesign
         /// Where the left (-1) / right (+1) arm grows from the skin, in world space, moving with the skin exactly as the
         /// shader moves it (crawl stretch, ripple, upright bend). Arms drawn from here stay attached to the body.
         /// </summary>
-        public Vector3 HandRootWorld(float side)
+        public override Vector3 HandRootWorld(float side)
         {
             if (_visual == null || !_hasHands) return transform.position;
             var r = Root(side);
@@ -147,7 +147,7 @@ namespace SlugDesign
         /// Where a body-space point riding the skin at <paramref name="t"/> is in the world right now: moved as the shader
         /// moves the skin there (crawl stretch, front swelling, ripple, upright bend, turn). For hitboxes and the like.
         /// </summary>
-        public Vector3 FollowPointWorld(Vector3 pointBody, float t, Vector3 normalBody)
+        public override Vector3 FollowPointWorld(Vector3 pointBody, float t, Vector3 normalBody)
         {
             if (_visual == null || _shape == null) return transform.TransformPoint(pointBody);
             _shape.RingInfo(Mathf.Clamp01(t), out var pivot, out float radius);
@@ -156,7 +156,7 @@ namespace SlugDesign
         }
 
         /// <summary>The outward skin normal at the arm root, in world space.</summary>
-        public Vector3 HandRootNormalWorld(float side)
+        public override Vector3 HandRootNormalWorld(float side)
         {
             if (_visual == null || !_hasHands) return transform.right * Mathf.Sign(side);
             var r = Root(side);
@@ -223,7 +223,7 @@ namespace SlugDesign
         /// How dry the skin looks: 0 = as built, 1 = parched (dull, greyed, darker). <paramref name="soaked"/> (0..1) gives a
         /// little extra sheen when it is wetter than full. Only the skin (body, tentacles, hands, feet), not the gear.
         /// </summary>
-        public void SetDryness(float dry, float soaked = 0f)
+        public override void SetDryness(float dry, float soaked = 0f)
         {
             dry = Mathf.Clamp01(dry);
             soaked = Mathf.Clamp01(soaked);
@@ -248,7 +248,7 @@ namespace SlugDesign
         }
 
         /// <summary>The hands' material (colour, toon shading, outline), to dress arms made elsewhere.</summary>
-        public Material HandMaterial => _hand;
+        public override Material HandMaterial => _hand;
 
         /// <summary>CPU copy of BodyOffset in SlugToonInput.hlsl, for a point that rides on the skin.</summary>
         Vector3 SkinOffset(SkinPoint p)
@@ -1040,9 +1040,35 @@ namespace SlugDesign
         public event System.Action Rebuilt;
 
         /// <summary>Where gear is parented (body space). Null until the slug is built.</summary>
-        public Transform VisualRoot => _visual != null ? _visual.transform : null;
+        public override Transform VisualRoot => _visual != null ? _visual.transform : null;
         /// <summary>The body's shape in body space (frames along the spine, raycasts against the skin), for fitting gear.</summary>
         public SlugMeshFactory.BodyShape Shape => _visual != null ? _shape : null;
+        public override object ShapeKey => Shape;
+
+        /// <summary>The short cone hands go once any tool's stretchy arms are made (they grow from the same spots).</summary>
+        public override void UseStretchyArm(float side, GameObject arm)
+        {
+            handsExtend = 0f;
+            ApplyHands();
+        }
+
+        /// <summary>The skin at t along the body and angleDeg round it, found with a ray out from the spine (body space).</summary>
+        public override bool CarrySpot(float t, float angleDeg, out Vector3 p, out Vector3 n, out Vector3 along, out Vector3 right,
+                                       out Vector3 belly, out float tHit)
+        {
+            var shape = Shape;
+            if (shape == null) { p = n = along = right = belly = Vector3.zero; tHit = t; return false; }
+            var f = shape.FrameAt(Mathf.Clamp01(t));
+            float a = angleDeg * Mathf.Deg2Rad;
+            Vector3 dir = (f.up * Mathf.Cos(a) + f.right * Mathf.Sin(a)).normalized;
+            if (!shape.RaycastT(f.center, dir, out p, out n, out tHit)) { p = f.center + dir * f.ry; n = dir; tHit = t; }
+            n.Normalize();
+            along = Vector3.ProjectOnPlane(f.forward, n).normalized;
+            right = Vector3.Cross(along, n).normalized;
+            if (Vector3.Dot(right, f.right) < 0f) right = -right;
+            belly = -f.up;
+            return true;
+        }
 
         /// <summary>Where the left (-1) / right (+1) tentacle leaves the skin, its direction, root radius and length (body space).</summary>
         public void EarRoot(float side, out Vector3 point, out Vector3 axis, out float radius, out float length)
@@ -1057,7 +1083,7 @@ namespace SlugDesign
         GameObject _winkShut;
         /// <summary>Shuts the left eye (0 open .. 1 shut): one eye closed to look along a gun. The painted face squeezes
         /// it shut; the round 3D eyes swap it for a short line once it is more than half shut.</summary>
-        public void SetWink(float amount)
+        public override void SetWink(float amount)
         {
             if (Mathf.Abs(amount - _wink) < 0.01f && (amount > 0f || _wink == 0f)) return;
             _wink = amount;

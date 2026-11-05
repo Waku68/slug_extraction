@@ -2,6 +2,8 @@
 
 英語版 `base_cenote.md` の訳。Argon は読まない。中身を変えるときは両方直す。
 
+> **前の拠点の票（Nov 2 から使わない）**。拠点は Claude が Unity のコードで作り直している（石灰岩の崖の洞窟、背骨は水、板の足場）。いまの形は spec 10章、前の案の全文は `../spec_history.md` の10章。
+
 ## 日本語訳（わくさんが読む用。中身は上と同じ）
 
 あなたは「ナメクジ脱出PvP」（Unity 6000.5 URP）のプレイヤーの拠点を作る。まずプロジェクト直下の AGENTS.md、次に `.claude/skills/modeling/SKILL.md` と `shapes/cave_room.md` を読む。AGENTS.md の決まり（1単位＝1 m、滑らかな法線、テクスチャを描かない、部品ごとのマテリアル、Blender のスクリプトで作る）をすべて守る。わくさんへの返事は、短く平たい日本語で。わくさんの見取り図の絵 `docs/modeling/reference/base_sketch_oct17.webp` も見る（上が北。上の絵が1階、下の絵が2階）。

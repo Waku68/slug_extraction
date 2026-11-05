@@ -36,6 +36,7 @@ namespace SlugExtract
             SaltRock(map, new Vector3(-17.8f, top, 8.2f), 1.25f);
             SaltRock(map, new Vector3(-16.2f, top, 9.6f), 1.25f);
             MoveTestBuilder.Label("岩塩の採取場（乾いた塩原）", new Vector3(-12f, 2.2f, -5f), 3f);
+            SlugDesign.HarvestVisuals.TsuyuriPatches(map, _settings, SlugDesign.HarvestVisuals.TsuyuriSpots);   // ツユリ at the salt flat's edge: the flower by hand, the bulb with the pickaxe
 
             // ---- wet field in the east: rows of crops
             MoveTestBuilder.Box("WetField", new Vector3(13f, 0.005f, 0f), new Vector3(12f, 0.01f, 14f), _wetGround).GetComponent<Collider>().enabled = false;
@@ -106,7 +107,7 @@ namespace SlugExtract
             bag.controller = player.GetComponent<SlugMoveController>();
             FitBag(player, bag);
             bag.gear.helmet = true;                                        // set out in a helmet and the shell-plate armour
-            bag.gear.armor = SlugDesign.SlugEquipment.Armor.ShellPlate;
+            bag.gear.armor = SlugDesign.SlugGearBase.Armor.ShellPlate;
             var raid = new GameObject("Raid").AddComponent<RaidManager>();
             raid.settings = _settings;
             raid.controller = bag.controller;
@@ -123,19 +124,19 @@ namespace SlugExtract
         }
 
         /// <summary>
-        /// Wires a bag to the slug it rides on: the bag on its back (gear; added, bag only, when the slug wears none), its
-        /// hitboxes (rounds in the back wear the bag), and for the player the camera (peeking at the back).
+        /// Wires a bag to the slug it rides on: the bag on its back (gear; added, bag only, when the slug wears none: the
+        /// crawling slug's or the two-legged one's), its hitboxes (rounds in the back wear the bag), and for the player the
+        /// camera (peeking at the back).
         /// </summary>
         internal static void FitBag(GameObject root, SlugBag bag)
         {
-            var slug = root.GetComponentInChildren<SlugDesign.SlugPop>();
-            var gear = slug.GetComponent<SlugDesign.SlugEquipment>();
+            var slug = root.GetComponentInChildren<SlugDesign.SlugBodyBase>();
+            var gear = slug.GetComponent<SlugDesign.SlugGearBase>();
             if (!gear)
             {
-                gear = slug.gameObject.AddComponent<SlugDesign.SlugEquipment>();
-                gear.slug = slug;
+                gear = AddGear(slug);
                 gear.helmet = false;
-                gear.armor = SlugDesign.SlugEquipment.Armor.None;
+                gear.armor = SlugDesign.SlugGearBase.Armor.None;
             }
             gear.bag = true;
             bag.slug = slug;
@@ -157,6 +158,20 @@ namespace SlugExtract
             }
             EditorUtility.SetDirty(bag);
             EditorUtility.SetDirty(gear);
+        }
+
+        /// <summary>The gear that fits the body: the crawling slug's (cut from its skin) or the two-legged one's (on its bones).</summary>
+        internal static SlugDesign.SlugGearBase AddGear(SlugDesign.SlugBodyBase slug)
+        {
+            if (slug is SlugDesign.SlugPop pop)
+            {
+                var g = slug.gameObject.AddComponent<SlugDesign.SlugEquipment>();
+                g.slug = pop;
+                return g;
+            }
+            var d = slug.gameObject.AddComponent<SlugDesign.DinoEquipment>();
+            d.slug = (SlugDesign.DinoSlugBody)slug;
+            return d;
         }
 
         /// <summary>

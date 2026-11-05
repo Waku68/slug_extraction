@@ -20,6 +20,12 @@ namespace SlugDesign
         /// <summary>Where the logs lie in ExtractTest: the far side of the wet field, behind the turnips.</summary>
         public static readonly Vector3[] UgoTakeSpots = { new Vector3(9.5f, 0f, 5.8f), new Vector3(13f, 0f, 6.1f), new Vector3(16.4f, 0f, 5.7f) };
 
+        /// <summary>Where ツユリ grows in ExtractTest: little patches along the east edge of the salt flat (spec 6: the damp hollows at the salt flat's edge).</summary>
+        public static readonly Vector3[] TsuyuriSpots = { new Vector3(-7.6f, 0f, -4f), new Vector3(-7.3f, 0f, 2.5f), new Vector3(-7.8f, 0f, 11f) };
+
+        const string NatureArt = "Assets/Art/Nature/";
+        static GameObject LoadNature(string path) => AssetDatabase.LoadAssetAtPath<GameObject>(NatureArt + path);
+
         /// <summary>How high the middle of the rain turnip's bulb sits above the ground, in the model's metres (0.2 × its radius, rainturnip_gen.py).</summary>
         const float BulbAboveGround = 0.027f;
 
@@ -44,6 +50,11 @@ namespace SlugDesign
             }
             foreach (var pick in Object.FindObjectsByType<Pickable>(FindObjectsInactive.Include, FindObjectsSortMode.None))
                 if (pick.kind == ItemKind.UgoTake && pick.transform.parent) Flush(pick, settings);
+            if (scene.name == "ExtractTest" && Object.FindObjectsByType<TsuyuriPlant>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length == 0)
+            {
+                var parent = GameObject.Find("Map") ? GameObject.Find("Map").transform : null;
+                TsuyuriPatches(parent, settings, TsuyuriSpots);
+            }
             EditorSceneManager.MarkSceneDirty(scene);
             Debug.Log($"Harvest visuals: {n} nodes updated in {scene.name}");
         }
@@ -66,6 +77,8 @@ namespace SlugDesign
             s.rockSalt.model = Load("RockSalt/RockSalt_Chunk_A.fbx");
             s.ugoTake.model = Load("UgoTake/UgoTake_Item.fbx");
             s.ugoTakeCrushed.model = s.ugoTake.model;
+            s.tsuyuri.model = LoadNature("Tsuyuri/Tsuyuri_Item.prefab");
+            s.tsuyuriBulb.model = LoadNature("Tsuyuri/Tsuyuri_Bulb.prefab");
             EditorUtility.SetDirty(s);
             AssetDatabase.SaveAssets();
         }
@@ -177,6 +190,60 @@ namespace SlugDesign
                 }
                 EditorUtility.SetDirty(pick);
                 Flush(pick, settings);
+            }
+        }
+
+        /// <summary>
+        /// Little patches of ツユリ (2–3 plants each, the Unity-made models in Art/Nature/Tsuyuri): each plant shows a bud,
+        /// opens with the weather (<see cref="TsuyuriPlant"/>), its flower picked by hand, the whole plant dug up for its bulb.
+        /// </summary>
+        public static void TsuyuriPatches(Transform parent, ExtractSettings settings, Vector3[] at)
+        {
+            var open = LoadNature("Tsuyuri/Tsuyuri_E.prefab");
+            var bud = LoadNature("Tsuyuri/Tsuyuri_E_Bud.prefab");
+            var cut = LoadNature("Tsuyuri/Tsuyuri_E_Picked.prefab");
+            if (!open || !bud || !cut) return;
+            var rnd = new System.Random(23);
+            foreach (var p0 in at)
+            {
+                int count = 2 + rnd.Next(2);
+                for (int i = 0; i < count; i++)
+                {
+                    float a = (float)(i * 2.4 + rnd.NextDouble());
+                    var p = p0 + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * (i == 0 ? 0f : 0.22f + 0.1f * (float)rnd.NextDouble());
+                    if (Physics.Raycast(p + Vector3.up * 5f, Vector3.down, out var hit, 20f)) p.y = hit.point.y;
+                    var root = new GameObject("Tsuyuri");
+                    root.transform.SetParent(parent, true);
+                    root.transform.SetPositionAndRotation(p, Quaternion.Euler(0f, (float)rnd.NextDouble() * 360f, 0f));
+                    root.transform.localScale = Vector3.one * (0.9f + 0.25f * (float)rnd.NextDouble());
+                    var box = root.AddComponent<BoxCollider>();   // the pickaxe meets the clump of leaves (low enough to crawl over)
+                    box.center = new Vector3(0f, 0.07f, 0f);
+                    box.size = new Vector3(0.18f, 0.14f, 0.18f);
+
+                    var budGo = Instance(bud, root.transform);
+                    budGo.name = "つぼみ";
+                    var cutGo = Instance(cut, root.transform);
+                    cutGo.name = "摘んだあと";
+                    cutGo.SetActive(false);
+                    var flowerGo = new GameObject("花");
+                    flowerGo.transform.SetParent(root.transform, false);
+                    var pick = flowerGo.AddComponent<Pickable>();
+                    pick.settings = settings;
+                    pick.kind = ItemKind.Tsuyuri;
+                    pick.crushedKind = ItemKind.Tsuyuri;     // no collider on the flower: the pickaxe digs the plant instead
+                    var bloom = Instance(open, flowerGo.transform);
+                    bloom.name = "咲いた花";
+                    pick.parts.Add(bloom);
+                    budGo.SetActive(false);                  // built open; the weather closes it at the start (TsuyuriPlant)
+
+                    var plant = root.AddComponent<TsuyuriPlant>();
+                    plant.settings = settings;
+                    plant.flower = pick;
+                    plant.bud = budGo;
+                    plant.picked = cutGo;
+                    EditorUtility.SetDirty(pick);
+                    EditorUtility.SetDirty(plant);
+                }
             }
         }
 

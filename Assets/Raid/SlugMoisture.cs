@@ -7,9 +7,11 @@ using UnityEngine.InputSystem;
 namespace SlugExtract
 {
     /// <summary>
-    /// The slug's moisture (docs/discussions/moisture_discussion.md). Sun dries the body, shade a little, cloud a little more,
-    /// the night's dew holds it; rain under the open sky wets it, and touching water (a puddle, a stream) soaks it in seconds,
-    /// even past full. Salt ground dries it twice as fast, even at night. While it is moist enough, health comes back very
+    /// The slug's moisture (docs/discussions/moisture_discussion.md). How fast it dries is set by the ground underfoot
+    /// (spec 4章の表, <see cref="GroundKinds"/>): soil and grass slowly, sand and black lava faster, salt hardest (even at
+    /// night), wet shining ground not at all; shade and cloud slow it, the night's dew holds it. Rain under the open sky wets
+    /// it, the open ground stays wet a while after (sand dries first, the shade last), and touching water (a puddle, a
+    /// stream) soaks it in seconds, even past full. While it is moist enough, health comes back very
     /// slowly and uses a little of it; at nothing the slug crawls slower and its health drains away until it falls.
     /// Two moss balls of water ride on the belt (F: two seconds, the tools wait); touching water fills them again.
     /// No numbers: the skin dulls and shrinks as it dries, the screen's edges blur white when it is nearly gone,
@@ -20,7 +22,7 @@ namespace SlugExtract
         public ConditionSettings settings;
         public SlugMoveController controller;
         public SlugCameraRig cameraRig;
-        public SlugPop slug;
+        public SlugBodyBase slug;
         public SlugHealth health;
         [Tooltip("左上の自分（苔玉をその下に出す）")] public SelfPortrait portrait;
         /// <summary>Holds the moss-ball key without the keyboard (tests and tools).</summary>
@@ -33,11 +35,13 @@ namespace SlugExtract
         /// <summary>Why it changes right now (for development).</summary>
         public string Reason { get; private set; } = "";
         public float RatePerMinute { get; private set; }
-        /// <summary>The sun is on the slug (a sunny day, out of the shade). <see cref="SunGlare"/> shows it.</summary>
+        /// <summary>The sun is on the slug (a sunny day, out of the shade).</summary>
         public bool InSun { get; private set; }
-        /// <summary>0..1: how hard the sun dries the slug right now (soil 0.5, salt 1; 0 in the shade, under cloud, at dawn
-        /// and dusk, at night). The light streaks on the view follow it.</summary>
+        /// <summary>0..1: how hard the sun dries the slug right now (soil 0.3, sand 0.5, salt 1; 0 on wet ground, in the shade,
+        /// under cloud, at dawn and dusk, at night).</summary>
         public float SunDrying { get; private set; }
+        /// <summary>The ground underfoot (<see cref="GroundKinds"/>), before the rain's wet is counted.</summary>
+        public GroundKind Ground { get; private set; }
 
         /// <summary>The four looks of moisture (spec 4章 Oct 18): 0 glossy (past full), 1 plain, 2 drying (dull, shrunk,
         /// blotched), 3 in danger (wrinkled, the view's edges blur).</summary>
@@ -50,7 +54,7 @@ namespace SlugExtract
         public event System.Action WettingStarted;
 
         bool _inSun, _underSky, _wasDrying, _wasWetting;
-        float _probe, _use, _refill;
+        float _probe, _use, _refill, _rainCheck, _minutesSinceRain = float.PositiveInfinity;
         Texture2D _edge, _drop;
         GUIStyle _dev;
 
@@ -58,7 +62,8 @@ namespace SlugExtract
         {
             Value = settings.moistureMax;
             MossBalls = settings.mossBalls;
-            if (!GetComponent<SunGlare>()) gameObject.AddComponent<SunGlare>().moisture = this;
+            // the light on the player's own view (SunGlare) is no longer added (Nov 3 わくさん: it got in the way of seeing);
+            // the sun shows only on the island (SunShafts)
         }
 
         void Update()
@@ -68,8 +73,8 @@ namespace SlugExtract
             var s = settings;
             float dt = Time.deltaTime;
             var t = weather.Time;
-            var sky = weather.Weather.sky;
             Vector3 pos = controller.transform.position;
+            var sky = weather.WeatherAt(weather.ShownHours, pos).sky;
 
             // is the sun on the back, is the sky overhead? (a few times a second is plenty: shadows move slowly)
             _probe -= dt;
@@ -80,12 +85,16 @@ namespace SlugExtract
                 int mask = SlugHitboxes.WorldMask;
                 _inSun = t.daylightAmount > 0.05f && !Physics.Raycast(from, -t.sunDirection, 400f, mask, QueryTriggerInteraction.Ignore);
                 _underSky = !Physics.Raycast(from, Vector3.up, 80f, mask, QueryTriggerInteraction.Ignore);
+                Ground = GroundKinds.At(pos);
             }
-            bool salt = MoistureZone.Any(MoistureZone.Kind.Salt, pos);
+            // when it last rained here (every couple of seconds is plenty: the ground dries in minutes)
+            _rainCheck -= dt;
+            if (_rainCheck <= 0f) { _rainCheck = 2f; _minutesSinceRain = MinutesSinceRain(weather, pos); }
+            bool salt = Ground == GroundKind.Salt;
             bool water = MoistureZone.Any(MoistureZone.Kind.Water, pos);
             bool raining = (sky == Sky.LightRain || sky == Sky.HeavyRain) && _underSky;
 
-            // how much it changes a minute here, now
+            // how much it changes a minute here, now: by the ground underfoot (spec 4章の表; cloud is the same as shade)
             float perMinute;
             if (raining)
             {
@@ -94,11 +103,26 @@ namespace SlugExtract
             }
             else
             {
-                float dayRate = sky == Sky.Sunny ? (_inSun ? s.sunnyInSun : s.sunnyInShade) : s.cloudy;
-                perMinute = Mathf.Lerp(s.night, dayRate, t.daylightAmount);
-                Reason = t.Night ? "夜（露）" : sky == Sky.Sunny ? (_inSun ? "晴れ・日なた" : "晴れ・日陰") : "曇り";
-                // salt ground: twice the drying by day, its own (harsh) rate by night
-                if (salt) { perMinute = Mathf.Lerp(s.saltNight, dayRate * s.saltDrainMultiplier, t.daylightAmount); Reason += "・塩の上"; }
+                bool sunny = sky == Sky.Sunny && _inSun;
+                var ground = Ground;
+                // just after rain the open ground still shines wet and holds the body: sand dries first, the shade last
+                bool afterRain = false;
+                if (_underSky && (ground == GroundKind.Soil || ground == GroundKind.Sand))
+                {
+                    float wetFor = (ground == GroundKind.Sand ? s.wetAfterRainSand : s.wetAfterRainSoil) * (sunny ? 1f : s.wetShadeMultiplier);
+                    if (_minutesSinceRain < wetFor) { ground = GroundKind.Wet; afterRain = true; }
+                }
+                float inSun, inShade, atNight;
+                switch (ground)
+                {
+                    case GroundKind.Wet: inSun = inShade = atNight = s.wetGround; break;
+                    case GroundKind.Salt: inSun = s.saltInSun; inShade = s.saltInShade; atNight = s.saltNight; break;
+                    case GroundKind.Sand: inSun = s.sandInSun; inShade = s.sandInShade; atNight = s.night; break;
+                    default: inSun = s.soilInSun; inShade = s.soilInShade; atNight = s.night; break;
+                }
+                perMinute = Mathf.Lerp(atNight, sunny ? inSun : inShade, t.daylightAmount);
+                Reason = (t.Night ? "夜" : sky == Sky.Sunny ? (_inSun ? "晴れ・日なた" : "晴れ・日陰") : "曇り")
+                         + "・" + GroundKinds.Name(ground) + (afterRain ? "（雨上がり）" : "");
             }
             float gain = perMinute / 60f * dt;
             if (water)
@@ -113,11 +137,11 @@ namespace SlugExtract
 
             // the sun's share of it: only a sunny day out of the shade (cloud counts as shade), not at dawn and dusk
             InSun = !raining && !water && sky == Sky.Sunny && _inSun && t.daylightAmount > 0.5f;
-            float sunRate = Mathf.Max(-s.sunnyInSun, 1e-3f);
-            SunDrying = InSun ? Mathf.Clamp01(-perMinute / sunRate * 0.5f) * (1f - t.twilight) : 0f;
+            float saltRate = Mathf.Max(-s.saltInSun, 1e-3f);
+            SunDrying = InSun ? Mathf.Clamp01(-perMinute / saltRate) * (1f - t.twilight) : 0f;
 
             // the moment it changes, said once (spec 4章 Oct 10): out into the sun or onto salt, into the wet
-            bool drying = InSun || (salt && !water && !raining);
+            bool drying = SunDrying > 0f || (salt && !water && !raining);
             bool wetting = water || raining;
             if (drying && !_wasDrying) DryingStarted?.Invoke();
             if (wetting && !_wasWetting) WettingStarted?.Invoke();
@@ -154,6 +178,18 @@ namespace SlugExtract
             // the four stages (a little give at each line, so standing on it does not flicker)
             int stage = StageFor(Value, Stage);
             if (stage != Stage) { int old = Stage; Stage = stage; StageChanged?.Invoke(stage, old); }
+        }
+
+        /// <summary>Real minutes since it last rained over this spot (infinity when longer ago than the ground stays wet).
+        /// The weather is worked out from the time and place alone, so the past is just read back.</summary>
+        float MinutesSinceRain(WeatherPresenter weather, Vector3 pos)
+        {
+            var s = settings;
+            float longest = Mathf.Max(s.wetAfterRainSand, s.wetAfterRainSoil) * Mathf.Max(1f, s.wetShadeMultiplier);
+            double now = weather.ShownHours;
+            for (float m = 0f; m <= longest; m += 0.5f)
+                if (weather.WeatherAt(now - m / 60.0, pos).rain > 0.05f) return m;
+            return float.PositiveInfinity;
         }
 
         int StageFor(float v, int current)

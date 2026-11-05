@@ -92,6 +92,23 @@ namespace SlugExtract
         /// <summary>A point of the drawing in the world (m, x east, z north).</summary>
         static Vector2 W(float sx, float sy) => new Vector2((sx - 366f) * K, (260f - sy) * K);
         static Vector2 W(Vector2 s) => W(s.x, s.y);
+        /// <summary>A point of the drawing (the talk's map units) on the ground plane (x, z).</summary>
+        public static Vector2 World(Vector2 svg) => W(svg);
+
+        /// <summary>Region names by index (the paint's kinds; RegionAt's array uses the same order).</summary>
+        public static readonly string[] RegionNames = { "森", "花の草原", "砂漠・浜", "赤い台地", "溶岩原・火口の丘", "岩塩の山", "枯れた谷の底", "川", "塩田", "菌輪" };
+
+        /// <summary>How much a world point (x east, z north, m) belongs to each region, 0..1 each, in RegionNames' order
+        /// (Nov 5, for Argon's plant placer docs/modeling/island_planting.md). All near 0 = the low ground between regions.
+        /// Reads the drawing only (not the terrain), so わくさん's hand edits of the mountain don't change it.</summary>
+        public static float[] RegionAt(float x, float z)
+        {
+            if (!_prepared) Prepare();
+            var o = new float[Kinds];
+            var s = Svg(x, z);
+            Base(s.x, s.y, o, false);
+            return o;
+        }
         static Vector2 Svg(float x, float z) => new Vector2(x / K + 366f, 260f - z / K);
 
         static Vector2[] Pts(float[] a)

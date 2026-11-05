@@ -19,7 +19,8 @@ namespace SlugMove
     /// First person draws the same pose shrunk toward the eye (so it never pokes into walls, yet lands on the same
     /// spot on screen) and, while the slug holds still, shifted to a comfortable place in view.
     /// Taken in hand, it comes off the back (<see cref="SlugToolRack"/>): the right hand reaches over the shoulder for it,
-    /// brings it round, and the left hand takes the end of the handle; no swing until it is in hand.
+    /// slides it out of the straps, brings it round, and the left hand takes the end of the handle; no swing until it is
+    /// in hand (<see cref="BackDraw"/>). When another tool is chosen it goes back on the same way first.
     /// Runs after the camera rig so the first-person copy follows this frame's camera.
     /// </summary>
     [DefaultExecutionOrder(100)]
@@ -28,7 +29,7 @@ namespace SlugMove
         public PickaxeSettings pickaxe;
         public SlugMoveController controller;
         public SlugCameraRig cameraRig;
-        public SlugPop slug;
+        public SlugBodyBase slug;
         [Tooltip("false の間は振れない（試合の終了後など）")] public bool inputEnabled = true;
         /// <summary>Swung by something else (a bot, later the network): <see cref="swingHeld"/> stands for the mouse button.</summary>
         [System.NonSerialized] public bool driven;
@@ -68,6 +69,16 @@ namespace SlugMove
         public const int BodyToolLayer = 31;
 
         Transform Root => controller.transform;
+        SlugLoadout Loadout => _rack ? _rack.loadout : null;
+        /// <summary>Being put back on the back (the loadout is taking another tool).</summary>
+        bool PuttingAway => Loadout && Loadout.PuttingAway(this);
+        /// <summary>The points kept out of the bag on the way off the back: both ends of the handle, its middle and the head's two points.</summary>
+        static readonly Vector3[] BagSamples =
+        {
+            Vector3.zero, new Vector3(0f, SlugPickaxe.HandleLength * 0.5f, 0f), SlugPickaxe.HeadLocal,
+            SlugPickaxe.TipLocal, Vector3.Scale(SlugPickaxe.TipLocal, new Vector3(1f, 1f, -1f)),
+        };
+        float _pathPrev = 1f;
 
         void OnEnable()
         {
@@ -85,6 +96,7 @@ namespace SlugMove
             if (!_ready) return;
             _swing.Cancel();
             if (controller) controller.leanDegrees = 0f;
+            if (slug) { slug.SetSwingTurn(0f); slug.SetSwingHands(Vector3.zero, Vector3.zero, 0f); }
             Show(false);
         }
 
@@ -139,7 +151,10 @@ namespace SlugMove
             if (!_ready) return;
             _swing.settings = pickaxe;
             if (_draw < 1f) _draw = Mathf.MoveTowards(_draw, 1f, Time.deltaTime / Mathf.Max(drawTime, 1e-3f));
-            bool canSwing = _draw >= 1f && !cameraRig.HandsBusy && !controller.Climbing && (driven || (inputEnabled && Cursor.lockState == CursorLockMode.Locked));
+            // on its way back onto the body: a swing under way is dropped and no new one starts
+            bool putting = PuttingAway;
+            if (putting && _swing.Phase != SwingPhase.Idle) _swing.Cancel();
+            bool canSwing = _draw >= 1f && !putting && !cameraRig.HandsBusy && !controller.Climbing && (driven || (inputEnabled && Cursor.lockState == CursorLockMode.Locked));
             bool held = canSwing && (driven ? swingHeld : _attack != null && _attack.IsPressed());
             if (held && (_swing.Phase == SwingPhase.Idle || (_swing.Phase == SwingPhase.Recover && _swing.Blend < pickaxe.chainAt)))
                 BeginSwing();
@@ -163,6 +178,7 @@ namespace SlugMove
                     Land(hit, fraction, drawn);
             }
             controller.leanDegrees = _swing.Lean;
+            if (slug) slug.SetSwingTurn(_swing.BodyTurn);        // the chest and shoulders go round with the swing
         }
 
         void BeginSwing()
@@ -360,14 +376,20 @@ namespace SlugMove
             //      player's own in first person (that one shows the first-person copy below)
             ToolPose bodyRest = RestThirdPerson(out float tpUpper);
             ToolPose pose = _swing.PoseLocal(bodyRest.InverseTransformed(Root)).Transformed(Root);
-            // taken in hand: the right hand reaches it on the back, then brings it round to the ready pose
-            var ls = _rack && _rack.loadout ? _rack.loadout.settings : null;
+            // taken in hand: the right hand reaches over the shoulder for it on the back, slides it out of the straps
+            // and brings it round to the ready pose (BackDraw); put away, the same way backwards
+            var ls = Loadout ? Loadout.settings : null;
+            float path = PuttingAway ? 1f - Loadout.PutAway(this) : _draw;
             ToolPose stow = default;
-            bool drawing = ls && _draw < 1f && _rack.TryStowPose(this, out stow);
+            bool drawing = ls && path < 1f && _rack.TryStowPose(this, out stow);
             float reachPart = ls ? ls.reachPart : 0.4f;
-            float dReach = drawing ? Ease(_draw / Mathf.Max(reachPart, 1e-3f)) : 1f;
-            float dPull = drawing ? Ease((_draw - reachPart) / Mathf.Max(1f - reachPart, 1e-3f)) : 1f;
-            if (drawing) pose = ToolPose.Lerp(stow, pose, dPull);
+            float dReach = drawing ? BackDraw.Reach(path, reachPart) : 1f;
+            float dPull = drawing ? BackDraw.Pull(path, reachPart) : 1f;
+            if (drawing && Mathf.Abs(path - _pathPrev) < 0.5f) BackDraw.Jostle(_rack, _pathPrev, path, reachPart);
+            _pathPrev = path;
+            Vector3 over = drawing ? BackDraw.Over(slug, Root.rotation, ls, _rack) : Vector3.zero;
+            // (slid along the handle, toward the head)
+            if (drawing) pose = BackDraw.Tool(stow, pose, ToolPose.GripLowLocal, Vector3.up * ls.slideOut, over, path, reachPart, _rack, BagSamples, 0.015f);
             TipWorld = pose.Point(SlugPickaxe.TipLocal);
             _tool.transform.SetPositionAndRotation(pose.position, pose.rotation);
             _tool.SetMode(true, false);
@@ -379,10 +401,25 @@ namespace SlugMove
             if (drawing)
             {
                 Quaternion body = Root.rotation;
-                rightGrip = Vector3.Lerp(slug.HandRootWorld(1f) + body * new Vector3(-0.01f, -0.01f, 0.05f), rightGrip, dReach);
+                rightGrip = BackDraw.Hand(slug.HandRootWorld(1f) + body * new Vector3(-0.01f, -0.01f, 0.05f), over, rightGrip, dReach, _rack);
                 leftGripBody = Vector3.Lerp(slug.HandRootWorld(-1f) + body * new Vector3(0.01f, -0.01f, 0.05f), leftGripBody, dPull);
             }
-            BuildArm(_arms.BodyR, slug.HandRootWorld(1f), slug.HandRootNormalWorld(1f), rightGrip, handle, 1f, 1f);
+            // the right arm does not stretch out past rightArmMax: the right hand slides down the handle toward the left
+            // one instead (only the look; the swing and its hits are the tool's). The body leans and shifts toward the
+            // hands so the arms stay about the same length on a near blow and a far one (SetSwingHands)
+            else if (_swing.Phase != SwingPhase.Idle && s.rightArmMax > 0f)
+                rightGrip = KeepArmIn(slug.HandRootWorld(1f), pose, rightGrip, together, s.rightArmMax);
+            // (the blow is quick: while it comes down, the body is given where the hands will land, so it is already
+            // there when the head strikes)
+            if (_swing.Phase == SwingPhase.Strike)
+            {
+                Vector3 land = Root.TransformPoint(HasPredictedContact ? _contactGripLocal : _swing.StrikePoseLocal(1f).GripLow);
+                slug.SetSwingHands(land, land, 1f);
+            }
+            else slug.SetSwingHands(leftGripBody, rightGrip, drawing ? 0f : Mathf.Clamp01(_swing.Blend));
+            // (on the back the right arm goes round over the shoulder, never through the bag)
+            BuildArm(_arms.BodyR, slug.HandRootWorld(1f), slug.HandRootNormalWorld(1f), rightGrip, handle, 1f, 1f,
+                     over, drawing ? BackDraw.ArmVia(path, reachPart) : 0f);
             BuildArm(_arms.BodyL, slug.HandRootWorld(-1f), slug.HandRootNormalWorld(-1f), leftGripBody, handle, 1f, 1f);
             var cam = cameraRig.cam;
 
@@ -458,7 +495,7 @@ namespace SlugMove
                 Quaternion r1 = t.localRotation, r0 = Quaternion.Euler(ls.fpBackTurn) * r1;
                 Vector3 g = ToolPose.GripLowLocal * scale;
                 Quaternion r = Quaternion.Slerp(r0, r1, dPull);
-                Vector3 grip = Vector3.Lerp(ls.fpBackFrom * scale, t.localPosition + r1 * g, dPull);
+                Vector3 grip = BackDraw.FpArc(ls.fpBackFrom * scale, t.localPosition + r1 * g, dPull);
                 t.localRotation = r;
                 t.localPosition = grip - r * g;
                 viewHandle = r * Vector3.up;
@@ -468,6 +505,23 @@ namespace SlugMove
             }
             BuildArm(_arms.ViewR, s.fpArmAnchor, up, rightV, viewHandle, scale * s.fpArmThickness, scale);
             BuildArm(_arms.ViewL, s.fpArmAnchorLeft, up, leftV, viewHandle, scale * s.fpArmThickness, scale);
+        }
+
+        /// <summary>
+        /// The right hand slid down the handle (toward <paramref name="lowest"/> above its end, by the left hand) until it
+        /// is no further than <paramref name="maxArm"/> from the arm's root; as far down as it goes when that is not enough.
+        /// </summary>
+        static Vector3 KeepArmIn(Vector3 root, ToolPose pose, Vector3 grip, float lowest, float maxArm)
+        {
+            if (Vector3.Distance(root, grip) <= maxArm) return grip;
+            float hi = Vector3.Dot(grip - pose.position, pose.rotation * Vector3.up), lo = lowest;
+            if (hi <= lo) return grip;
+            for (int i = 0; i < 12; i++)
+            {
+                float mid = (lo + hi) * 0.5f;
+                if (Vector3.Distance(root, pose.Point(new Vector3(0f, mid, 0f))) > maxArm) hi = mid; else lo = mid;
+            }
+            return pose.Point(new Vector3(0f, lo, 0f));
         }
 
         static float Ease(float x)
@@ -483,11 +537,12 @@ namespace SlugMove
         }
 
         /// <summary>An arm from its root to a grip: it leaves the body along the skin normal and wraps the handle from the side.</summary>
-        void BuildArm(SlugArmMesh arm, Vector3 root, Vector3 rootNormal, Vector3 grip, Vector3 handle, float thickness, float fistScale)
+        void BuildArm(SlugArmMesh arm, Vector3 root, Vector3 rootNormal, Vector3 grip, Vector3 handle, float thickness, float fistScale,
+                      Vector3 via = default, float viaWeight = 0f)
         {
             var s = pickaxe;
             SlugArmSet.Build(arm, root, rootNormal, grip, handle, s.armRadiusRoot * thickness, s.armRadiusHand * thickness,
-                             s.fistSize * fistScale, fistScale);
+                             s.fistSize * fistScale, fistScale, via, viaWeight);
         }
     }
 }

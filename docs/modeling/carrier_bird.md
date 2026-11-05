@@ -1,6 +1,8 @@
 # Carrier bird (model sheet)
 
 Oct 18, 2026. Japanese translation for waku: `carrier_bird_ja.md` (do not read it).
+
+> **Outdated (Oct 30, 2026):** this is the Blender version. The bird is finished as Unity code (`Assets/Art/Editor/Creatures/CarrierBirdBuilder.cs`, sheet `carrier_bird_code.md`). Do not change the finished bird. Blender 版の票（Oct 30 にコード版で完成。使わない）。
 References:
 - `reference/carrier_bird_sketch_oct18.webp` — waku's first pencil sketch (photo turned sideways:
   rotate 90° counter-clockwise; left = side view facing right, right = front view).

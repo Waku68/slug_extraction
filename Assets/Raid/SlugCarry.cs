@@ -20,7 +20,7 @@ namespace SlugExtract
         public SlugBag bag;
         public SlugMoveController controller;
         public SlugCameraRig cameraRig;
-        public SlugPop slug;
+        public SlugBodyBase slug;
         [Tooltip("抱える位置：両腕の付け根の真ん中からのずれ（体の向き基準, m）。物の大きさの半分だけさらに前へ")] public Vector3 holdOffset = new Vector3(0f, -0.03f, 0.05f);
         [Tooltip("一人称で抱える位置（カメラ基準, m, 縮める前）。画面の下の真ん中")] public Vector3 fpHold = new Vector3(0f, -0.17f, 0.36f);
         [Tooltip("一人称で、物と腕を目に向かって縮めて描く倍率")] public float fpScale = 0.45f;

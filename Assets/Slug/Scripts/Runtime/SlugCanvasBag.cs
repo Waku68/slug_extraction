@@ -14,6 +14,10 @@ namespace SlugDesign
     ///    runs along the side seams. The fuller, the higher the lid rides.
     /// Lid, pocket and straps grow less than the sack (as the square root), so a crammed bag bulges round them. No texture:
     /// the parts are told apart by their shape and shade.
+    /// Opened (looked into on the back): the top of the sack under the lid is its mouth. It sinks into a lining that runs
+    /// down to a floor a third of the way up, and a heap of what is in it rises from that floor as the bag fills; the frame
+    /// can draw the bottom in and spread the mouth wide (<see cref="Frame.Taper"/>). Made twice, shut and opened, with
+    /// the same vertices, the bag is opened by blending the two.
     /// Bag space: x across, y up the bag (to its mouth), z out from the back; the back panel lies at z = -half.z, the
     /// bottom at y = -half.y. The sack is parametrised like a globe lying on its side: lat runs across (the poles are the
     /// sides), lon round the section (0 the top, 90° the front, 180° the bottom, 270° the back).
@@ -22,12 +26,28 @@ namespace SlugDesign
     {
         const float StrapHalf = 0.011f, StrapThick = 0.003f, LidThick = 0.007f, PipeRadius = 0.0035f;
 
-        /// <summary>Where bag space sits: its middle and its axes.</summary>
+        /// <summary>Where bag space sits: its middle and its axes, and how it is tapered (none unless <see cref="Taper"/>).</summary>
         public struct Frame
         {
             public Vector3 c, x, y, z;
-            public Frame(Vector3 c, Vector3 x, Vector3 y, Vector3 z) { this.c = c; this.x = x; this.y = y; this.z = z; }
-            public Vector3 P(Vector3 l) => c + x * l.x + y * l.y + z * l.z;
+            float _hy, _hz, _bottom, _mouth, _mouthDepth;
+            public Frame(Vector3 c, Vector3 x, Vector3 y, Vector3 z) { this.c = c; this.x = x; this.y = y; this.z = z; _hy = _hz = 1f; _bottom = _mouth = _mouthDepth = 1f; }
+
+            /// <summary>Draws the bag in to <paramref name="bottom"/> times its width and depth at the bottom and spreads it
+            /// to <paramref name="mouth"/> times its width and <paramref name="mouthDepth"/> times its depth at the top (half
+            /// height <paramref name="hy"/>; the depth grows out from the back panel at z = -<paramref name="hz"/>, so the bag
+            /// stays against the back). Mostly near the top.</summary>
+            public void Taper(float hy, float hz, float bottom, float mouth, float mouthDepth)
+            {
+                _hy = hy; _hz = hz; _bottom = bottom; _mouth = mouth; _mouthDepth = mouthDepth;
+            }
+
+            public Vector3 P(Vector3 l)
+            {
+                float k = Mathf.Clamp01((l.y / _hy + 1f) * 0.5f);
+                float w = Mathf.Lerp(_bottom, _mouth, k * k), d = Mathf.Lerp(_bottom, _mouthDepth, k * k);
+                return c + x * (l.x * w) + y * l.y + z * (-_hz + (l.z + _hz) * d);
+            }
             public Vector3 D(Vector3 l) => x * l.x + y * l.y + z * l.z;
         }
 
@@ -36,22 +56,25 @@ namespace SlugDesign
         {
             public readonly SlugEquipment.GearMesh body = new SlugEquipment.GearMesh(), trim = new SlugEquipment.GearMesh(),
                 pocket = new SlugEquipment.GearMesh(), straps = new SlugEquipment.GearMesh(), buckles = new SlugEquipment.GearMesh(),
-                lid = new SlugEquipment.GearMesh(), lidStraps = new SlugEquipment.GearMesh(), mouth = new SlugEquipment.GearMesh();
-            public Vector3 hinge, mouthCenter;
+                lid = new SlugEquipment.GearMesh(), lidStraps = new SlugEquipment.GearMesh(), mouth = new SlugEquipment.GearMesh(),
+                top = new SlugEquipment.GearMesh(), heap = new SlugEquipment.GearMesh();
+            /// <summary>The lid's hinge, the middle of the mouth, and the middle of the top of the heap (where the things on
+            /// top lie; on the floor when empty).</summary>
+            public Vector3 hinge, mouthCenter, inside;
         }
 
         /// <summary>
         /// The bag with its envelope's half size <paramref name="half"/>, sewn from cloth panels the size of the empty bag
-        /// (<paramref name="cloth"/>, half sizes), filled by <paramref name="fill"/> (0 = empty, 1 = crammed).
+        /// (<paramref name="cloth"/>, half sizes), filled by <paramref name="fill"/> (0 = empty, 1 = crammed); its mouth sunk
+        /// into the lining when <paramref name="open"/> (everything else is the same, vertex for vertex).
         /// </summary>
-        public static Parts Make(Frame f, Vector3 cloth, Vector3 half, float fill)
+        public static Parts Make(Frame f, Vector3 cloth, Vector3 half, float fill, bool open = false)
         {
             var s = new Sack(half, cloth, fill);
             var o = new Parts();
-            Body(o.body, s, f);
-
             float gx = Mathf.Sqrt(half.x / cloth.x), gy = Mathf.Sqrt(half.y / cloth.y);
             float top = s.At(0f, 0f).y, bottom = s.At(0f, Mathf.PI).y;
+            Body(o, s, f, s.LatAtX(0.8f * 0.98f * cloth.x * gx, 0f), bottom + 0.3f * (top - bottom), top, fill, open);
 
             // the lid: from the back of the top, over it and down the front, lifted the fuller the bag
             float lidX = cloth.x * 0.98f * gx, drape = cloth.y * 0.62f * gy;
@@ -184,19 +207,90 @@ namespace SlugDesign
         }
 
         // ------------------------------------------------------------------ pieces
-        static void Body(SlugEquipment.GearMesh mb, Sack s, Frame f, int nLat = 28, int nLon = 64)
+        /// <summary>The mouth reaches this many lon steps of the sack (of 64 round it) either side of the top: under the lid.</summary>
+        const int MouthLon = 8;
+
+        /// <summary>
+        /// The sack (<see cref="Parts.body"/>), its mouth (the top, out to <paramref name="mouthLat"/> across) as a piece of
+        /// its own (<see cref="Parts.top"/>), and the heap of what is in it (<see cref="Parts.heap"/>). Opened, the mouth
+        /// sinks: its rim stays, a lip turns in and a lining runs from it down to the floor at <paramref name="floor"/> (bag
+        /// space y); shut, it is the top of the sack. Either way the heap's top lies between the floor (empty) and most of
+        /// the way up to the rim (crammed) by <paramref name="fill"/>.
+        /// </summary>
+        static void Body(Parts o, Sack s, Frame f, float mouthLat, float floor, float top, float fill, bool open)
         {
+            const int nLat = 28, nLon = 64, mid = nLat / 2;
+            int mLat = Mathf.Clamp(Mathf.RoundToInt(mouthLat / Mathf.PI * nLat), 1, mid - 1);
+            float Lon(float j) => j / nLon * Mathf.PI * 2f;
+            int Wrap(int j) => j > nLon / 2 ? j - nLon : j;
+
+            // the shell: all of the sack but the mouth
             var idx = new int[nLat + 1, nLon];
             for (int i = 0; i <= nLat; i++)
             for (int j = 0; j < nLon; j++)
-                idx[i, j] = mb.Vert(f.P(s.At(Lat(i, nLat), j / (float)nLon * Mathf.PI * 2f)));
+                idx[i, j] = o.body.Vert(f.P(s.At(Lat(i, nLat), Lon(j))));
             for (int i = 0; i < nLat; i++)
             for (int j = 0; j < nLon; j++)
             {
+                int dj = Wrap(j);
+                if (i >= mid - mLat && i < mid + mLat && dj >= -MouthLon && dj < MouthLon) continue;
                 float lat = Lat(i + 0.5f, nLat), lon = (j + 0.5f) / nLon * Mathf.PI * 2f;
                 Vector3 under = f.P(s.At(lat, lon) - s.Normal(lat, lon) * 0.05f);
-                mb.Quad(idx[i, j], idx[i + 1, j], idx[i + 1, (j + 1) % nLon], idx[i, (j + 1) % nLon], under, true);
+                o.body.Quad(idx[i, j], idx[i + 1, j], idx[i + 1, (j + 1) % nLon], idx[i, (j + 1) % nLon], under, true);
             }
+
+            // the mouth: (a, b) steps across and along from the top's middle; r = 1 on its rim
+            Vector3 Rim(float a, float b, out float r)
+            {
+                r = Mathf.Max(Mathf.Abs(a) / mLat, Mathf.Abs(b) / MouthLon);
+                return r < 1e-4f ? s.At(0f, 0f) : s.At(Lat(mid + a / r, nLat), Lon(b / r));
+            }
+            Vector3 c = Vector3.zero;
+            int nRim = 0;
+            for (int a = -mLat; a <= mLat; a++)
+            for (int b = -MouthLon; b <= MouthLon; b++)
+                if (Mathf.Abs(a) == mLat || Mathf.Abs(b) == MouthLon) { c += s.At(Lat(mid + a, nLat), Lon(b)); nRim++; }
+            c /= nRim;
+            // opened: the lining runs down over the outer part of the mouth (a lip turning in at the rim), the floor is the rest
+            const float wallTo = 0.45f, inset = 0.9f;
+            Vector3 Sunk(int a, int b)
+            {
+                Vector3 rim = Rim(a, b, out float r);
+                if (r < wallTo) { var fl = c + (rim - c) * (inset * r / wallTo); fl.y = floor; return fl; }
+                var p = c + (rim - c) * Mathf.Lerp(inset, 1f, Mathf.Clamp01((r - 0.9f) / 0.1f));
+                p.y = Mathf.Lerp(floor, rim.y, (r - wallTo) / (1f - wallTo));
+                return p;
+            }
+            int na = 2 * mLat + 1, nb = 2 * MouthLon + 1;
+            var m = new int[na, nb];
+            for (int a = -mLat; a <= mLat; a++)
+            for (int b = -MouthLon; b <= MouthLon; b++)
+                m[a + mLat, b + MouthLon] = o.top.Vert(f.P(open ? Sunk(a, b) : s.At(Lat(mid + a, nLat), Lon(b))));
+            for (int a = 0; a < na - 1; a++)
+            for (int b = 0; b < nb - 1; b++)
+            {
+                // wound as the top of the sack (the sunk lining faces the same way: up and in)
+                float lat = Lat(mid - mLat + a + 0.5f, nLat), lon = Lon(b - MouthLon + 0.5f);
+                o.top.Quad(m[a, b], m[a + 1, b], m[a + 1, b + 1], m[a, b + 1], f.P(s.At(lat, lon) - s.Normal(lat, lon) * 0.05f), true);
+            }
+
+            // the heap: a low mound filling the lining at the level of what is in it, a little lumpy
+            float level = Mathf.Lerp(floor + 0.004f, top - 0.3f * (top - floor), fill), dome = 0.16f * (top - floor);
+            var h = new int[na, nb];
+            for (int a = -mLat; a <= mLat; a++)
+            for (int b = -MouthLon; b <= MouthLon; b++)
+            {
+                var p = c + (Rim(a, b, out float r) - c) * (inset * r);
+                p.y = level + dome * (1f - r * r) + 0.004f * Mathf.Sin(a * 2.1f + 0.7f) * Mathf.Sin(b * 1.7f + 0.3f) * (1f - r);
+                h[a + mLat, b + MouthLon] = o.heap.Vert(f.P(p));
+            }
+            for (int a = 0; a < na - 1; a++)
+            for (int b = 0; b < nb - 1; b++)
+            {
+                Vector3 below = (o.heap.Pos(h[a, b]) + o.heap.Pos(h[a + 1, b + 1])) * 0.5f - f.y * 0.05f;
+                o.heap.Quad(h[a, b], h[a + 1, b], h[a + 1, b + 1], h[a, b + 1], below, true);
+            }
+            o.inside = f.P(new Vector3(c.x, level + dome, c.z));
         }
 
         static float Lat(float i, int n) => Mathf.Lerp(-Mathf.PI * 0.5f, Mathf.PI * 0.5f, i / n);

@@ -2,6 +2,8 @@
 
 Oct 18, 2026
 
+> **Outdated (Nov 2, 2026): do not build from this sheet.** Furniture for the previous base. The base is being remade by Claude in Unity code; see `../spec.md` §10. 前の拠点の家具の票（Nov 2 から使わない）。
+
 拠点の洞窟（`base_cenote.md`。Argon が灰色のラフを作った）の中に置く、部屋ごとの家具・器具と、細かいマテリアル。下の **English prompt** をそのまま貼る。日本語訳はわくさんが読むためのもので、中身は同じ。
 
 - 決めた経緯：`../discussions/base_furniture_discussion.md`（Claude がペルソナと話して決めた。わくさんの判断：段階の材料に島の大物を使う、秤は演出だけ）、`../discussions/base_storage_discussion.md`・`_2.md`（物の扱い、籠の3つの仕切り）

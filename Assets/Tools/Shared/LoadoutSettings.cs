@@ -16,6 +16,11 @@ namespace SlugMove
         [Tooltip("ピッケル（背中）を取って構えるまでの時間")] public float pickaxeDrawTime = 0.65f;
         [Tooltip("腰の物（小さい銃・ナイフ）を取って構えるまでの時間")] public float hipDrawTime = 0.3f;
         [Range(0.1f, 0.7f), Tooltip("そのうち、手が道具に届くまでの割合。残りの時間で構えの位置まで持ってくる")] public float reachPart = 0.4f;
+        [Tooltip("背中の物（銃・ピッケル）をしまう時間。取り出しと同じ道すじを逆に戻して留め、手を戻す。しまい終わってから次の物を取る")] public float backStowTime = 0.4f;
+
+        [Header("背中から取る道すじ")]
+        [Tooltip("引き抜くとき、道具をその長さの向きに留め具から滑らせる長さ（m）")] public float slideOut = 0.08f;
+        [Tooltip("手と道具が通る、右肩の上の点（右腕の付け根から、体の向きで m）。+y = 上、-z = 後ろ。バッグが膨らんでいれば、その外へ押し出す")] public Vector3 overShoulder = new Vector3(0.03f, 0.13f, -0.05f);
 
         [Header("背中の銃（バッグの上に斜めに留める）")]
         [Tooltip("体の長さ方向の位置（0 = 尾、1 = 頭）")] public float backGunT = 0.52f;

@@ -15,6 +15,8 @@ namespace SlugMove
         [Tooltip("加速（m/s²）。小さいほど動き出しと方向転換が重い")] public float acceleration = 1.5f;
         [Tooltip("入力を離したときの一定のブレーキ（m/s²）。滑りとは別にかかる")] public float deceleration = 0.3f;
         [Tooltip("止まるときの滑り（秒）。大きいほど、ぬるっと長く滑る")] public float slideTime = 0.5f;
+        [Tooltip("2本足のとき、最高速から止まるまでの時間（秒）。滑らずに足で止まる（Nov 2）")] public float footStopTime = 0.1f;
+        [Tooltip("2本足のとき、速さにかける倍率。歩くのは這うより速い（Nov 2）")] public float footSpeed = 1.35f;
         [Range(0f, 1f), Tooltip("横移動（A/D）の速さの倍率")] public float strafeMultiplier = 0.6f;
         [Range(0f, 1f), Tooltip("後ろ移動（S）の速さの倍率")] public float backwardMultiplier = 0.5f;
         [Tooltip("体の向きが視点の向きに追いつく、いちばん遅い速さ（度/秒）")] public float bodyTurnSpeed = 120f;
@@ -26,6 +28,16 @@ namespace SlugMove
         [Tooltip("上乗せが抜けるまでの時間（秒）")] public float turnKickTime = 0.15f;
         [Tooltip("次の切り返しまでの時間（秒）。ジグザグがまっすぐより速くならないように")] public float turnKickCooldown = 0.5f;
         [Tooltip("切り返したときに、お尻が外へ振られる強さ（度/秒）。0 でなし")] public float turnKickTail = 220f;
+
+        [Header("走る（Shift 長押し、Nov 3。2本足だけ。数字は出さない）")]
+        [Tooltip("走るときに歩く速さへかける倍率。1.5 で 1.6 → 2.4 m/s（人なら約 8.6 m/s の全力疾走）。乾き・バッグの重さで遅くなるのは歩きと同じ")] public float runMultiplier = 1.5f;
+        [Tooltip("続けて走れる時間（秒）。尽きると息が切れて歩きに戻る")] public float staminaSeconds = 5f;
+        [Tooltip("走るのをやめてから、息が戻り始めるまで（秒）。歩いていても戻る")] public float staminaRecoverDelay = 1f;
+        [Tooltip("空から満タンまで戻る時間（秒、戻り始めてから）")] public float staminaRefillTime = 3f;
+        [Range(0f, 1f), Tooltip("息が切れたあと、ここまで戻るとまた走れる（満タン = 1）。それまでは肩で息をして、触角が垂れる。Nov 5 わくさん：満タンまで戻るまで走れない")] public float staminaResume = 1f;
+        [Range(0f, 1f), Tooltip("ここより少なくなると、画面の端が少しずつ暗くなる（満タン = 1）")] public float staminaWarnBelow = 0.3f;
+        [Range(0f, 1f), Tooltip("尽きたときの画面の端の暗さ")] public float staminaEdgeDark = 0.45f;
+        [Tooltip("走っている間に視野角を広げる量（度）")] public float runFovKick = 3f;
 
         [Header("覗いている間（照準器・スコープ。切り返しの勢いはつかない）")]
         [Range(0f, 1f), Tooltip("覗いている間の、這う速さの倍率")] public float aimSpeedMultiplier = 0.8f;
@@ -51,6 +63,7 @@ namespace SlugMove
         [Tooltip("よじ登れる段差の高さ（m）。目の高さは約 0.47 m")] public float climbHeight = 0.45f;
         [Tooltip("よじ登る速さ（m/s、上向き）")] public float climbSpeed = 0.5f;
         [Range(0f, 90f), Tooltip("よじ登るときに体を起こす最大の角度（度）")] public float climbTilt = 50f;
+        [Tooltip("はしごを上り下りする速さ（m/s、はしごに沿って）。岩に掛けたはしご（SlugLadder）")] public float ladderSpeed = 1.2f;
 
         [Header("縮んで伸びる（スペースを押すと少し縮んで伸びる。長押しで大きく溜める）")]
         [Tooltip("いちばん縮むまでの時間（秒）。長く溜めるほど遠くへ伸びる")] public float lungeChargeTime = 0.5f;

@@ -8,10 +8,13 @@ using UnityEngine.Rendering.Universal;
 namespace SlugDesign
 {
     /// <summary>
-    /// The slug as it is now, in one place: the prefab every scene uses (<see cref="PrefabPath"/>), the decided look
-    /// (<see cref="ApplyCurrent"/>), and a dark rainy scene with screenshots (whole body, face close-ups, the crawl in
-    /// frozen stills) to check it. The earlier comparison galleries (v1 ... v7) were folded into this; their history is
-    /// in docs/character/.
+    /// The crawling slug (the body until Nov 3; the game scenes now use the two-legged one, <see cref="DinoSlugBody"/>),
+    /// kept in one place: its prefab (<see cref="PrefabPath"/>), the decided look (<see cref="ApplyCurrent"/>), and a dark
+    /// rainy scene where it can still be played (Nov 3 わくさん：前のやつはバッグとかヘルメットはそのままで操作できるように):
+    /// the same controls as the game (WASD, Space, Q to look into the bag, 1-3 tools, V third person), wearing the
+    /// helmet, the shell plate armour, the vest and a bag with things in it (<see cref="BuildPlayer"/>). The screenshots
+    /// (whole body, face close-ups, the crawl in frozen stills) are taken of that slug. The earlier comparison galleries
+    /// (v1 ... v7) were folded into this; their history is in docs/character/.
     /// </summary>
     public static class SlugLookbook
     {
@@ -20,6 +23,8 @@ namespace SlugDesign
         public const string ScenePath = "Assets/Scenes/Preview/SlugLookbook.unity";
         const string ShaderName = "Slug/Toon";
         const float FrozenTime = 0.0f;
+        /// <summary>Where the face sits in front of the capsule's axis (m). The slug turns about that axis.</summary>
+        const float FaceForward = 0.122f;
 
         static string OutDir => Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Screenshots", "Character"));
         static ParticleSystem _rain;
@@ -65,34 +70,110 @@ namespace SlugDesign
             Debug.Log("[Slug] prefab saved: " + PrefabPath);
         }
 
+        // ------------------------------------------------------------------ player
+        /// <summary>
+        /// The crawling slug as a player (the game's controls, camera, tools and hitboxes) at <paramref name="position"/>,
+        /// dressed as it set out on a raid: the helmet, the shell plate armour, the vest, and a bag with a few things in it
+        /// to look into (Q). It was the game scenes' player until Nov 3.
+        /// </summary>
+        internal static GameObject BuildPlayer(SlugMove.SlugMoveSettings settings, Vector3 position)
+        {
+            var player = new GameObject("Player");
+            player.transform.position = position;
+            var cc = player.AddComponent<CharacterController>();
+            cc.radius = 0.18f;   // the body is about 0.33 m wide; a 0.36 m capsule passes a 0.45 m corridor
+            cc.height = 0.56f;
+            cc.center = new Vector3(0f, 0.28f, 0f);
+            cc.skinWidth = 0.03f;
+            cc.minMoveDistance = 0f;
+            cc.slopeLimit = settings.slopeLimit;
+            cc.stepOffset = settings.stepHeight;
+
+            // the capsule sits around the head; the body trails behind it (eyes at about +0.16 m, inside the capsule)
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
+            var slugGo = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+            slugGo.name = "Body";
+            slugGo.transform.SetParent(player.transform, false);
+            slugGo.transform.localPosition = new Vector3(0f, -cc.skinWidth, -0.31f);
+            var slug = slugGo.GetComponent<SlugPop>();
+            ApplyCurrent(slug);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(slug);
+            slug.Rebuild();
+            // keep the face over the front of the capsule whatever the body length (the body is centred on its footprint)
+            float faceZ = player.transform.InverseTransformPoint(slug.FaceCenterWorld).z;
+            slugGo.transform.localPosition += new Vector3(0f, 0f, FaceForward - faceZ);
+
+            var camGo = new GameObject("Main Camera") { tag = "MainCamera" };
+            var cam = camGo.AddComponent<Camera>();
+            cam.nearClipPlane = 0.02f;
+            cam.farClipPlane = 200f;
+            cam.fieldOfView = settings.fieldOfView;
+            camGo.AddComponent<AudioListener>();
+            camGo.AddComponent<UniversalAdditionalCameraData>();
+            camGo.transform.SetPositionAndRotation(player.transform.position + new Vector3(0f, 0.47f, 0.3f), Quaternion.identity);
+
+            var move = player.AddComponent<SlugMove.SlugMoveController>();
+            var rig = player.AddComponent<SlugMove.SlugCameraRig>();
+            var hud = player.AddComponent<SlugMove.SlugMoveHud>();
+            var tool = player.AddComponent<SlugMove.SlugToolHolder>();
+            move.settings = settings; move.cameraRig = rig; move.body = slugGo.transform;
+            rig.settings = settings; rig.controller = move; rig.slug = slug; rig.cam = cam;
+            hud.controller = move; hud.cameraRig = rig;
+            tool.pickaxe = SlugMove.MoveTestBuilder.LoadPickaxeSettings(); tool.controller = move; tool.cameraRig = rig; tool.slug = slug;
+            // 1 = pickaxe, 2 = the back gun, 3 = the hip tool; only the one in hand is enabled
+            var kinds = new[] { SlugMove.GunKind.Rifle, SlugMove.GunKind.Shotgun, SlugMove.GunKind.Sniper, SlugMove.GunKind.Pistol };
+            var guns = new SlugMove.SlugGunHolder[kinds.Length];
+            for (int i = 0; i < kinds.Length; i++)
+            {
+                var gun = guns[i] = player.AddComponent<SlugMove.SlugGunHolder>();
+                gun.gun = SlugMove.MoveTestBuilder.LoadGunSettings(kinds[i]); gun.controller = move; gun.cameraRig = rig; gun.slug = slug;
+                gun.enabled = false;
+            }
+            var loadout = player.AddComponent<SlugMove.SlugLoadout>();
+            loadout.pickaxe = tool; loadout.guns = guns;
+            SlugMove.MoveTestBuilder.FitLoadout(player);
+            player.AddComponent<SlugMove.SlugHitboxes>().slug = slug;
+
+            // the gear it set out in, and a bag with a few things in it
+            var gear = slugGo.AddComponent<SlugEquipment>();
+            gear.slug = slug;
+            gear.helmet = true;
+            gear.armor = SlugEquipment.Armor.ShellPlate;
+            var bag = player.AddComponent<SlugExtract.SlugBag>();
+            bag.settings = SlugExtract.ExtractTestBuilder.PrepareAssets();
+            bag.controller = move;
+            bag.startItems = new[] { SlugExtract.ItemKind.RockSalt, SlugExtract.ItemKind.Crop, SlugExtract.ItemKind.RockSalt };
+            SlugExtract.ExtractTestBuilder.FitBag(player, bag);
+            return player;
+        }
+
         // ------------------------------------------------------------------ scene
         [MenuItem("Slug/Lookbook Build Scene")]
         public static void BuildScene()
         {
             if (!AssetDatabase.IsValidFolder(Dir)) AssetDatabase.CreateFolder("Assets/Slug", "Lookbook");
             if (AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath) == null) BuildPrefab();
+            var active = EditorSceneManager.GetActiveScene();
+            if (active.isDirty && !string.IsNullOrEmpty(active.path)) EditorSceneManager.SaveScene(active);
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            BuildEnvironment(out var gallery, out _rain);
+            BuildEnvironment(out _rain);
 
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
-            var inst = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
-            inst.name = "Slug";
-            inst.transform.SetParent(gallery, false);
-            inst.transform.rotation = Quaternion.Euler(0f, 145f, 0f);
-            var s = inst.GetComponent<SlugPop>();
-            ApplyCurrent(s);
-            s.Rebuild();
+            // the crawling slug to play, facing away from the overview camera's side (the screenshots turn its body)
+            var player = BuildPlayer(SlugMove.MoveTestBuilder.LoadSettings(), Vector3.zero);
+            var s = player.GetComponentInChildren<SlugPop>();
 
             var cam = GameObject.Find("Overview Camera").GetComponent<Camera>();
             cam.fieldOfView = 20f;
-            Frame(cam, BoundsOf(inst), 16f, 1.2f);
+            Frame(cam, BoundsOf(s.gameObject), 16f, 1.2f);
+            cam.enabled = false;   // only a stand for the screenshots; playing, the slug's own camera shows
             EditorSceneManager.SaveScene(scene, ScenePath);
+            SlugMove.MoveTestBuilder.AddToBuildSettings(ScenePath);
             AssetDatabase.SaveAssets();
             Debug.Log("[Slug] lookbook scene saved: " + ScenePath);
         }
 
         /// <summary>Dark rainy set: cold overcast light, ground, rain streaks (pre-simulated before every shot), camera.</summary>
-        static void BuildEnvironment(out Transform gallery, out ParticleSystem rain)
+        static void BuildEnvironment(out ParticleSystem rain)
         {
             RenderSettings.skybox = null;
             RenderSettings.ambientMode = AmbientMode.Trilight;
@@ -117,9 +198,8 @@ namespace SlugDesign
             groundMat.SetFloat("_RimAmount", 0f);
             groundMat.SetFloat("_Bands", 2f);
             AssetDatabase.CreateAsset(groundMat, Dir + "/RainGround.mat");
-            var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);   // its collider stays: the slug walks on it
             ground.name = "Ground";
-            Object.DestroyImmediate(ground.GetComponent<Collider>());
             ground.transform.localScale = new Vector3(60f, 1f, 30f);
             ground.GetComponent<MeshRenderer>().sharedMaterial = groundMat;
 
@@ -156,13 +236,10 @@ namespace SlugDesign
             rain = ps;
 
             var camGo = new GameObject("Overview Camera");
-            camGo.tag = "MainCamera";
             var cam = camGo.AddComponent<Camera>();
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(0.1f, 0.13f, 0.17f);
             camGo.AddComponent<UniversalAdditionalCameraData>();
-
-            gallery = new GameObject("Gallery").transform;
         }
 
         // ------------------------------------------------------------------ screenshots
@@ -172,10 +249,9 @@ namespace SlugDesign
             Directory.CreateDirectory(OutDir);
             foreach (var d in new[] { "face", "wave" }) Directory.CreateDirectory(Path.Combine(OutDir, d));
             var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-            var gallery = GameObject.Find("Gallery").transform;
             _rain = GameObject.Find("Rain").GetComponent<ParticleSystem>();
             var overview = GameObject.Find("Overview Camera").GetComponent<Camera>();
-            var s = gallery.GetComponentInChildren<SlugPop>();
+            var s = Object.FindAnyObjectByType<SlugPop>();
             s.Rebuild();
 
             const int W = 1280, H = 960;

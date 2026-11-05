@@ -1,6 +1,8 @@
 # 籠を運ぶ鳥（モデル票・日本語訳）
 
 Oct 18, 2026。わくさん用の訳。Argon が読むのは英語版 `carrier_bird.md`（中身は同じ）。
+
+> **Blender 版の票（Oct 30 に Unity のコード版で完成。使わない）**。いまの鳥は `Assets/Art/Editor/Creatures/CarrierBirdBuilder.cs`、票は `carrier_bird_code.md`。
 参考：
 - `reference/carrier_bird_sketch_oct18.webp`：わくさんの最初の鉛筆の絵（写真が横向き。左へ 90° 回すと、左が横から〈右向き〉、右が前から）
 - 灰色ラフ2回目のあとの方向（Oct 18）：**首をちぢめたデフォルメのペリカン**。わくさんが見せたペリカンの絵（素材サイトの絵なのでリポジトリには入れない）から取る所を下に書いた。鉛筆の絵の「目の下の線とふくらみ」は、ペリカンののど袋

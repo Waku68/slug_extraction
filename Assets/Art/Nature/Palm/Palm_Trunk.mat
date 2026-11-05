@@ -14,7 +14,7 @@ Material:
   m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
+  m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
   stringTagMap: {}
@@ -47,7 +47,7 @@ Material:
     - _DstBlend: 0
     - _EyeKind: 0
     - _EyeRad: 0.03
-    - _Facet: 0
+    - _Facet: 1
     - _FeltAmount: 0
     - _FollowMode: 0
     - _FollowT: 0
@@ -55,8 +55,8 @@ Material:
     - _JiggleAmp: 0
     - _JiggleFreq: 9
     - _JiggleSpeed: 9
-    - _MottleAmount: 0
-    - _MottleScale: 10
+    - _MottleAmount: 0.3
+    - _MottleScale: 3
     - _OutlineWidth: 0.0076
     - _PatternSize: 0.3
     - _PatternType: 0
@@ -128,7 +128,7 @@ Material:
     - _FollowNormal: {r: 0, g: 1, b: 0, a: 0}
     - _FollowPivot: {r: 0, g: 0, b: 0, a: 0}
     - _FollowRadial: {r: 0, g: 0, b: 0, a: 0}
-    - _MottleColor: {r: 0.5866667, g: 0.54, b: 0.46000004, a: 0.85}
+    - _MottleColor: {r: 0.6117647, g: 0.5568628, b: 0.47058824, a: 1}
     - _MouthC: {r: 0, g: 0, b: 0, a: 0}
     - _MouthColor: {r: 0.09999997, g: 0.079999976, b: 0.059999965, a: 1}
     - _MouthP: {r: 0.04, g: 0.015, b: 0.004, a: 0}
@@ -136,6 +136,9 @@ Material:
     - _MouthU: {r: 0, g: 1, b: 0, a: 0}
     - _OutlineColor: {r: 0.31058824, g: 0.28588235, b: 0.24352942, a: 0.45}
     - _PartOffset: {r: 0, g: 0, b: 0, a: 0}
+    - _PathA0: {r: 0, g: 0, b: 0, a: 0}
+    - _PathA1: {r: 0, g: 0, b: 0, a: 0}
+    - _PathAnchor: {r: 0, g: 0, b: 0, a: 0}
     - _PatternColor: {r: 1, g: 1, b: 1, a: 1}
     - _PatternScale: {r: 10, g: 10, b: 0, a: 0}
     - _RimColor: {r: 1, g: 1, b: 1, a: 1}

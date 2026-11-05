@@ -2,6 +2,8 @@
 
 Oct 17, 2026（午後に2版目：わくさんの絵で2階建てに変えた）
 
+> **Outdated (Nov 2, 2026): do not build from this sheet.** This is the previous base. The base is being remade by Claude in Unity code with a new layout (limestone cliff cave, water spine, plank walkways); see `../spec.md` §10. 前の拠点の票（Nov 2 から使わない。いまの形は spec 10章）。
+
 わくさんと決めた拠点の構造（`../spec.md` 10章「拠点の構造」）を、Argon（Google Antigravity）に渡すプロンプトにしたもの。下の **English prompt** をそのまま貼る。日本語訳はわくさんが読むためのもので、中身は同じ。
 
 - わくさんの絵：`reference/base_sketch_oct17.webp`（上が北。1階と2階の見取り図）

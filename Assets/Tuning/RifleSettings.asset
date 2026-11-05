@@ -20,8 +20,8 @@ MonoBehaviour:
   cycleTime: 0.6
   pellets: 1
   pelletSpread: 0
-  fireRate: 300
-  magazineSize: 20
+  fireRate: 450
+  magazineSize: 22
   muzzleSpeed: 140
   gravityScale: 1
   roundLife: 1.2

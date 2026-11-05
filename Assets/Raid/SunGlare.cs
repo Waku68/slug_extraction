@@ -9,11 +9,11 @@ namespace SlugExtract
     /// loudly). While the slug is in the sun on a sunny day, broad bands of light lie across the whole view, all running
     /// about the same way: in from the side of the screen the sun is on (from the sun itself when it is in view), brighter
     /// on that side and fading as they cross (Oct 27 わくさん: not fanned out from one point at the edge).
-    /// How strong they are is how fast the sun dries the slug there (<see cref="SlugMoisture.SunDrying"/>: soil half, salt
+    /// How strong they are is how fast the sun dries the slug there (<see cref="SlugMoisture.SunDrying"/>: soil faint, sand more, salt
     /// full); in the shade, under cloud, at dawn and dusk and at night there are none, so the light always means danger.
     /// Stepping out of the shade flares them once. The bands drift and breathe slowly, like light through moving air.
-    /// Added to the player by <see cref="SlugMoisture"/>. The island's own shafts of light (seen by everyone) are
-    /// <see cref="SlugWorld.SunShafts"/>.
+    /// Not used since Nov 3 (わくさん: it got in the way of seeing; the sun shows only on the island, in
+    /// <see cref="SlugWorld.SunShafts"/>). Nothing adds it any more; the code is kept.
     /// </summary>
     public class SunGlare : MonoBehaviour
     {
@@ -51,7 +51,7 @@ namespace SlugExtract
         void Update()
         {
             if (!moisture) return;
-            float target = moisture.SunDrying > 0f ? Mathf.Lerp(minShare, 1f, Mathf.InverseLerp(0.5f, 1f, moisture.SunDrying)) : 0f;
+            float target = moisture.SunDrying > 0f ? Mathf.Lerp(minShare, 1f, Mathf.InverseLerp(0.3f, 1f, moisture.SunDrying)) : 0f;
             float speed = 1f / Mathf.Max(target > _shown ? fadeIn : fadeOut, 1e-3f);
             _shown = Mathf.MoveTowards(_shown, target, speed * Time.deltaTime);
             // out of the shade: one flare, so the moment it starts is caught even without looking at anything

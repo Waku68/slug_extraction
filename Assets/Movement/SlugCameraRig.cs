@@ -14,6 +14,8 @@ namespace SlugMove
         public SlugMoveSettings settings;
         public SlugMoveController controller;
         public SlugPop slug;
+        /// <summary>The two-legged body (Nov 2), in place of <see cref="slug"/>: the eyes sit on its eye anchor.</summary>
+        public DinoSlugBody dino;
         public Camera cam;
         public bool thirdPerson;
         /// <summary>In third person: over the right shoulder (closer, the body on the left of the view) instead of straight behind.</summary>
@@ -28,6 +30,24 @@ namespace SlugMove
         [System.NonSerialized] public float peek;
         /// <summary>What the eyes look at while peeking (world): the middle of the bag.</summary>
         [System.NonSerialized] public Vector3 peekTarget;
+        [Tooltip("覗くとき、目を設定の位置からさらに出す（右, 上, 前, m）。バッグと回した顔と胸のベストが一度に入るように")]
+        public Vector3 peekStepOut = new Vector3(0.13f, -0.01f, -0.03f);
+        [Tooltip("覗くとき、見る点をバッグの中からずらす（右, 上, 前, m）。顔の下のベストまで入るように")]
+        public Vector3 peekAimShift = new Vector3(0f, -0.1f, 0.1f);
+        /// <summary>While peeking, how much further back the eyes stand from what they look at (m; set by the bag: a
+        /// swollen bag stands up big and needs more room to be seen whole).</summary>
+        [System.NonSerialized] public float peekBack;
+        /// <summary>While peeking, the way the opened bag's mouth faces (world; set by the bag).</summary>
+        [System.NonSerialized] public Vector3 peekMouthAxis = Vector3.up;
+        [Range(0f, 1f), Tooltip("覗くとき、目をバッグの口の向きの上へ寄せる割合（1 = 口を真上から覗きこむ）。距離は変えない")]
+        public float peekAlongMouth = 0.5f;
+        [Range(0f, 1f), Tooltip("ふくらんだバッグのとき：口の向きへ寄せる割合と、見る点を顔のほうへ寄せる割合（顔がバッグに隠れないように）")]
+        public float peekAlongMouthBig = 0.2f;
+        [Range(0f, 1f)] public float peekFaceShareBig = 0.3f;
+        /// <summary>0..1: how big the opened bag is (set by the bag; it leans back then, and the eyes keep the face in view).</summary>
+        [System.NonSerialized] public float peekBig;
+        [Tooltip("覗くとき、見る点からさらに離れる距離（m）。起こしたバッグが画面に収まるように")]
+        public float peekStandBack = 0.1f;
         /// <summary>Looking at its own back: the tools cannot be used.</summary>
         public bool Peeking => peek > 0.02f;
         /// <summary>Busy with something else (setting the bag down, shouldering one): the tools cannot be used.</summary>
@@ -56,7 +76,7 @@ namespace SlugMove
         // shrink and stretch: a springy offset of the eyes (right, up, forward of the look, m) and their pitch (+ = down),
         // and the field of view (narrowed while charging, flung wide by the stretch)
         Vector3 _kickPos, _kickPosV;
-        float _kickPitch, _kickPitchV, _fovAdd, _fovPunch;
+        float _kickPitch, _kickPitchV, _fovAdd, _fovPunch, _runFov;
 
         void OnEnable()
         {
@@ -70,7 +90,7 @@ namespace SlugMove
             Yaw = controller.transform.eulerAngles.y;
             if (!driven) LockCursor(true);
             // the helmet only casts its shadow for this camera while it sits in the head
-            var gear = slug ? slug.GetComponent<SlugDesign.SlugEquipment>() : null;
+            var gear = slug ? slug.GetComponent<SlugDesign.SlugGearBase>() : dino ? dino.GetComponent<SlugDesign.SlugGearBase>() : null;
             if (gear) gear.SetOwnCamera(cam, () => !ShowsBody);
             cam.cullingMask |= 1 << SlugToolHolder.BodyToolLayer;
         }
@@ -200,8 +220,10 @@ namespace SlugMove
                     if (r.name == "Body") { _bodyMat = r.sharedMaterial; break; }
             }
             StepKick(dt);
+            // running widens the view a little (Nov 3)
+            _runFov = Mathf.Lerp(_runFov, controller && controller.Running ? s.runFovKick : 0f, 1f - Mathf.Exp(-dt * 5f));
             cam.fieldOfView = zoom > 1.001f && !thirdPerson
-                ? 2f * Mathf.Atan(Mathf.Tan(s.fieldOfView * 0.5f * Mathf.Deg2Rad) / zoom) * Mathf.Rad2Deg : s.fieldOfView + _fovAdd;
+                ? 2f * Mathf.Atan(Mathf.Tan(s.fieldOfView * 0.5f * Mathf.Deg2Rad) / zoom) * Mathf.Rad2Deg : s.fieldOfView + _fovAdd + _runFov;
             Quaternion look = Quaternion.Euler(_pitch, Yaw, 0f);
             Vector3 pos;
             Quaternion rot;
@@ -234,7 +256,8 @@ namespace SlugMove
             else
             {
                 // ---- on the face
-                Vector3 eye = slug.FaceCenterWorld + slug.FaceForwardWorld * s.eyeForward + slug.FaceUpWorld * s.eyeUp;
+                Vector3 eye = slug ? slug.FaceCenterWorld + slug.FaceForwardWorld * s.eyeForward + slug.FaceUpWorld * s.eyeUp
+                                   : dino.ViewEyeWorld + dino.EyeForwardWorld * s.eyeForward + dino.EyeUpWorld * s.eyeUp;
 
                 // the same body breathing as the shader: the head moves by (stretch - 1) * (head - tail)
                 float stretch = 0.07f, waveSpeed = 0.8f, wavePhase = 0f;
@@ -245,7 +268,7 @@ namespace SlugMove
                     wavePhase = _bodyMat.GetFloat("_WavePhase");
                 }
                 float theta = 2f * Mathf.PI * waveSpeed * controller.CrawlTime + wavePhase;
-                eye += (slug.FaceCenterWorld - slug.TailWorld) * (stretch * Mathf.Sin(theta) * s.stretchFollow);
+                if (slug) eye += (slug.FaceCenterWorld - slug.TailWorld) * (stretch * Mathf.Sin(theta) * s.stretchFollow);
 
                 // ---- sway with the wave, only while moving
                 _bob01 = Mathf.Lerp(_bob01, controller.Speed01, 1f - Mathf.Exp(-6f * dt));
@@ -264,8 +287,15 @@ namespace SlugMove
             {
                 float w = peek * peek * (3f - 2f * peek);
                 Quaternion yawOnly = Quaternion.Euler(0f, Yaw, 0f);
-                Vector3 over = slug.FaceCenterUnturnedWorld + yawOnly * s.peekEye;     // (from where the face was before it turned)
-                Vector3 to = peekTarget - over;
+                // (from where the face was before it turned; out far enough to see the turned face and the vest below it too)
+                Vector3 over = (slug ? slug.FaceCenterUnturnedWorld : dino.EyeUnturnedWorld) + yawOnly * (s.peekEye + peekStepOut);
+                // (a big bag: the aim drawn toward the face, so it stays in view beside the bag)
+                Vector3 aim = Vector3.Lerp(peekTarget, slug ? slug.FaceCenterWorld : dino.EyeWorld, peekFaceShareBig * peekBig) + yawOnly * peekAimShift;
+                // swung round the aim toward the way the bag's mouth faces, so the eyes look into it
+                float dist = Vector3.Distance(over, aim);
+                Vector3 from = Vector3.Slerp((over - aim).normalized, peekMouthAxis.normalized, Mathf.Lerp(peekAlongMouth, peekAlongMouthBig, peekBig));
+                over = aim + from * (dist + peekStandBack + peekBack);
+                Vector3 to = aim - over;
                 Quaternion peekRot = to.sqrMagnitude > 1e-6f ? Quaternion.LookRotation(to, Vector3.up) : rot;
                 pos = Vector3.Lerp(pos, over, w);
                 rot = Quaternion.Slerp(rot, peekRot, w);

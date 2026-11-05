@@ -78,14 +78,23 @@ namespace SlugMove
         /// <summary>
         /// Builds the arm from <paramref name="root"/> (leaving along <paramref name="rootDir"/>) to <paramref name="hand"/>
         /// (arriving along <paramref name="handDir"/>), closing the fist around a handle running along <paramref name="handleDir"/>.
+        /// With <paramref name="viaWeight"/> &gt; 0 the arm is drawn toward passing through <paramref name="via"/> halfway
+        /// (1 = right through it): reaching round something in the way, such as over the shoulder past a big bag.
         /// </summary>
         public void Build(Vector3 root, Vector3 rootDir, Vector3 hand, Vector3 handDir, Vector3 handleDir,
-                          float rootRadius, float handRadius, Vector3 fistSize)
+                          float rootRadius, float handRadius, Vector3 fistSize, Vector3 via = default, float viaWeight = 0f)
         {
             float len = Vector3.Distance(root, hand);
             rootDir = rootDir.sqrMagnitude > 1e-8f ? rootDir.normalized : (hand - root).normalized;
             handDir = handDir.sqrMagnitude > 1e-8f ? handDir.normalized : (hand - root).normalized;
             Vector3 p0 = root, p1 = root + rootDir * (len * 0.3f), p2 = hand - handDir * (len * 0.25f), p3 = hand;
+            if (viaWeight > 0f)
+            {
+                // both inner points on one spot that puts the middle of the curve on the via point
+                Vector3 c = (8f * via - p0 - p3) / 6f;
+                p1 = Vector3.Lerp(p1, c, viaWeight);
+                p2 = Vector3.Lerp(p2, c, viaWeight);
+            }
 
             // a frame carried along the curve without twisting
             Vector3 tan = Tangent(p0, p1, p2, p3, 0f);

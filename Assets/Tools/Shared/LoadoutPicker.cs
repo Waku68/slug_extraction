@@ -152,7 +152,7 @@ namespace SlugMove
 
             // ---- how they are taken in hand
             var s = loadout.settings;
-            string times = s ? $"背中の物は取り出すのに時間がかかる（銃 {s.backDrawTime:0.0#} 秒、ピッケル {s.pickaxeDrawTime:0.0#} 秒）。腰の物は速い（{s.hipDrawTime:0.0#} 秒）。" : "";
+            string times = s ? $"背中の物は取り出すのに時間がかかる（銃 {s.backDrawTime:0.0#} 秒、ピッケル {s.pickaxeDrawTime:0.0#} 秒、しまうのに {s.backStowTime:0.0#} 秒）。腰の物は速い（{s.hipDrawTime:0.0#} 秒）。" : "";
             GUI.Label(new Rect(x, y, PW - 48f, 60f), $"1 ピッケル ／ 2 背中の銃 ／ 3 腰の道具（ホイールでも）\n{times}", _note);
             y += 72f;
 

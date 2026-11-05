@@ -10,10 +10,13 @@ namespace SlugExtract
     /// Fills the <see cref="SoundBank"/> with the placeholder sounds (Assets/Audio/Placeholder, made by
     /// SoundGen/placeholder_sfx.py) and gives the player's slug in the open scene a <see cref="SlugSounds"/>.
     /// Clips already set by hand in the bank (わく's own sounds) are kept; only empty keys get placeholders.
+    /// The game's sounds (Assets/Audio/Game, made by SoundGen/game_clips.py from わく's AI sounds, Nov 4) take the place
+    /// of placeholders and of the earlier AI sounds.
     /// </summary>
     public static class PlaceholderSounds
     {
         const string Folder = "Assets/Audio/Placeholder";
+        const string GameFolder = "Assets/Audio/Game";
         const string BankPath = "Assets/Tuning/SoundBank.asset";
 
         /// <summary>わく's own sounds used in place of a placeholder (key → clip path).</summary>
@@ -48,8 +51,25 @@ namespace SlugExtract
                 bank = ScriptableObject.CreateInstance<SoundBank>();
                 AssetDatabase.CreateAsset(bank, BankPath);
             }
+            foreach (var kv in Groups(Folder)) SetIfEmpty(bank, kv.Key, kv.Value.ToArray());
+            foreach (var kv in Groups(GameFolder)) SetOverPlaceholder(bank, kv.Key, kv.Value.ToArray());
+            foreach (var kv in Own)
+            {
+                Import(kv.Value);
+                var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(kv.Value);
+                if (clip) SetOverPlaceholder(bank, kv.Key, new[] { clip });
+            }
+            EditorUtility.SetDirty(bank);
+            AssetDatabase.SaveAssets();
+            return bank;
+        }
+
+        /// <summary>Every clip in a folder grouped by its key (the name without _01).</summary>
+        static SortedDictionary<string, List<AudioClip>> Groups(string folder)
+        {
             var groups = new SortedDictionary<string, List<AudioClip>>();
-            foreach (var guid in AssetDatabase.FindAssets("t:AudioClip", new[] { Folder }))
+            if (!AssetDatabase.IsValidFolder(folder)) return groups;
+            foreach (var guid in AssetDatabase.FindAssets("t:AudioClip", new[] { folder }))
             {
                 var path = AssetDatabase.GUIDToAssetPath(guid);
                 Import(path);
@@ -59,15 +79,7 @@ namespace SlugExtract
                 if (!groups.TryGetValue(key, out var list)) groups[key] = list = new List<AudioClip>();
                 list.Add(AssetDatabase.LoadAssetAtPath<AudioClip>(path));
             }
-            foreach (var kv in groups) SetIfEmpty(bank, kv.Key, kv.Value.ToArray());
-            foreach (var kv in Own)
-            {
-                var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(kv.Value);
-                if (clip) SetIfEmpty(bank, kv.Key, new[] { clip });
-            }
-            EditorUtility.SetDirty(bank);
-            AssetDatabase.SaveAssets();
-            return bank;
+            return groups;
         }
 
         static void SetIfEmpty(SoundBank bank, string key, AudioClip[] clips)
@@ -75,6 +87,19 @@ namespace SlugExtract
             var e = bank.entries.Find(x => x.key == key);
             if (e == null) bank.entries.Add(e = new SoundBank.Entry { key = key });
             if (e.clips == null || e.clips.Length == 0) e.clips = clips;
+        }
+
+        /// <summary>わく's own sound takes the key's place while it still plays only placeholders or AI sounds (or nothing).</summary>
+        static void SetOverPlaceholder(SoundBank bank, string key, AudioClip[] clips)
+        {
+            var e = bank.entries.Find(x => x.key == key);
+            if (e == null) bank.entries.Add(e = new SoundBank.Entry { key = key });
+            bool placeholders = e.clips == null || System.Array.TrueForAll(e.clips, c =>
+            {
+                string p = c ? AssetDatabase.GetAssetPath(c) : "";
+                return p == "" || p.StartsWith(Folder) || p.StartsWith(GameFolder) || p.StartsWith("Assets/Audio/Imported");
+            });
+            if (placeholders) e.clips = clips;
         }
 
         /// <summary>Short sounds that play often: decompressed on load, mono (sound_list.md).</summary>

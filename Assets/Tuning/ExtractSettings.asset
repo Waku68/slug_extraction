@@ -41,6 +41,8 @@ MonoBehaviour:
   saltRegrowGameHours: 3
   ugoTakeAfterRainGameHours: 2
   ugoTakeSunGameHours: 2
+  tsuyuriOpenGameHours: 1
+  tsuyuriBloomShare: 0.34
   cloth:
     displayName: "\u5E03\u306E\u888B"
     durability: 60
@@ -139,3 +141,25 @@ MonoBehaviour:
     chipColor: {r: 0.85, g: 0.78, b: 0.66, a: 1}
     model: {fileID: 919132149155446097, guid: 111bfb2b9ef167f46aae63e2099edb0d, type: 3}
     modelScale: {x: 1.25, y: 0.45, z: 1.25}
+  tsuyuri:
+    displayName: "\u30C4\u30E6\u30EA"
+    weight: 0.05
+    volume: 0.15
+    value: 45
+    size: 0.12
+    heldSize: 0.16
+    canHide: 1
+    chipColor: {r: 0.9, g: 0.94, b: 0.97, a: 1}
+    model: {fileID: 1885106282203233973, guid: 7bb62087abbc8a74d87cecb60d9535c7, type: 3}
+    modelScale: {x: 1, y: 1, z: 1}
+  tsuyuriBulb:
+    displayName: "\u30C4\u30E6\u30EA\u306E\u7403\u6839"
+    weight: 0.3
+    volume: 0.3
+    value: 20
+    size: 0.11
+    heldSize: 0.13
+    canHide: 1
+    chipColor: {r: 0.55, g: 0.47, b: 0.36, a: 1}
+    model: {fileID: 561731854613103953, guid: a2a3488783d938f4fa1a032f1c8d729f, type: 3}
+    modelScale: {x: 1, y: 1, z: 1}

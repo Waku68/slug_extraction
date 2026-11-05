@@ -2,6 +2,8 @@
 
 英語版 `base_furniture.md` の訳。Argon は読まない。中身を変えるときは両方直す。
 
+> **前の拠点の家具の票（Nov 2 から使わない）**。いまの拠点の設備の案は `../discussions/base_facilities_plan.md` と `base_layout_v2.md`、決まりは spec 10章。
+
 ## 日本語訳（わくさんが読む用。中身は上と同じ）
 
 あなたは「ナメクジ脱出PvP」（Unity 6000.5 URP）のプレイヤーの拠点（CenoteBase）の中に置く、家具と器具を作る。洞窟そのものは、もう作ってある（灰色のラフ 2版目、`Blender/Base/cenote_base_gen.py`）。今回は部屋の中を埋める。

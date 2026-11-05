@@ -56,6 +56,9 @@ Shader "Slug/Toon"
 
         [Header(Facets)]
         [Toggle] _Facet("Flat Facets", Float) = 0
+        _TopCoat("Top Coat (island ground colour on faces that look up)", Range(0, 1)) = 0
+        _WindAmount("Wind Sway (m)", Range(0, 1)) = 0
+        [Toggle] _IslandLook("Island Object (wet shine & rain haze)", Float) = 1
 
         [Header(Gummy)]
         _Alpha("Core Opacity (1 = opaque)", Range(0, 1)) = 1
@@ -172,7 +175,7 @@ Shader "Slug/Toon"
             Cull [_Cull]
 
             HLSLPROGRAM
-            #pragma target 3.5
+            #pragma target 4.5
             #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
@@ -194,6 +197,7 @@ Shader "Slug/Toon"
                 float2 uv         : TEXCOORD0;
                 float2 uv1        : TEXCOORD1;
                 float3 uv2        : TEXCOORD2;
+                half4  color      : COLOR;
             };
 
             struct Varyings
@@ -211,6 +215,7 @@ Shader "Slug/Toon"
                 float3 pos = IN.positionOS.xyz;
                 float3 nrm = IN.normalOS;
                 SlugDeform(pos, nrm, IN.tangentOS.xyz, IN.uv, IN.uv1.x, IN.uv2);
+                SlugWind(pos, nrm, IN.color, _WindAmount);
                 OUT.positionWS = TransformObjectToWorld(pos);
                 OUT.positionCS = TransformWorldToHClip(OUT.positionWS);
                 OUT.normalWS = TransformObjectToWorldNormal(nrm);
@@ -236,10 +241,10 @@ Shader "Slug/Toon"
                 float x = lit * _Bands;
                 float stepped = (floor(x) + smoothstep(0.5 - _BandSoftness, 0.5 + _BandSoftness, frac(x))) / _Bands;
                 stepped = lerp(saturate(stepped), smoothstep(0.1, 0.95, lit), 0.5);
-                half3 col = albedo * lerp(_ShadeColor.rgb, half3(1, 1, 1), stepped) * mainLight.color;
+                half3 col = albedo * lerp(SlugShade(_ShadeColor.rgb), half3(1, 1, 1), stepped) * mainLight.color;
                 col += albedo * SampleSH(N) * _AmbientStrength;
                 col = lerp(col, half3(1.0, 0.98, 0.94), glint * 0.85);
-                return half4(col, 1.0);
+                return half4(SlugAir(col, IN.positionWS), 1.0);
             }
 
             half4 frag(Varyings IN) : SV_Target
@@ -435,23 +440,32 @@ Shader "Slug/Toon"
                     albedo = lerp(albedo, _FaceInkColor.rgb, ink);
                 }
 
+                // ---- the ground of the place on top (island rocks) ----
+                albedo = SlugTopCoat(albedo, IN.positionWS, N, _TopCoat, ValueNoise3(IN.positionWS * 1.7));
+
                 // ---- toon lighting (main light + SH ambient only) ----
                 float4 shadowCoord = float4(0, 0, 0, 0);
                 #if defined(_MAIN_LIGHT_SHADOWS) || defined(_MAIN_LIGHT_SHADOWS_CASCADE)
                     shadowCoord = TransformWorldToShadowCoord(IN.positionWS);
                 #endif
                 Light mainLight = GetMainLight(shadowCoord);
+                float sh = mainLight.shadowAttenuation * SlugCloudShadowAt(IN.positionWS);
+                float islandLook = SlugIsIslandObject();
+                half3 wetSheen;
+                SlugWetSurface(albedo, wetSheen, IN.positionWS, N, V, mainLight.direction, mainLight.color, sh, islandLook);
 
                 float ndl = dot(N, mainLight.direction) * 0.5 + 0.5;
-                float lit = ndl * lerp(0.35, 1.0, mainLight.shadowAttenuation);
+                float lit = ndl * lerp(0.35, 1.0, sh);
                 float x = lit * _Bands;
                 float stepped = (floor(x) + smoothstep(0.5 - _BandSoftness, 0.5 + _BandSoftness, frac(x))) / _Bands;
                 stepped = saturate(stepped);
                 stepped = lerp(stepped, smoothstep(0.1, 0.95, lit), _ToonSmooth);
 
-                half3 tint = lerp(_ShadeColor.rgb, half3(1, 1, 1), stepped);
+                half3 tint = lerp(SlugShade(_ShadeColor.rgb), half3(1, 1, 1), stepped);
                 half3 col = albedo * tint * mainLight.color;
                 col += albedo * SampleSH(N) * _AmbientStrength;
+                col += SlugGlow(albedo, IN.positionWS, stepped * sh);
+                col += wetSheen;
 
                 // soft rim (matte, not a wet highlight)
                 float rim = pow(1.0 - ndv, _RimPower);
@@ -465,7 +479,7 @@ Shader "Slug/Toon"
                 {
                     alpha *= lerp(_Alpha, 1.0, saturate(pow(1.0 - ndv, 2.0) * _AlphaEdge));
                 }
-                return half4(col, alpha);
+                return half4(SlugAirLook(col, IN.positionWS, islandLook), alpha);
             }
             ENDHLSL
         }
@@ -474,13 +488,15 @@ Shader "Slug/Toon"
         Pass
         {
             Name "Outline"
-            Tags { "LightMode" = "SRPDefaultUnlit" }
+            // its own pass name, drawn for everything at once after the opaques by the "Toon Outlines" renderer feature
+            // (Nov 4: as a second pass of each object, SRPDefaultUnlit, it broke the SRP batcher: ~12x the draw time)
+            Tags { "LightMode" = "SlugOutline" }
 
             Cull Front
             ZWrite On
 
             HLSLPROGRAM
-            #pragma target 3.5
+            #pragma target 4.5
             #pragma vertex vert
             #pragma fragment frag
 
@@ -494,9 +510,10 @@ Shader "Slug/Toon"
                 float2 uv         : TEXCOORD0;
                 float2 uv1        : TEXCOORD1;
                 float3 uv2        : TEXCOORD2;
+                half4  color      : COLOR;
             };
 
-            struct Varyings { float4 positionCS : SV_POSITION; };
+            struct Varyings { float4 positionCS : SV_POSITION; float3 positionWS : TEXCOORD0; };
 
             Varyings vert(Attributes IN)
             {
@@ -504,15 +521,17 @@ Shader "Slug/Toon"
                 float3 pos = IN.positionOS.xyz;
                 float3 nrm = IN.normalOS;
                 SlugDeform(pos, nrm, IN.tangentOS.xyz, IN.uv, IN.uv1.x, IN.uv2);
+                SlugWind(pos, nrm, IN.color, _WindAmount);
                 pos += nrm * _OutlineWidth;
-                OUT.positionCS = TransformObjectToHClip(pos);
+                OUT.positionWS = TransformObjectToWorld(pos);
+                OUT.positionCS = TransformWorldToHClip(OUT.positionWS);
                 return OUT;
             }
 
             half4 frag(Varyings IN) : SV_Target
             {
                 clip(_OutlineWidth - 1e-4);
-                return half4(_OutlineColor.rgb, 1);
+                return half4(SlugAirLook(_OutlineColor.rgb, IN.positionWS, SlugIsIslandObject()), 1);   // far outlines melt into the air too
             }
             ENDHLSL
         }
@@ -529,7 +548,7 @@ Shader "Slug/Toon"
             Cull [_Cull]
 
             HLSLPROGRAM
-            #pragma target 3.5
+            #pragma target 4.5
             #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
@@ -548,6 +567,7 @@ Shader "Slug/Toon"
                 float2 uv         : TEXCOORD0;
                 float2 uv1        : TEXCOORD1;
                 float3 uv2        : TEXCOORD2;
+                half4  color      : COLOR;
             };
 
             struct Varyings { float4 positionCS : SV_POSITION; };
@@ -558,6 +578,7 @@ Shader "Slug/Toon"
                 float3 pos = IN.positionOS.xyz;
                 float3 nrm = IN.normalOS;
                 SlugDeform(pos, nrm, IN.tangentOS.xyz, IN.uv, IN.uv1.x, IN.uv2);
+                SlugWind(pos, nrm, IN.color, _WindAmount);
                 float3 positionWS = TransformObjectToWorld(pos);
                 float3 normalWS = TransformObjectToWorldNormal(nrm);
                 #if _CASTING_PUNCTUAL_LIGHT_SHADOW
@@ -590,7 +611,7 @@ Shader "Slug/Toon"
             Cull [_Cull]
 
             HLSLPROGRAM
-            #pragma target 3.5
+            #pragma target 4.5
             #pragma vertex vert
             #pragma fragment frag
 
@@ -604,6 +625,7 @@ Shader "Slug/Toon"
                 float2 uv         : TEXCOORD0;
                 float2 uv1        : TEXCOORD1;
                 float3 uv2        : TEXCOORD2;
+                half4  color      : COLOR;
             };
 
             struct Varyings { float4 positionCS : SV_POSITION; };
@@ -614,6 +636,7 @@ Shader "Slug/Toon"
                 float3 pos = IN.positionOS.xyz;
                 float3 nrm = IN.normalOS;
                 SlugDeform(pos, nrm, IN.tangentOS.xyz, IN.uv, IN.uv1.x, IN.uv2);
+                SlugWind(pos, nrm, IN.color, _WindAmount);
                 OUT.positionCS = TransformObjectToHClip(pos);
                 return OUT;
             }

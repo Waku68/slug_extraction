@@ -345,32 +345,52 @@ def slug_hurt(rng, v):
     return voice
 
 
+def _load_seed_slice(filename, t0, t1, hp_hz=65.0, lp_hz=9000.0, fade_in=0.006, fade_out=0.025):
+    path = os.path.join(os.path.dirname(__file__), "seeds", filename)
+    with wave.open(path, "rb") as w:
+        raw = w.readframes(w.getnframes())
+        ch = w.getnchannels()
+    arr = np.frombuffer(raw, dtype=np.int16).astype(float) / 32768.0
+    if ch > 1:
+        arr = arr.reshape(-1, ch).mean(axis=1)
+    s = arr[int(round(t0 * SR)) : int(round(t1 * SR))].copy()
+    spec = np.fft.rfft(s)
+    freqs = np.fft.rfftfreq(len(s), 1.0 / SR)
+    gain = (1.0 / np.sqrt(1.0 + (hp_hz / np.maximum(freqs, 1.0)) ** 4)) * (1.0 / np.sqrt(1.0 + (freqs / lp_hz) ** 4))
+    s = np.fft.irfft(spec * gain, n=len(s))
+    fi = min(len(s), int(round(SR * fade_in)))
+    fo = min(len(s), int(round(SR * fade_out)))
+    if fi > 1:
+        s[:fi] *= np.sin(0.5 * np.pi * np.linspace(0.0, 1.0, fi)) ** 2
+    if fo > 1:
+        s[-fo:] *= np.cos(0.5 * np.pi * np.linspace(0.0, 1.0, fo)) ** 2
+    return s / (np.max(np.abs(s)) or 1.0)
+
+
+def _resample(sig, ratio):
+    if abs(ratio - 1.0) < 1e-4:
+        return sig.copy()
+    n_out = max(4, int(round(len(sig) / ratio)))
+    return np.interp(np.linspace(0.0, len(sig) - 1, n_out), np.arange(len(sig)), sig)
+
+
 def slug_squeeze(rng, v):
-    """押した瞬間に縮む：むにっ（すぐ）、そのまま押していると体が締まっていく、ぎゅうう（離すと途中で切れる）。"""
-    d = 0.6
-    t = t_axis(d)
-    squish = biquad(noise(0.05, rng), "lp", 700 + 200 * v) * env(0.05, 0.002, 0.018)
-    knock = tone(0.06, 150 + 15 * v, 95) * env(0.06, 0.001, 0.02) * 0.7
-    # the tightening: a rubbery creak (stick-slip) whose pitch and grain rise as it is held
-    f = (105 + 10 * v) * (2.1 ** np.clip(t / 0.45, 0, 1))
-    ph = 2 * np.pi * np.cumsum(f) / SR
-    creak = np.sign(np.sin(ph)) * (0.5 + 0.5 * np.sin(2 * np.pi * (28 + 20 * t / d) * t)) ** 3
-    creak = biquad(creak, "band", 650 + 700 * np.clip(t / 0.45, 0, 1), q=1.4)
-    wet = biquad(noise(d, rng), "band", 500 + 500 * t / d, q=2.5) * 0.25
-    swell = np.clip(t / 0.3, 0, 1) ** 1.5 * np.clip((d - t) / 0.08, 0, 1)
-    return mix(squish * 1.3, knock, (creak * 0.55 + wet) * swell * 0.7)
+    """縮む音（わくさん実録 v5_B）：撮り直し原音（0.28〜0.70s、0.42秒）の「にゅー」そのまま（離すと途中で切れる）。"""
+    d = 0.42
+    sq = _load_seed_slice("retake_full.wav", 0.28, 0.70, hp_hz=65.0, lp_hz=8000.0, fade_in=0.010, fade_out=0.030)
+    sq = _resample(sq, 1.0 + 0.03 * v)
+    return pad(sq, d)
 
 
 def slug_lunge(rng, v):
-    """離して伸びる：ぽんっ（吸いついていた体が離れる）、びよーんと伸びる。縮む音は slug_squeeze。"""
-    d = 0.3
-    t = t_axis(d)
-    pop = tone(0.035, 420 + 30 * v, 140) * env(0.035, 0.001, 0.012)
-    smack = biquad(noise(0.03, rng), "lp", 2200 + 400 * v) * env(0.03, 0.0005, 0.006)
-    f = (210 + 20 * v) * (560 / 210) ** np.clip(t / 0.16, 0, 1) * (1 + 0.06 * np.sin(2 * np.pi * 18 * t))
-    ph = 2 * np.pi * np.cumsum(f) / SR
-    boing = (np.sin(ph) + 0.25 * np.sin(2 * ph)) * env(d, 0.012, 0.08, hold=0.03) * 0.5
-    return mix(pop * 1.1, smack * 0.9, at(boing, 0.01))
+    """伸びる音（わくさん実録 v5_B）：撮り直し原音の「ひゅー」（等倍主役）＋実録の「カラッ」（0.04秒後、0.30秒）。"""
+    d = 0.30
+    p_mul = 1.0 + 0.03 * v
+    hyuu = _load_seed_slice("retake_full.wav", 3.64, 3.99, hp_hz=250.0, lp_hz=9000.0, fade_in=0.006, fade_out=0.035)
+    kara = _load_seed_slice("five_sounds_full.wav", 0.800, 1.055, hp_hz=180.0, lp_hz=9000.0, fade_in=0.002, fade_out=0.020)
+    hyuu = _resample(hyuu, 1.00 * p_mul)
+    kara = _resample(kara, 1.00 * p_mul)
+    return pad(mix(hyuu * 1.00, at(kara * 0.55, 0.040)), d)
 
 
 def slug_land(rng, v):

@@ -19,22 +19,24 @@ namespace SlugExtract
     /// (a chunk just struck out of a rock, something dropped) in the hands, and with something in the hands E puts it in
     /// the bag (over the shoulder); G takes the top thing out of the bag into the hands, and with something in the hands
     /// G drops it (hold and let go to throw); X pushes what is in the hands into the body; Q (hold) turns the head round
-    /// to look at the back and flips the bag's lid open (everyone sees both); in the own view the bag on the back is
-    /// drawn big and tipped toward the eyes: in its mouth the top two things, drawn chunky and easy to tell apart
-    /// (three, spilling over, when it is crammed), and the numbers. While the hands are full the tools are put away.
+    /// to look at the back, and the bag tips up, flips its lid open and spreads its mouth (everyone sees all of it): in it
+    /// the heap of what is in it, risen as high as the bag is full (the floor of the lining when empty), and on the heap
+    /// the top things, drawn chunky and easy to tell apart (two, more the fuller it is, eight when crammed); below the
+    /// turned face, the vest with what is left of the moss balls and the magazines. No numbers. While the hands are full the tools are put away.
     /// C (hold) sets the bag down on the ground, mouth open, or shoulders one lying there: things go into and come out
     /// of a bag on the ground much faster (<see cref="GroundBag"/>), for anyone, so a fallen slug's bag (dropped where
     /// it fell) can be emptied into one's own quickly by setting one's own down beside it.
     /// Sorting is for the base.
     /// A bag without a <see cref="controller"/> (a practice slug) takes no input and shows nothing.
     /// </summary>
+    [DefaultExecutionOrder(-4)]   // its LateUpdate reads the posed body and bag (-10, -5) before the camera places the eyes (0)
     public class SlugBag : MonoBehaviour
     {
         public ExtractSettings settings;
         [Tooltip("動かすナメクジ。空なら操作も画面の表示もない（練習用ナメクジ）")] public SlugMoveController controller;
         public SlugCameraRig cameraRig;
-        public SlugPop slug;
-        [Tooltip("背中のバッグの見た目")] public SlugEquipment gear;
+        public SlugBodyBase slug;
+        [Tooltip("背中のバッグの見た目")] public SlugGearBase gear;
         [Tooltip("背中の当たり判定（バッグに当たった弾で耐久が減る）")] public SlugHitboxes hitboxes;
         [Tooltip("背負うバッグの種類（出撃前の画面でも選べる）")] public BagKind kind = BagKind.Cloth;
         [Tooltip("始めから入っている物（試す用）。上から順に入れる")] public ItemKind[] startItems = new ItemKind[0];
@@ -73,18 +75,17 @@ namespace SlugExtract
         readonly List<ItemKind> _items = new List<ItemKind>();
         SlugLoadout _loadout;
         SelfPortrait _portrait;
-        // the things seen in the bag's mouth while peeking (drawn only for the own camera)
-        readonly GameObject[] _shown = new GameObject[3];
-        readonly ItemKind[] _shownKind = new ItemKind[3];
-        readonly Renderer[][] _shownRenderers = { new Renderer[0], new Renderer[0], new Renderer[0] };
-        Vector3 _ownMouth;
-        bool _ownMouthValid;
+        SlugMoisture _moisture;
+        // the things seen on top in the bag's mouth while peeking
+        const int MaxShown = 8;
+        readonly GameObject[] _shown = new GameObject[MaxShown];
+        readonly ItemKind[] _shownKind = new ItemKind[MaxShown];
         float _gHeld = -1f, _peek, _lastSwell = -1f;
         float _eHeld = -1f;      // E held since (spec 4章 Oct 18: hold E to put things straight into the bag, one after another)
         BagKind _lastLook = (BagKind)(-1);
         string _message;
         float _messageUntil;
-        GUIStyle _big, _mid, _small;
+        GUIStyle _mid, _small;
 
         public bool IsPlayer => controller != null;
         Collider OwnCollider => controller ? controller.GetComponent<Collider>() : null;
@@ -110,36 +111,27 @@ namespace SlugExtract
         }
 
         /// <summary>
-        /// Poses the bag on the back for each camera: the lid open while peeking (for everyone), and for the own camera
-        /// only the bag grown and tipped toward the eyes, with the top things in its mouth.
+        /// The top things in the opened bag (for every camera: everyone sees into it while it is looked into), lying half
+        /// sunk on the heap of the rest. The bag itself is opened and posed by its gear.
         /// </summary>
         void OnBeginCamera(UnityEngine.Rendering.ScriptableRenderContext context, Camera camera)
         {
-            if (!IsPlayer || !gear || !cameraRig) return;
-            float e = Ease(_peek);
-            bool own = camera == cameraRig.cam;
-            bool posed = gear.PoseBag(e, own ? e : 0f, cameraRig.cam.transform.position);
-            bool show = own && posed;
-            if (own) { _ownMouthValid = posed; _ownMouth = gear.BagMouthPosition; }
-            Vector3 half = gear.BackItemHalf / 1.05f;
-            float s = gear.BagPoseScale;
-            bool crammed = Crammed;
-            for (int i = 0; i < _shown.Length; i++)
+            if (!IsPlayer || !gear) return;
+            int n = 0;
+            while (n < _shown.Length && _shown[n] && _shown[n].activeSelf) n++;
+            if (n == 0) return;
+            // laid out over the heap in a spiral from its middle (the top thing there, highest), chunky, the same size
+            // whatever the thing (easy to tell apart), a little smaller the more there are
+            Vector2 heap = gear.BagHeapHalf;
+            float size = Mathf.Min(heap.x * 0.8f, 0.12f) * Mathf.Lerp(1f, 0.6f, (n - 2) / (float)(MaxShown - 2));
+            for (int i = 0; i < n; i++)
             {
-                if (!_shown[i] || !_shown[i].activeSelf) continue;
-                foreach (var r in _shownRenderers[i]) if (r) r.enabled = show;
-                if (!show) continue;
-                // chunky, the same size whatever the thing (easy to tell apart), half sunk in the mouth; no bigger than in
-                // a bag about half full, or a crammed one's would fill the view
-                float size = Mathf.Min(half.x * (crammed ? 0.8f : 0.65f), 0.12f) * s;
-                Vector3 at = crammed
-                    ? (i == 0 ? new Vector3(0.05f, 0.45f, 0.1f) : i == 1 ? new Vector3(-0.42f, 0.25f, -0.05f) : new Vector3(0.48f, 0.2f, -0.12f))
-                    : (i == 0 ? new Vector3(0.12f, 0.25f, 0.12f) : new Vector3(-0.35f, 0.05f, -0.1f));
-                Vector3 local = new Vector3(at.x * half.x, at.y * size / s, at.z * half.z) * s;
+                float r = i == 0 ? 0f : Mathf.Sqrt((i + 0.5f) / n) * 0.7f, a = i * 2.4f;
+                Vector3 local = new Vector3(Mathf.Cos(a) * r * heap.x, size * (0.35f - 0.3f * r), Mathf.Sin(a) * r * heap.y);
                 var t = _shown[i].transform;
-                t.position = gear.BagMouthPosition + gear.BagMouthRotation * local;
+                t.position = gear.BagInsidePosition + gear.BagMouthRotation * local;
                 t.rotation = gear.BagMouthRotation * Quaternion.Euler(15f + 40f * i, 25f - 70f * i, 10f * i);
-                t.localScale = Vector3.one * (size * ItemPickup.Scale(_shownKind[i]));
+                t.localScale = Vector3.one * (size * (i == 0 ? 1.15f : 1f) * ItemPickup.Scale(_shownKind[i]));
             }
         }
 
@@ -517,11 +509,11 @@ namespace SlugExtract
             bool peeking = forcePeek || (locked && kb != null && kb.qKey.isPressed);
             if (peeking && _peek <= 0f) Did?.Invoke("peek", ItemKind.RockSalt);
             _peek = Mathf.MoveTowards(_peek, peeking ? 1f : 0f, dt / 0.22f);
+            if (gear) { gear.bagOpen = HasBag ? Ease(_peek) : 0f; gear.bagHasContents = _items.Count > 0; }
             if (cameraRig)
             {
                 cameraRig.peek = _peek;
-                // the eyes look at the bag's mouth as the own view last drew it (grown and tipped up toward them)
-                cameraRig.peekTarget = _ownMouthValid ? Vector3.Lerp(BagCenterWorld(), _ownMouth, Ease(_peek)) : BagCenterWorld();
+                AimPeek();
                 cameraRig.handsBusy = BagAction;
             }
 
@@ -619,17 +611,32 @@ namespace SlugExtract
         }
 
         // ------------------------------------------------------------------ peeking: the bag on the back, opened
-        /// <summary>Crammed: three things show, spilling over (a bag with a limit nearly at it, or past the weight threshold).</summary>
-        bool Crammed => HasBag && (Def.capacity > 0f ? Volume >= Def.capacity * 0.8f : Weight > settings.weightThreshold);
+        /// <summary>0..1: how full the bag is (by its capacity, or by how swollen a bag without one is).</summary>
+        float Fullness => !HasBag ? 0f : Def.capacity > 0f ? Mathf.Clamp01(Volume / Def.capacity) : SlugEquipment.Fill(settings.Swell(Def, Volume));
+
+        /// <summary>
+        /// Where the eyes look while peeking: into the bag as it opens (tipped up toward them). Also after the body and the
+        /// bag are posed this frame (LateUpdate), so the view does not lag a frame behind them while walking.
+        /// </summary>
+        void AimPeek()
+        {
+            cameraRig.peekTarget = gear && gear.HasBackItem ? Vector3.Lerp(BagCenterWorld(), gear.BagInsidePosition, Ease(_peek)) : BagCenterWorld();
+            // (a swollen bag stands up big: the eyes stand back by how much taller than an empty one it is)
+            cameraRig.peekBack = gear && gear.HasBackItem ? Mathf.Max(0f, gear.BackItemHalf.y / 1.05f - gear.bagSize.y) * 2.5f : 0f;
+            cameraRig.peekMouthAxis = gear && gear.HasBackItem ? gear.BagMouthRotation * Vector3.up : Vector3.up;
+            cameraRig.peekBig = gear && gear.HasBackItem ? gear.BagPeekBig : 0f;
+        }
 
         void LateUpdate()
         {
+            ShowVestLoad();
             if (!IsPlayer) return;
+            if (cameraRig) AimPeek();
             // everyone sees the head turn round to look at its back (and the lid flip open: OnBeginCamera)
             controller.twistDegrees = settings.peekTwist * Ease(_peek);
 
-            // the top two things (three when crammed), placed in the mouth for the own camera (OnBeginCamera)
-            int n = _peek > 0.05f && HasBag ? (Crammed ? 3 : 2) : 0;
+            // the top things, more the fuller it is (two, up to eight crammed), placed in the mouth (OnBeginCamera)
+            int n = _peek > 0.05f && HasBag ? Mathf.Clamp(2 + Mathf.RoundToInt((MaxShown - 2) * Fullness), 2, MaxShown) : 0;
             for (int i = 0; i < _shown.Length; i++)
             {
                 int index = _items.Count - 1 - i;              // 0 = the top one
@@ -640,10 +647,35 @@ namespace SlugExtract
                     _shown[i] = ItemPickup.Visual(settings, _items[index], null, false);
                     _shown[i].name = "Peek_" + _items[index];
                     _shownKind[i] = _items[index];
-                    _shownRenderers[i] = _shown[i].GetComponentsInChildren<Renderer>(true);
                 }
                 if (_shown[i] && _shown[i].activeSelf != on) _shown[i].SetActive(on);
             }
+        }
+
+        /// <summary>
+        /// The vest shows what is left, for anyone to see: a moss ball in each of its pouches still filled, and a magazine
+        /// standing in a pouch for every magazine's worth of rounds still carried outside the gun (one more empties as the
+        /// rounds run under it). A gun without a limit (tests) keeps its pouches full.
+        /// </summary>
+        void ShowVestLoad()
+        {
+            if (!gear || !gear.vest) return;
+            if (!_moisture) _moisture = GetComponent<SlugMoisture>();
+            int mossPouches = _moisture && _moisture.settings ? _moisture.settings.mossBalls : 2;
+            int moss = _moisture && _moisture.settings ? _moisture.MossBalls : mossPouches;
+            Mags(_loadout ? _loadout.BackGun : null, out int bigPouches, out int big);
+            Mags(_loadout ? _loadout.HipGun : null, out int smallPouches, out int small);
+            gear.SetVestLoad(mossPouches, moss, bigPouches, big, smallPouches, small);
+        }
+
+        static void Mags(SlugGunHolder gun, out int pouches, out int filled)
+        {
+            pouches = filled = 0;
+            if (!gun || !gun.gun) return;
+            var h = gun.Handling;
+            pouches = Mathf.Max(gun.gun.magazinesCarried - 1, 2);
+            if (gun.gun.magazinesCarried <= 0 || h.settings == null) { filled = pouches; return; }
+            filled = Mathf.Min(pouches, Mathf.CeilToInt(h.Reserve / (float)Mathf.Max(gun.gun.magazineSize, 1)));
         }
 
         void Say(string text)
@@ -652,14 +684,13 @@ namespace SlugExtract
             _messageUntil = Time.time + 2.2f;
         }
 
-        // ------------------------------------------------------------------ HUD: the bag's shape (always), the numbers (peeking), prompts
+        // ------------------------------------------------------------------ HUD: the bag's shape (always), prompts
         void Styles()
         {
-            if (_big != null) return;
-            _big = new GUIStyle(GUI.skin.label) { fontSize = 26, alignment = TextAnchor.MiddleCenter, richText = true };
+            if (_mid != null) return;
             _mid = new GUIStyle(GUI.skin.label) { fontSize = 17, alignment = TextAnchor.UpperLeft, richText = true };
             _small = new GUIStyle(GUI.skin.label) { fontSize = 16, alignment = TextAnchor.MiddleCenter, richText = true };
-            foreach (var st in new[] { _big, _mid, _small }) st.normal.textColor = Color.white;
+            foreach (var st in new[] { _mid, _small }) st.normal.textColor = Color.white;
         }
 
         void OnGUI()
@@ -703,24 +734,7 @@ namespace SlugExtract
             }
             GUI.matrix = guiMatrix;
 
-            // ---- peeking: what is on top, and the numbers
-            if (_peek > 0.6f)
-            {
-                // under the bag's shape (and the slug itself), clear of the back in view
-                var r = new Rect(10, portrait ? Mathf.Max(128f, _portrait.Area.yMax + 10f) : 128f, 400, 150);
-                GUI.Box(r, GUIContent.none);
-                GUI.Box(r, GUIContent.none);
-                string top = Top.HasValue ? settings.Def(Top.Value).displayName : "（空）";
-                if (_items.Count >= 2) top += $"<size=16>　その下：{settings.Def(_items[_items.Count - 2]).displayName}</size>";
-                GUI.Label(new Rect(r.x, r.y + 6, r.width, 34), $"<size=22>一番上：<b>{top}</b></size>", _big);
-                string cap = HasBag && Def.capacity > 0f ? $" / {Def.capacity:0.#}" : "";
-                string dur = HasBag ? $"{Mathf.CeilToInt(Durability)} / {Def.durability:0}" : "—";
-                string hidden = HasHidden ? settings.Def(Hidden).displayName : "空";
-                GUI.Label(new Rect(r.x + 14, r.y + 46, r.width - 20, 100),
-                    $"重さ  {Weight:0.0}（閾値 {settings.weightThreshold:0}）  速さ ×{settings.SpeedFor(Weight):0.00}\n" +
-                    $"中身  {_items.Count} 個（かさ {Volume:0.#}{cap}）  価値 {Value} 塩\n" +
-                    $"耐久  {dur}　　体の中  {hidden}", _mid);
-            }
+            // ---- peeking shows no numbers: what is in the bag, the magazines and the moss balls on the vest are seen
 
             // ---- prompts and messages
             float y = Mathf.Min(h * 0.5f + 60f, h - 200f);      // above the tool slots

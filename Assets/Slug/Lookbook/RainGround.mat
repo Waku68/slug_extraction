@@ -22,7 +22,11 @@ Material:
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
-    m_TexEnvs: []
+    m_TexEnvs:
+    - _BaseMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
     - _Alpha: 1
@@ -34,9 +38,12 @@ Material:
     - _BodyLength: 1
     - _BumpAmp: 0
     - _BumpFreq: 4
+    - _CamoAmount: 0
+    - _CamoScale: 14
     - _Cull: 2
     - _DentAmp: 0
     - _DentFreq: 90
+    - _DropAmount: 0
     - _DstBlend: 0
     - _EyeKind: 0
     - _EyeRad: 0.03
@@ -60,6 +67,12 @@ Material:
     - _RuffleAmp: 0
     - _RuffleFreq: 14
     - _RuffleSpeed: 2
+    - _SkirtAmp: 0
+    - _SkirtEnd: 0.6
+    - _SkirtFreq: 18
+    - _SkirtLines: 0.35
+    - _SkirtU: 0.14
+    - _SkirtWidth: 0.06
     - _SparkleStrength: 1
     - _SrcBlend: 1
     - _StitchAmount: 0
@@ -70,6 +83,10 @@ Material:
     - _Surface: 0
     - _SwayAmp: 0
     - _ToonSmooth: 0
+    - _TopCoat: 0
+    - _TurnAngle: 0
+    - _TwistAngle: 0
+    - _UprightAngle: 0
     - _WaveAmp: 0
     - _WaveFreq: 1.5
     - _WaveHeadFade: 0.55
@@ -80,6 +97,10 @@ Material:
     m_Colors:
     - _BaseColor: {r: 0.3, g: 0.35, b: 0.35, a: 1}
     - _BellyColor: {r: 1, g: 0.9, b: 0.85, a: 1}
+    - _CamoColor1: {r: 0.41999996, g: 0.28999996, b: 0.16999996, a: 1}
+    - _CamoColor2: {r: 0.15999997, g: 0.14999998, b: 0.10999996, a: 1}
+    - _CamoColor3: {r: 0.6399999, g: 0.58, b: 0.37999994, a: 1}
+    - _DropRange: {r: 0, g: 1, b: 0, a: 0}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _EyeC: {r: 0, g: 0, b: 0, a: 0}
     - _EyeColor: {r: 0.049999982, g: 0.044999972, b: 0.049999982, a: 1}
@@ -115,6 +136,10 @@ Material:
     - _MouthR: {r: 1, g: 0, b: 0, a: 0}
     - _MouthU: {r: 0, g: 1, b: 0, a: 0}
     - _OutlineColor: {r: 0.24999997, g: 0.14999998, b: 0.24999997, a: 1}
+    - _PartOffset: {r: 0, g: 0, b: 0, a: 0}
+    - _PathA0: {r: 0, g: 0, b: 0, a: 0}
+    - _PathA1: {r: 0, g: 0, b: 0, a: 0}
+    - _PathAnchor: {r: 0, g: 0, b: 0, a: 0}
     - _PatternColor: {r: 1, g: 1, b: 1, a: 1}
     - _PatternScale: {r: 10, g: 10, b: 0, a: 0}
     - _RimColor: {r: 1, g: 1, b: 1, a: 1}
@@ -122,6 +147,12 @@ Material:
     - _StitchColor: {r: 0.29999998, g: 0.19999996, b: 0.14999998, a: 1}
     - _SwayDir: {r: 0, g: 0, b: 1, a: 0}
     - _TailPivot: {r: 0, g: 0, b: 0, a: 0}
+    - _TurnPivot: {r: 0, g: 0, b: 0, a: 0}
+    - _TurnRange: {r: 0, g: 1, b: 0, a: 0}
+    - _TwistPivot: {r: 0, g: 0, b: 0, a: 0}
+    - _TwistRange: {r: 0, g: 1, b: 0, a: 0}
+    - _UprightPivot: {r: 0, g: 0, b: 0, a: 0}
+    - _UprightRange: {r: 0, g: 1, b: 0, a: 0}
     - _WrinkleScale: {r: 18, g: 18, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

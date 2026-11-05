@@ -50,10 +50,11 @@ namespace SlugExtract
             double step = StepGameHours / 24.0 * wp.settings.dayHours;
             int n = (int)((now - _last) / step);
             if (n > MaxSteps) { _last = now - MaxSteps * step; n = MaxSteps; }
+            Vector3 pos = transform.position;
             for (int i = 0; i < n; i++)
             {
                 _last += step;
-                Step((float)StepGameHours, wp.WeatherAt(_last), IslandClock.At(wp.settings, _last));
+                Step((float)StepGameHours, wp.WeatherAt(_last, pos), IslandClock.At(wp.settings, _last));
             }
         }
 

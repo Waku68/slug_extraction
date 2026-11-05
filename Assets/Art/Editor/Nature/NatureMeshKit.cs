@@ -35,6 +35,23 @@ namespace SlugDesign
         {
             for (int i = from; i < _v.Count; i++) _col[i] = paint(_v[i], _uv[i]);
         }
+        /// <summary>i 番の頂点の位置（作った部品のあたりに苔や草を足すのに使う）。</summary>
+        public Vector3 Vertex(int i) => _v[i];
+
+        /// <summary>from 番から後の頂点を動かす（作った部品をまとめて回す・倒す・つぶす）。</summary>
+        public void Transform(int from, Func<Vector3, Vector3> f)
+        {
+            for (int i = from; i < _v.Count; i++) _v[i] = f(_v[i]);
+        }
+        readonly List<(int from, int to, Vector3 c, Vector3 r, float amount)> _mass = new List<(int, int, Vector3, Vector3, float)>();
+
+        /// <summary>
+        /// from 番から後（いままでに足した所まで）の頂点の陰を、塊（中心 c、半径 radii の楕円の玉）の丸みに寄せる（amount 0〜1）。
+        /// 葉の集まりを、葉 1 枚ずつではなく 1 つの塊として光らせる（ケルン風、Nov 2）。形のでこぼこは輪郭にだけ残る。
+        /// 呼んだ順に重ねる（小さな塊ごとに 1、そのあと茂みぜんたいに半分、など）。
+        /// </summary>
+        public void Mass(int from, Vector3 c, Vector3 radii, float amount) => _mass.Add((from, _v.Count, c, radii, amount));
+
         public void Tri(int sub, int a, int b, int c) { var t = _tris[sub]; t.Add(a); t.Add(b); t.Add(c); }
         public void Quad(int sub, int a, int b, int c, int d) { Tri(sub, a, b, c); Tri(sub, a, c, d); }
         void QuadR(int sub, int a, int b, int c, int d) { Quad(sub, d, c, b, a); }   // 葉身は向きが逆に組んであるので裏返す
@@ -94,8 +111,9 @@ namespace SlugDesign
         /// <summary>
         /// 厚みのある葉身。path(s) が軸、widthAt(s) が片側の幅、fold が V 字の深さ（幅に対する割合）。
         /// 断面は 左ふち・軸・右ふち の 3 点で、上の面と下の面とふちの厚みを閉じる。
+        /// sideDir を渡すと、幅の向きをそれに合わせる（花びらのように上や下を向く葉身用。ふだんは真上を基準に横へ広げる）。
         /// </summary>
-        public void Blade(Func<float, Vector3> path, Func<float, float> widthAt, int segs, float thick, float fold, int sub)
+        public void Blade(Func<float, Vector3> path, Func<float, float> widthAt, int segs, float thick, float fold, int sub, Vector3 sideDir = default)
         {
             var top = new int[segs + 1, 3];
             var bot = new int[segs + 1, 3];
@@ -104,11 +122,11 @@ namespace SlugDesign
                 float s = i / (float)segs;
                 Vector3 c = path(s);
                 Vector3 tan = (path(Mathf.Min(1f, s + 0.02f)) - path(Mathf.Max(0f, s - 0.02f))).normalized;
-                Vector3 side = Vector3.Cross(Vector3.up, tan);
+                Vector3 side = sideDir != Vector3.zero ? sideDir - tan * Vector3.Dot(sideDir, tan) : Vector3.Cross(Vector3.up, tan);
                 if (side.sqrMagnitude < 1e-4f) side = Vector3.right;
                 side.Normalize();
                 Vector3 up = Vector3.Cross(tan, side).normalized;
-                float w = Mathf.Max(0.01f, widthAt(s));
+                float w = Mathf.Max(sideDir != Vector3.zero ? 0.002f : 0.01f, widthAt(s));   // 花びらは先を細く尖らせる
                 Vector3 l = c + side * w - up * (w * fold);
                 Vector3 r = c - side * w - up * (w * fold);
                 Vector3 m = c + up * (thick * 0.6f);
@@ -166,6 +184,19 @@ namespace SlugDesign
             m.subMeshCount = _tris.Count;
             for (int i = 0; i < _tris.Count; i++) m.SetTriangles(_tris[i], i);
             m.RecalculateNormals();
+            if (_mass.Count > 0)
+            {
+                var n = m.normals;
+                foreach (var g in _mass)
+                    for (int i = g.from; i < g.to; i++)
+                    {
+                        // the ellipsoid's own normal at this point
+                        var d = _v[i] - g.c;
+                        var e = new Vector3(d.x / (g.r.x * g.r.x), d.y / (g.r.y * g.r.y), d.z / (g.r.z * g.r.z));
+                        if (e.sqrMagnitude > 1e-10f) n[i] = Vector3.Slerp(n[i], e.normalized, g.amount).normalized;
+                    }
+                m.normals = n;
+            }
             m.RecalculateBounds();
             m.RecalculateTangents();
             return m;

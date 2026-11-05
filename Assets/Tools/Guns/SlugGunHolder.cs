@@ -21,6 +21,8 @@ namespace SlugMove
     /// Taken in hand, it comes off the body where it rides (<see cref="SlugToolRack"/>): the right hand reaches for it
     /// (over the shoulder for the back, down to the hip for a small gun), brings it up, and the left hand takes it on
     /// the way. In first person it comes down from the upper right (the back) or up from the lower right (the hip).
+    /// Off the back it is slid out of the straps and swung over the right shoulder (<see cref="BackDraw"/>); when
+    /// another tool is chosen it goes back on the same way before that one is taken.
     /// Runs after the camera rig so the first-person copy follows this frame's camera.
     /// </summary>
     [DefaultExecutionOrder(100)]
@@ -29,7 +31,7 @@ namespace SlugMove
         [FormerlySerializedAs("rifle")] public GunSettings gun;
         public SlugMoveController controller;
         public SlugCameraRig cameraRig;
-        public SlugPop slug;
+        public SlugBodyBase slug;
         [Tooltip("false の間は撃てない（試合の終了後など）")] public bool inputEnabled = true;
         [Tooltip("弾数と照準を画面に出す")] public bool showHud = true;
         /// <summary>How long the next draw takes (set by the loadout before enabling; negative = the gun's own equip time, 0 = at once).</summary>
@@ -39,6 +41,8 @@ namespace SlugMove
 
         /// <summary>Every round fired (from the eye, direction); a shotgun blast fires several at once.</summary>
         public event System.Action<Vector3, Vector3> Fired;
+        /// <summary>Every round fired by anyone (the gun, from the eye, direction): a round passing by the ear.</summary>
+        public static event System.Action<SlugGunHolder, Vector3, Vector3> AnyFired;
         /// <summary>Every round that lands on something.</summary>
         public event System.Action<RaycastHit> RoundHit;
         /// <summary>A step of the reload (open, eject, insert, seat), for sounds.</summary>
@@ -81,10 +85,15 @@ namespace SlugMove
         float _recoverPitch, _recoverYaw, _expectedPitch;
         float _flashRoll, _flashScale = 1f, _wallPull;
         Vector3 _bodyMuzzle, _viewMuzzle;
+        Vector3[] _bagSamples;
+        float _pathPrev = 1f;
         GUIStyle _style;
         static Texture2D _scopeTex;
 
         Transform Root => controller.transform;
+        SlugLoadout Loadout => _rack ? _rack.loadout : null;
+        /// <summary>Being put back where it rides (the loadout is taking another tool): it cannot be used meanwhile.</summary>
+        bool PuttingAway => Loadout && Loadout.PuttingAway(this);
 
         void OnEnable()
         {
@@ -104,7 +113,7 @@ namespace SlugMove
             if (!_ready) return;
             _recoverPitch = _recoverYaw = 0f;
             if (controller) { controller.leanDegrees = 0f; controller.aiming = 0f; }
-            if (slug) slug.SetWink(0f);
+            if (slug) { slug.SetWink(0f); slug.SetGunStance(0f, 0f, true); }
             if (cameraRig) cameraRig.zoom = 1f;
             Show(false);
         }
@@ -176,6 +185,9 @@ namespace SlugMove
             _bodyRenderers = bodies.ToArray();
             _bodyUnshadowed = unshadowed.ToArray();
             _expectedPitch = cameraRig.Pitch;
+            // the points kept out of the bag on the way off the back: the butt, the grip, the middle and the muzzle
+            Vector3 bore = new Vector3(0f, _gun.BoreY * 0.5f, 0f);
+            _bagSamples = new[] { bore, _gun.RestGripLocal, _gun.MuzzleLocal * 0.5f + bore, _gun.MuzzleLocal };
             _ready = true;
         }
 
@@ -189,7 +201,7 @@ namespace SlugMove
         void Update()
         {
             if (!_ready || driven) return;
-            bool canUse = inputEnabled && !cameraRig.HandsBusy && !controller.Climbing && (Cursor.lockState == CursorLockMode.Locked || forceTrigger || forceAim);
+            bool canUse = inputEnabled && !PuttingAway && !cameraRig.HandsBusy && !controller.Climbing && (Cursor.lockState == CursorLockMode.Locked || forceTrigger || forceAim);
             bool trigger = canUse && (forceTrigger || (_attack != null && _attack.IsPressed()));
             var mouse = Mouse.current;
             bool aim = canUse && (forceAim || (mouse != null && mouse.rightButton.isPressed));
@@ -204,6 +216,7 @@ namespace SlugMove
         /// </summary>
         public void Simulate(float dt, bool trigger, bool reload, bool aim = false)
         {
+            if (PuttingAway) trigger = reload = aim = false;      // on its way back onto the body: it lowers and settles
             _handling.settings = gun;
             _handling.sights = _gun.HasSights;
             if (reload && _handling.EquipLinear >= 1f) _handling.StartReload();
@@ -216,7 +229,12 @@ namespace SlugMove
             }
             controller.leanDegrees = _handling.Lean;
             controller.aiming = _handling.Scope;
-            if (slug) slug.SetWink(_handling.Scope);              // one eye shut while looking along it (everyone sees it)
+            if (slug)
+            {
+                slug.SetWink(_handling.Scope);                    // one eye shut while looking along it (everyone sees it)
+                // the upper body turns to the gun: the butt into the front of the shoulder, the cheek down onto it
+                slug.SetGunStance(_handling.Raise, _handling.Scope, gun.kind != GunKind.Pistol);
+            }
             // the scope narrows the view (and slows the look to match); the iron sights a little
             float zoom = gun.scopeFov > 0f
                 ? Mathf.Tan(cameraRig.settings.fieldOfView * 0.5f * Mathf.Deg2Rad) / Mathf.Tan(gun.scopeFov * 0.5f * Mathf.Deg2Rad)
@@ -258,6 +276,7 @@ namespace SlugMove
                 SaltRound.Fire(eye, dir * speed, firstPerson ? _viewMuzzle : _bodyMuzzle, firstPerson ? s.fpScale : 1f,
                                s, Root, hit => RoundHit?.Invoke(hit));
                 Fired?.Invoke(eye, dir);
+                AnyFired?.Invoke(this, eye, dir);
             }
 
             // the eyes climb (a little sideways too); part of it comes back after the burst
@@ -325,6 +344,19 @@ namespace SlugMove
             Quaternion body = Root.rotation;
             // looking along the iron sights brings the butt up toward the cheek
             Vector3 shoulder = slug.HandRootWorld(1f) + body * (s.buttOffset + (_gun.HasSights && s.scopeFov <= 0f ? s.sightButtOffset * h.Scope : Vector3.zero));
+            // the pistol's "shoulder" is where the hands hold it out: the body may bring it in (a long gun's butt is
+            // already on the shoulder)
+            if (s.kind == GunKind.Pistol) shoulder += body * slug.GunHoldShift;
+            // a body that says where its eye goes along the sights (the two-legged slug, Nov 3): looking along them, the
+            // gun comes up under that eye, the cheek down on the stock, the butt against the front of the shoulder
+            bool sighted = s.scopeFov > 0f || _gun.HasSights;
+            if (sighted && h.Scope > 0f && slug.SightEyeWorld(out var sightEye))
+            {
+                Vector3 eyeLocal = s.scopeFov > 0f ? _gun.ScopeEyeLocal - Vector3.forward * s.scopeEyeRelief : _gun.SightEyeLocal;
+                Quaternion was = Quaternion.Euler(_aimPitch, _aimYaw, 0f);
+                Vector3 cheekButt = sightEye + was * (Vector3.forward * _gun.ButtZ - eyeLocal);
+                shoulder = Vector3.Lerp(shoulder, cheekButt, Ease(h.Scope));
+            }
             Vector3 want = AimPoint - (shoulder + Quaternion.Euler(_aimPitch, _aimYaw, 0f) * new Vector3(0f, boreY, 0f));
             float wantYaw = Mathf.Atan2(want.x, want.z) * Mathf.Rad2Deg;
             float wantPitch = -Mathf.Atan2(want.y, new Vector2(want.x, want.z).magnitude) * Mathf.Rad2Deg;
@@ -337,12 +369,17 @@ namespace SlugMove
             //      drawn; the kick pushes it back into the shoulder and flips the muzzle
             // (a reload holds it up, tilted, instead of carried: the hands work on it in front of the chest)
             // taken in hand: first the right hand reaches the gun where it rides on the body, then brings it up
-            var ls = _rack && _rack.loadout ? _rack.loadout.settings : null;
+            // (off the back over the right shoulder, BackDraw); put away, the same way backwards
+            var ls = Loadout ? Loadout.settings : null;
+            bool putting = PuttingAway;
+            float lin = putting ? 1f - Loadout.PutAway(this) : h.EquipLinear, reachPart = ls ? ls.reachPart : 0.4f;
             ToolPose stowPose = default;
-            bool fromRack = ls && h.EquipLinear < 1f && _rack.TryStowPose(this, out stowPose);
-            float lin = h.EquipLinear, reachPart = ls ? ls.reachPart : 0.4f;
-            float drawReach = fromRack ? Ease(lin / Mathf.Max(reachPart, 1e-3f)) : 1f;
-            float drawPull = fromRack ? Ease((lin - reachPart) / Mathf.Max(1f - reachPart, 1e-3f)) : 1f;
+            bool fromRack = ls && lin < 1f && _rack.TryStowPose(this, out stowPose);
+            bool fromBack = fromRack && (drawFromBack || putting);
+            float drawReach = fromRack ? BackDraw.Reach(lin, reachPart) : 1f;
+            float drawPull = fromRack ? BackDraw.Pull(lin, reachPart) : 1f;
+            if (fromBack && Mathf.Abs(lin - _pathPrev) < 0.5f) BackDraw.Jostle(_rack, _pathPrev, lin, reachPart);
+            _pathPrev = lin;
             float tilt = h.ReloadTilt, low = (1f - h.Raise) * (1f - tilt), stow = fromRack ? 0f : 1f - h.Equip;
             // working a bolt cants the gun a little toward the hand on it
             float cant = gun.action == GunAction.Bolt && h.Cycling ? 10f * Mathf.Sin(Mathf.PI * h.Cycle) : 0f;
@@ -363,7 +400,14 @@ namespace SlugMove
             }
             pos += body * (StowOffset * stow);
             var pose = new ToolPose { position = pos, rotation = rot };
-            if (fromRack) { pose = BlendAtGrip(stowPose, pose, drawPull, _gun.RestGripLocal); rot = pose.rotation; }
+            Vector3 over = fromBack ? BackDraw.Over(slug, body, ls, _rack) : Vector3.zero;
+            if (fromBack)
+            {
+                // slid out of the straps toward the muzzle, then up over the shoulder, kept off the bag
+                pose = BackDraw.Tool(stowPose, pose, _gun.RestGripLocal, Vector3.forward * ls.slideOut, over, lin, reachPart, _rack, _bagSamples, 0.025f);
+                rot = pose.rotation;
+            }
+            else if (fromRack) { pose = BlendAtGrip(stowPose, pose, drawPull, _gun.RestGripLocal); rot = pose.rotation; }
 
             float q = h.Squeeze * s.fistSqueeze;
             Vector3 fist = Vector3.Scale(s.fistSize, new Vector3(1f + q * 0.5f, 1f - q, 1f + q * 0.5f));
@@ -384,12 +428,13 @@ namespace SlugMove
             Vector3 restL = slug.HandRootWorld(-1f) + body * Vector3.Scale(RestHand, new Vector3(-1f, 1f, 1f));
             if (fromRack)
             {
-                rightGrip = Vector3.Lerp(restR, rightGrip, drawReach);
+                rightGrip = fromBack ? BackDraw.Hand(restR, over, rightGrip, drawReach, _rack) : Vector3.Lerp(restR, rightGrip, drawReach);
                 leftGrip = Vector3.Lerp(restL, leftGrip, drawPull);
                 leftAxis = Vector3.Slerp(body * Vector3.forward, leftAxis, drawPull);
             }
+            // (on the back the right arm goes round over the shoulder, never through the bag)
             SlugArmSet.Build(_arms.BodyR, slug.HandRootWorld(1f), slug.HandRootNormalWorld(1f), rightGrip, rightAxis,
-                             s.armRadiusRoot, s.armRadiusHand, fist, 1f);
+                             s.armRadiusRoot, s.armRadiusHand, fist, 1f, over, fromBack ? BackDraw.ArmVia(lin, reachPart) : 0f);
             SlugArmSet.Build(_arms.BodyL, slug.HandRootWorld(-1f), slug.HandRootNormalWorld(-1f), leftGrip, leftAxis,
                              s.armRadiusRoot, s.armRadiusHand, fist, 1f);
 
@@ -435,10 +480,17 @@ namespace SlugMove
                 // off the back it comes down into view from the upper right, off the hip up from the lower right
                 var stowV = new ToolPose
                 {
-                    position = drawFromBack ? ls.fpBackFrom : ls.fpHipFrom,
-                    rotation = Quaternion.Euler(drawFromBack ? ls.fpBackTurn : ls.fpHipTurn) * poseV.rotation,
+                    position = fromBack ? ls.fpBackFrom : ls.fpHipFrom,
+                    rotation = Quaternion.Euler(fromBack ? ls.fpBackTurn : ls.fpHipTurn) * poseV.rotation,
                 };
-                poseV = BlendAtGrip(stowV, poseV, drawPull, _viewGun.RestGripLocal);
+                if (fromBack)
+                {
+                    // over the view first, then down into the hands (as if brought over the shoulder)
+                    Vector3 g = _viewGun.RestGripLocal;
+                    rotV = Quaternion.Slerp(stowV.rotation, poseV.rotation, drawPull);
+                    poseV = new ToolPose { position = BackDraw.FpArc(stowV.Point(g), poseV.Point(g), drawPull) - rotV * g, rotation = rotV };
+                }
+                else poseV = BlendAtGrip(stowV, poseV, drawPull, _viewGun.RestGripLocal);
                 rotV = poseV.rotation;
             }
 
@@ -450,7 +502,11 @@ namespace SlugMove
             _wallPull = pull > _wallPull ? pull : Mathf.MoveTowards(_wallPull, pull, 0.5f * dt);
             offset += Vector3.back * _wallPull * (1f - h.Scope);
             Vector3 Map(Vector3 local) => poseV.Point(local) * sc + offset;                    // gun space → drawn
-            Vector3 MapBody(Vector3 world) => toCam * (world - camPos) * sc;                   // the real body → drawn
+            // the real body → drawn. The two-legged body stays upright while the view looks up and down, so its arm roots
+            // are carried with the view's pitch (as the crawling slug's chest rose with it); else, looking up, the left
+            // arm would sweep across the view from under it
+            Quaternion toBody = slug is DinoSlugBody ? Quaternion.Inverse(Quaternion.Euler(0f, cameraRig.Yaw, 0f)) : toCam;
+            Vector3 MapBody(Vector3 world) => toBody * (world - camPos) * sc;
 
             _viewGun.SetSighting(s.scopeFov > 0f ? 0f : h.Scope);
             _viewGun.Pose(h, s, out var rightV, out var leftV);
@@ -465,12 +521,12 @@ namespace SlugMove
                 // across it. While the gun comes in, the right arm comes from off the right edge (the back) or the
                 // bottom right (the hip), and the left hand waits under the view; both settle as the gun arrives.
                 float join = Ease((drawPull - 0.45f) / 0.55f);
-                rootRV = Vector3.Lerp(drawFromBack ? FpBackArmRoot : FpHipArmRoot, rootRV, join);
+                rootRV = Vector3.Lerp(fromBack ? FpBackArmRoot : FpHipArmRoot, rootRV, join);
                 leftV2 = Vector3.Lerp(MapBody(restL) + FpHandBelow, leftV2, join);
             }
-            SlugArmSet.Build(_arms.ViewR, rootRV, toCam * slug.HandRootNormalWorld(1f),
+            SlugArmSet.Build(_arms.ViewR, rootRV, toBody * slug.HandRootNormalWorld(1f),
                              rightV2, rotV * rightV.axis, s.armRadiusRoot * thick, s.armRadiusHand * thick, fist * sc, sc);
-            SlugArmSet.Build(_arms.ViewL, MapBody(slug.HandRootWorld(-1f)), toCam * slug.HandRootNormalWorld(-1f),
+            SlugArmSet.Build(_arms.ViewL, MapBody(slug.HandRootWorld(-1f)), toBody * slug.HandRootNormalWorld(-1f),
                              leftV2, leftAxisV, s.armRadiusRoot * thick, s.armRadiusHand * thick, fist * sc, sc);
         }
 
@@ -503,7 +559,7 @@ namespace SlugMove
         ToolPose Carry(Quaternion body)
         {
             var s = gun;
-            Vector3 right = slug.HandRootWorld(1f) + body * s.carryRightHand;
+            Vector3 right = slug.HandRootWorld(1f) + body * (s.carryRightHand + slug.GunHoldShift);
             Vector3 dir = s.carryDirection.sqrMagnitude > 1e-6f ? s.carryDirection : new Vector3(-1f, -0.5f, 0.2f);
             Quaternion rot = Quaternion.LookRotation(body * dir, body * s.carryUp);
             return new ToolPose { position = right - rot * _gun.RestGripLocal, rotation = rot };

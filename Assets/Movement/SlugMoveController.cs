@@ -14,6 +14,16 @@ namespace SlugMove
     /// (pressed again and again, a little faster than crawling, and a little harder to hit), or hold it to shrink more
     /// (the body gets short, wide and low, and hardly moves: easy to hit) and let go to stretch further. It glides out
     /// on landing with a wobble, and it is heard. It is for getting about and out of a line of fire, not for climbing.
+    ///
+    /// Running (Nov 3 わくさん, two legs only): holding Sprint (Shift) while going forward runs at runMultiplier times the
+    /// walk (1.6 -> 2.4 m/s), slowed by the bag and drying as the walk is. Breath lasts staminaSeconds of running (no
+    /// numbers shown); staminaRecoverDelay after it stops (walking or standing) it comes back in staminaRefillTime. Run
+    /// out and the slug is out of breath: it walks, heaving (<see cref="SlugDesign.DinoSlugBody.breathless"/>), until the
+    /// breath is back to staminaResume. Nearly out, the edges of the view darken (<see cref="SlugRunEdge"/>). A hop
+    /// pressed while running keeps the run: the shrink does not brake, and it leaves at least at the running speed.
+    /// No running while aiming, lying down, climbing or shrinking from a walk. Bots do not run.
+    ///
+    /// Ladders (Nov 5, <see cref="SlugLadder"/>): walking into one climbs it at ladderSpeed, toward the rock up, away down.
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
     public class SlugMoveController : MonoBehaviour
@@ -30,7 +40,8 @@ namespace SlugMove
         [System.NonSerialized] public float bodyScale = 1f;
         /// <summary>0..1: how far a gun is brought up to look along its sights or through its scope. Set by the gun.</summary>
         [System.NonSerialized] public float aiming;
-        float SpeedFactor => speedMultiplier * conditionSpeed * devSpeed * Mathf.Lerp(1f, settings.aimSpeedMultiplier, aiming);
+        float SpeedFactor => speedMultiplier * conditionSpeed * devSpeed * Mathf.Lerp(1f, settings.aimSpeedMultiplier, aiming) * (_dino ? settings.footSpeed : 1f)
+                             * (_running ? settings.runMultiplier : 1f);
         [Tooltip("false の間は入力を受け付けない（試合の終了後など）")] public bool inputEnabled = true;
         /// <summary>Moved by something else (a bot, later the network) through <see cref="Simulate"/>: no keys are read.</summary>
         [System.NonSerialized] public bool driven;
@@ -43,6 +54,14 @@ namespace SlugMove
         [System.NonSerialized] public bool prone;
         /// <summary>0..1: how far down it is.</summary>
         public float Prone01 { get; private set; }
+        /// <summary>Sprint held (the player's key, or a tool). Nothing else sets it, so bots walk.</summary>
+        [System.NonSerialized] public bool runHeld;
+        /// <summary>Running now (Sprint held, going forward, breath left).</summary>
+        public bool Running => _running;
+        /// <summary>Out of breath: ran out, and walks until the breath is back to staminaResume.</summary>
+        public bool Breathless { get; private set; }
+        /// <summary>0..1: breath left for running (1 = full). Never shown as a number.</summary>
+        public float Stamina01 { get; private set; } = 1f;
 
         static readonly int FreezeId = Shader.PropertyToID("_SlugFreeze");
         static readonly int TimeId = Shader.PropertyToID("_SlugTimeValue");
@@ -51,14 +70,17 @@ namespace SlugMove
         const QueryTriggerInteraction NoTriggers = QueryTriggerInteraction.Ignore;
 
         CharacterController _cc;
-        InputAction _move, _jump;
+        InputAction _move, _jump, _sprint;
         Vector3 _velocity;          // horizontal, the speed the slug wants to keep
         float _vy;
         Vector3 _groundNormal = Vector3.up;
         Vector3 _bodyBasePos;
         Quaternion _tilt = Quaternion.identity;
         SlugDesign.SlugPop _slug;
+        SlugDesign.DinoSlugBody _dino;   // the two-legged body (Nov 2): it stands upright, stops dead and does not glide
         float _tailLag, _tailLagVel;
+        bool _running;
+        float _sinceRun = 99f;      // seconds since the last running step (the breath comes back after staminaRecoverDelay)
 
         // shrink, then stretch forward
         bool _charging, _lunging, _airborne;
@@ -70,8 +92,11 @@ namespace SlugMove
         float _heldSquash, _pendingKick;
         Vector3 _bodyBaseScale = Vector3.one;
 
-        // climbing a step taller than stepHeight
+        // climbing a step taller than stepHeight (or a ladder: _ladder set)
         bool _climbing;
+        SlugLadder _ladder;
+        bool _ladderOver;       // at the ladder's top, stepping between it and the platform
+        static readonly Collider[] _ladderHits = new Collider[8];
         Vector3 _climbDir, _climbWallPoint;
         float _climbStartY, _climbTopY, _climbProgress;
 
@@ -107,8 +132,9 @@ namespace SlugMove
         void Awake()
         {
             _cc = GetComponent<CharacterController>();
-            if (body) { _bodyBasePos = body.localPosition; _bodyBaseScale = body.localScale; }
+            if (body) { _bodyBasePos = body.localPosition; _bodyBaseScale = body.localScale; _dino = body.GetComponent<SlugDesign.DinoSlugBody>(); }
             if (!GetComponent<SlugSplash>()) gameObject.AddComponent<SlugSplash>();     // slime flung off by the stretch
+            if (_dino && !GetComponent<SlugRunEdge>()) gameObject.AddComponent<SlugRunEdge>();   // out of breath: the view's edges darken
         }
 
         void OnEnable()
@@ -117,6 +143,8 @@ namespace SlugMove
             _move?.Enable();
             _jump = InputSystem.actions != null ? InputSystem.actions.FindAction("Player/Jump") : null;
             _jump?.Enable();
+            _sprint = InputSystem.actions != null ? InputSystem.actions.FindAction("Player/Sprint") : null;
+            _sprint?.Enable();
             // the crawl of every slug shader now follows CrawlTime instead of the clock
             if (!driven) Shader.SetGlobalFloat(FreezeId, 1f);
         }
@@ -130,6 +158,7 @@ namespace SlugMove
             bool jump = forceJumpHold || (inputEnabled && _jump != null && (_jump.IsPressed() || _jump.WasPressedThisFrame()));
             var kb = Keyboard.current;
             if (inputEnabled && kb != null && kb.zKey.wasPressedThisFrame && Cursor.lockState == CursorLockMode.Locked) prone = !prone;
+            runHeld = inputEnabled && _sprint != null && _sprint.IsPressed();
             Simulate(Time.deltaTime, input, jump);
         }
 
@@ -154,13 +183,16 @@ namespace SlugMove
             Vector3 dir = wishAmount > 1e-4f ? wish.normalized : Vector3.zero;
 
             StepLunge(dt, jumpHeld, dir, yaw);
-            if (_charging) wishAmount *= s.lungeChargeMove;
+            StepRun(dt, input);
+            if (_charging && !_running) wishAmount *= s.lungeChargeMove;     // a hop pressed while running keeps the run
             wishAmount *= Mathf.Lerp(1f, s.proneSpeed, Prone01);
             StepTurnKick(key, dir, wishAmount, dt);
 
             Vector3 before = transform.position;
+            if (!_climbing && !_lunging && !_charging && Prone01 <= 0f && wishAmount > 0.1f) TryStartLadder(dir);
             if (!_climbing && !_lunging && !_charging && Prone01 <= 0f && OnGround && input.y > 0.1f) TryStartClimb(dir);
-            if (_climbing) Climb(dir, wishAmount, dt);
+            if (_climbing && _ladder) LadderClimb(dir, wishAmount, dt);
+            else if (_climbing) Climb(dir, wishAmount, dt);
             else Crawl(dir, wishAmount, dt);
             Speed = Mathf.Lerp(Speed, (transform.position - before).magnitude / dt, 1f - Mathf.Exp(-10f * dt));
             RecordTrail(before);
@@ -211,7 +243,9 @@ namespace SlugMove
                 // along the ground (up a slope it goes up the slope instead of into it), slower uphill as crawling is;
                 // the development fast crawl is for getting about, not for stretching
                 Vector3 along = OnGround ? Vector3.ProjectOnPlane(d, _groundNormal).normalized : d;
-                _velocity = along * (Mathf.Lerp(s.lungeSpeedMin, s.lungeSpeedMax, c) * speedMultiplier * conditionSpeed * SlopeFactor(d));
+                float speed = Mathf.Lerp(s.lungeSpeedMin, s.lungeSpeedMax, c) * speedMultiplier * conditionSpeed * SlopeFactor(d);
+                if (_running) speed = Mathf.Max(speed, Vector3.Dot(_velocity, along));      // a running hop leaves at least at the run
+                _velocity = along * speed;
                 // the head keeps facing the way the eyes look (the eyes sit in it): a stretch along the body makes it
                 // long; a stretch to the side flings the tail out the other way instead, trailing behind
                 _lungeAlong = Mathf.Abs(Vector3.Dot(d, transform.forward));
@@ -265,6 +299,33 @@ namespace SlugMove
             return Mathf.Lerp(s.lungeQuickPower, 1f, Mathf.SmoothStep(0f, 1f, (t - quick) / rest));
         }
 
+        // ------------------------------------------------------------------ running and the breath
+        /// <summary>
+        /// Runs while Sprint is held going forward, on two legs, with breath left; not while aiming, lying down, climbing,
+        /// or shrinking for a hop from a walk (a hop pressed mid-run keeps running). It never starts in the air. Running
+        /// uses the breath up in staminaSeconds; it comes back staminaRecoverDelay after the run stops. Run dry, the slug
+        /// is out of breath until the breath is back to staminaResume.
+        /// </summary>
+        void StepRun(float dt, Vector2 input)
+        {
+            var s = settings;
+            bool want = _dino && runHeld && input.y > 0.3f && !Breathless && !_climbing && Prone01 <= 0f && aiming < 0.1f
+                        && (!_charging || _running) && (!_airborne || _running);
+            _running = want;
+            if (_running && Speed > 0.3f)
+            {
+                _sinceRun = 0f;
+                Stamina01 = Mathf.Max(0f, Stamina01 - dt / Mathf.Max(s.staminaSeconds, 0.1f));
+                if (Stamina01 <= 0f) { Breathless = true; _running = false; }
+            }
+            else
+            {
+                _sinceRun += dt;
+                if (_sinceRun >= s.staminaRecoverDelay) Stamina01 = Mathf.Min(1f, Stamina01 + dt / Mathf.Max(s.staminaRefillTime, 0.1f));
+            }
+            if (Breathless && Stamina01 >= s.staminaResume) Breathless = false;
+        }
+
         // ------------------------------------------------------------------ turning back (a feint)
         /// <summary>
         /// Putting the move keys the other way while crawling (turnKickAngle or more, the keys themselves: turning the
@@ -306,7 +367,8 @@ namespace SlugMove
                 if (!_airborne)
                 {
                     float sp = _velocity.magnitude, floor = s.maxSpeed * SpeedFactor * wishAmount;
-                    float next = Mathf.Max(floor, sp * Mathf.Exp(-dt / Mathf.Max(s.lungeSlideTime, 1e-3f)));
+                    // two legs land on their feet: no gliding out (Nov 2 わくさん：滑るのはなし)
+                    float next = _dino ? Mathf.Min(sp, floor) : Mathf.Max(floor, sp * Mathf.Exp(-dt / Mathf.Max(s.lungeSlideTime, 1e-3f)));
                     _velocity = sp > 1e-5f ? _velocity * (next / sp) : Vector3.zero;
                     if (next <= s.maxSpeed * SpeedFactor * 1.02f) _lunging = false;
                 }
@@ -315,13 +377,15 @@ namespace SlugMove
             else if (wishAmount > 1e-4f)
             {
                 float target = (s.maxSpeed + s.turnKickSpeed * _kick) * SpeedFactor * wishAmount * SlopeFactor(dir);
-                float accel = _charging ? s.lungeChargeBrake : s.acceleration;      // shrinking: it all but stops
+                float accel = _charging ? s.lungeChargeBrake : s.acceleration * (_dino ? s.footSpeed : 1f);   // shrinking: it all but stops; two legs reach their faster top speed as soon
                 _velocity = Vector3.MoveTowards(_velocity, dir * target, accel * devSpeed * dt);
             }
             else
             {
                 float sp = _velocity.magnitude;
-                float next = Mathf.Max(0f, sp * Mathf.Exp(-dt * devSpeed / Mathf.Max(s.slideTime, 1e-3f)) - s.deceleration * devSpeed * dt);
+                // two legs stop on their feet in footStopTime from full speed; the crawling body glides
+                float next = _dino ? Mathf.Max(0f, sp - s.maxSpeed * s.footSpeed / Mathf.Max(s.footStopTime, 1e-3f) * devSpeed * dt)
+                                   : Mathf.Max(0f, sp * Mathf.Exp(-dt * devSpeed / Mathf.Max(s.slideTime, 1e-3f)) - s.deceleration * devSpeed * dt);
                 _velocity = sp > 1e-5f ? _velocity * (next / sp) : Vector3.zero;
             }
 
@@ -441,6 +505,79 @@ namespace SlugMove
             }
         }
 
+        // ------------------------------------------------------------------ ladders
+        /// <summary>
+        /// In the room in front of a ladder (its trigger): heading toward the rock starts up it from below; at the top,
+        /// heading away from the rock (off the platform's edge) starts down it.
+        /// </summary>
+        void TryStartLadder(Vector3 dir)
+        {
+            if (dir == Vector3.zero) return;
+            Vector3 feet = transform.position;
+            float r = _cc.radius;
+            int n = Physics.OverlapCapsuleNonAlloc(feet + Vector3.up * r, feet + Vector3.up * (_cc.height - r), r, _ladderHits, ~0, QueryTriggerInteraction.Collide);
+            for (int i = 0; i < n; i++)
+            {
+                var l = _ladderHits[i] ? _ladderHits[i].GetComponent<SlugLadder>() : null;
+                if (!l) continue;
+                float push = Vector3.Dot(dir, l.into);
+                bool atTop = feet.y > l.top.y - 0.25f;
+                if (atTop ? push > -0.5f : push < 0.3f) continue;
+                _climbing = true;
+                _ladder = l;
+                _ladderOver = atTop;
+                _climbDir = l.into;
+                _climbWallPoint = l.top;
+                _climbStartY = l.foot.y;
+                _climbTopY = l.top.y;
+                _climbProgress = Mathf.InverseLerp(l.foot.y, l.top.y, feet.y);
+                _velocity = Vector3.zero;
+                _vy = 0f;
+                return;
+            }
+        }
+
+        /// <summary>
+        /// Along the ladder: toward the rock is up, away is down (nothing held: it stays). At the top it steps across
+        /// onto the platform; at the foot it is back on the ground.
+        /// </summary>
+        void LadderClimb(Vector3 dir, float wishAmount, float dt)
+        {
+            var l = _ladder;
+            if (!l || !l.isActiveAndEnabled) { EndLadder(Vector3.zero); return; }
+            float speed = settings.ladderSpeed * SpeedFactor;
+            float push = Vector3.Dot(dir, l.into) * wishAmount;
+            Vector3 feet = transform.position;
+            Vector3 motion;
+            if (_ladderOver)
+            {
+                // between the ladder's top and the platform: level with the top, in or out
+                float past = Vector3.Dot(feet - l.top, l.into);
+                motion = l.into * (speed * push) + Vector3.up * ((l.top.y - feet.y) * 6f);
+                if (push > 0f && past > _cc.radius + 0.12f) { EndLadder(l.into * speed * 0.5f); return; }
+                if (push < 0f && past <= 0.01f) _ladderOver = false;      // back over the rungs: going down
+            }
+            else
+            {
+                Vector3 on = l.Closest(feet);
+                motion = l.Up * (speed * push) + (on - feet) * 6f;           // held to the line of the rungs
+                if (push > 0f && feet.y >= l.top.y - 0.01f) _ladderOver = true;
+                if (push < 0f && feet.y <= l.foot.y + 0.04f) { EndLadder(Vector3.zero); return; }
+            }
+            var hit = _cc.Move(motion * dt);
+            if (!_ladderOver && push < 0f && (hit & CollisionFlags.Below) != 0) { EndLadder(Vector3.zero); return; }   // feet on the ground
+            _climbProgress = Mathf.InverseLerp(l.foot.y, l.top.y, transform.position.y);
+        }
+
+        void EndLadder(Vector3 velocity)
+        {
+            _climbing = false;
+            _ladder = null;
+            _ladderOver = false;
+            _velocity = velocity;
+            _vy = -1f;
+        }
+
         /// <summary>
         /// Is there still wall in front, with a climbable top, if the feet were at <paramref name="feet"/>?
         /// If so, the climb takes on that wall (its facing, slowly, and the height of its top).
@@ -548,7 +685,7 @@ namespace SlugMove
         void AlignBody(float dt)
         {
             if (!body) return;
-            Vector3 n = OnGround ? _groundNormal : Vector3.up;
+            Vector3 n = OnGround && !_dino ? _groundNormal : Vector3.up;   // two legs stand upright; the feet follow the ground
             if (_climbing)
             {
                 // rear up while going up, lie down again over the edge
@@ -564,6 +701,20 @@ namespace SlugMove
             float e = 1f + _stretch;
             var sc = _stretch < 0f ? new Vector3(Mathf.Pow(e, -0.55f), Mathf.Pow(e, 0.4f), e)
                                    : new Vector3(Mathf.Pow(e, -0.45f), Mathf.Pow(e, -0.45f), e);
+            if (_dino)
+            {
+                // two legs do not squash: they crouch before the hop and stretch out in the air
+                body.localScale = _bodyBaseScale * bodyScale;
+                _dino.crouch = Mathf.Clamp01(-_stretch / 0.3f);
+                _dino.stretch = Mathf.Clamp01(_stretch / 0.3f);
+                _dino.prone = Prone01;
+                _dino.twist = twistDegrees;
+                _dino.lean = leanDegrees;
+                _dino.airborne = _airborne;
+                _dino.run = _running ? 1f : 0f;
+                _dino.breathless = Breathless ? 1f : 0f;
+                return;
+            }
             body.localScale = Vector3.Scale(_bodyBaseScale, sc) * bodyScale;
 
             // bend the lifted front back by the nose-up pitch, so the upper body stays upright

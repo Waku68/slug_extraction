@@ -18,7 +18,7 @@ namespace SlugMove
     public class SlugToolRack : MonoBehaviour
     {
         public SlugLoadout loadout;
-        public SlugPop slug;
+        public SlugBodyBase slug;
         public SlugCameraRig cameraRig;
 
         /// <summary>A place on the body (body space at rest, and the skin's t and normal there for following it).</summary>
@@ -36,7 +36,7 @@ namespace SlugMove
         readonly Dictionary<GunKind, Seat> _gunSeats = new Dictionary<GunKind, Seat>();
         readonly Dictionary<Object, ToolPose> _poses = new Dictionary<Object, ToolPose>();
         readonly List<Renderer> _renderers = new List<Renderer>();
-        SlugMeshFactory.BodyShape _seatedFor;
+        object _seatedFor;
         float _reseatTimer;
         bool _ready;
         static Material _leather;
@@ -98,23 +98,61 @@ namespace SlugMove
         /// </summary>
         public bool TryStowPose(Object holder, out ToolPose pose) => _poses.TryGetValue(holder, out pose);
 
-        /// <summary>The renderers of the guns riding on the body now (not the pickaxe or the knife), for leaving them
-        /// behind when the slug falls.</summary>
-        public void CollectGuns(List<Renderer> into)
+        /// <summary>The gear worn (the bag or shell on the back), if any.</summary>
+        public SlugGearBase Gear => _gear ? _gear : (_gear = slug ? slug.GetComponent<SlugGearBase>() : null);
+        SlugGearBase _gear;
+        // the box of what is worn on the back this frame (world; x across the back, y up it, z out from it)
+        bool _hasBox;
+        Vector3 _boxCenter, _boxHalf;
+        Quaternion _boxRotation;
+
+        /// <summary>
+        /// How far <paramref name="world"/> has to move to come out of what is worn on the back (the bag as swollen as it
+        /// is now, or the shell), keeping <paramref name="margin"/> off it. Anything over it is lifted onto its outside (away
+        /// from the back), so a hand or tool passing over a big bag goes over it rather than round its edge. Zero when the
+        /// point is clear of it, or nothing is worn.
+        /// </summary>
+        public Vector3 OutOfBack(Vector3 world, float margin)
+        {
+            if (!_hasBox) return Vector3.zero;
+            Vector3 p = Quaternion.Inverse(_boxRotation) * (world - _boxCenter);
+            Vector3 h = _boxHalf + Vector3.one * margin;
+            if (Mathf.Abs(p.x) >= h.x || Mathf.Abs(p.y) >= h.y || p.z >= h.z || p.z <= -_boxHalf.z) return Vector3.zero;
+            return _boxRotation * new Vector3(0f, 0f, h.z - p.z);
+        }
+
+        /// <summary>Follows the box of what is worn on the back with the body (it bends and stretches with the skin).</summary>
+        void FollowBox()
+        {
+            var gear = Gear;
+            _hasBox = gear && gear.HasBackItem;
+            if (!_hasBox) return;
+            var s = new Seat { position = gear.BackItemCenter, rotation = gear.BackItemRotation, normal = gear.BackItemNormal, t = gear.BackItemT };
+            var pose = Follow(s);
+            _boxCenter = pose.position;
+            _boxRotation = pose.rotation;
+            _boxHalf = gear.BackItemHalf * (slug.VisualRoot ? slug.VisualRoot.lossyScale.x : 1f);
+        }
+
+        /// <summary>The renderers of the guns riding on the body now (not the pickaxe or the knife), one list per gun,
+        /// for leaving them behind when the slug falls.</summary>
+        public void CollectGuns(List<List<Renderer>> pieces)
         {
             foreach (var g in _guns.Values)
-                if (g && g.gameObject.activeInHierarchy) into.AddRange(g.GetComponentsInChildren<Renderer>());
+                if (g && g.gameObject.activeInHierarchy) pieces.Add(new List<Renderer>(g.GetComponentsInChildren<Renderer>()));
         }
 
         // ------------------------------------------------------------------ every frame: follow the body
         void LateUpdate()
         {
             _poses.Clear();
-            if (!_ready || !Settings || slug.Shape == null) { Hide(); return; }
+            if (!_ready || !Settings || slug.ShapeKey == null) { Hide(); return; }
             _reseatTimer -= Time.deltaTime;
-            if (_seatedFor != slug.Shape || _reseatTimer <= 0f) Reseat();
+            if (_seatedFor != slug.ShapeKey || _reseatTimer <= 0f) Reseat();
+            FollowBox();
 
-            int held = loadout.HandsFull ? -1 : loadout.Current;      // with something else in the hands, every tool rides on the body
+            // with something else in the hands, every tool rides on the body; one being put away is still in the hand
+            int held = loadout.HandsFull ? -1 : loadout.InHand;
             if (loadout.pickaxe)
             {
                 var pose = Follow(_pickSeat);
@@ -168,12 +206,12 @@ namespace SlugMove
         void Reseat()
         {
             var s = Settings;
-            _seatedFor = slug.Shape;
+            _seatedFor = slug.ShapeKey;
             _reseatTimer = 0.25f;      // cheap enough to pick up tuning in play mode
-            var gear = slug.GetComponent<SlugEquipment>();
+            var gear = slug.GetComponent<SlugGearBase>();
 
             // ---- the back: over the bag (or the shell) when one is worn, else on the skin
-            if (Spot(s.backGunT, 0f, out var bp, out var bn, out var along, out var right, out var bt))
+            if (slug.CarrySpot(s.backGunT, 0f, out var bp, out var bn, out var along, out var right, out _, out var bt))
             {
                 float outer = gear && gear.HasBackItem ? Mathf.Max(0f, Vector3.Dot(gear.BackItemCenter - bp, bn) + gear.BackItemHalf.z) : 0f;
                 foreach (var g in loadout.guns)
@@ -187,7 +225,7 @@ namespace SlugMove
                     _gunSeats[g.gun.kind] = new Seat { position = origin, rotation = Quaternion.LookRotation(diag, up), normal = bn, t = bt };
                 }
             }
-            if (Spot(s.pickaxeT, 0f, out var pp, out var pn, out var pAlong, out var pRight, out var pt))
+            if (slug.CarrySpot(s.pickaxeT, 0f, out var pp, out var pn, out var pAlong, out var pRight, out _, out var pt))
             {
                 float outer = gear && gear.HasBackItem ? Mathf.Max(0f, Vector3.Dot(gear.BackItemCenter - pp, pn) + gear.BackItemHalf.z) : 0f;
                 // the handle the other way across the back (an X with the gun), the head flat against it over the left shoulder
@@ -198,10 +236,9 @@ namespace SlugMove
             }
 
             // ---- the right hip, at the belt: pointing down the body, tilted a little forward, the grip out above the belt
-            if (Spot(s.hipT, s.hipAngle, out var hp, out var hn, out var hAlong, out _, out var ht))
+            if (slug.CarrySpot(s.hipT, s.hipAngle, out var hp, out var hn, out var hAlong, out _, out var belly, out var ht))
             {
-                var f = slug.Shape.FrameAt(s.hipT);
-                Vector3 front = Vector3.ProjectOnPlane(-f.up, hn).normalized;
+                Vector3 front = Vector3.ProjectOnPlane(belly, hn).normalized;
                 float a = s.hipTilt * Mathf.Deg2Rad;
                 Vector3 down = (-hAlong * Mathf.Cos(a) + front * Mathf.Sin(a)).normalized;
                 Vector3 up = Vector3.Cross(down, hn);
@@ -214,25 +251,6 @@ namespace SlugMove
                 Vector3 knifeOrigin = hp + hn * (s.hipStandOff + 0.009f) - down * (s.hipGripOut + 0.02f);
                 _knifeSeat = new Seat { position = knifeOrigin, rotation = Quaternion.LookRotation(down, up), normal = hn, t = ht };
             }
-        }
-
-        /// <summary>
-        /// The skin at <paramref name="t"/> along the body and <paramref name="angleDeg"/> round it (0 = the middle of the
-        /// back, 90 = the right side), with its outward normal, the way along the body (toward the head) and the body's
-        /// right there, all in body space.
-        /// </summary>
-        bool Spot(float t, float angleDeg, out Vector3 p, out Vector3 n, out Vector3 along, out Vector3 right, out float tHit)
-        {
-            var shape = slug.Shape;
-            var f = shape.FrameAt(Mathf.Clamp01(t));
-            float a = angleDeg * Mathf.Deg2Rad;
-            Vector3 dir = (f.up * Mathf.Cos(a) + f.right * Mathf.Sin(a)).normalized;
-            if (!shape.RaycastT(f.center, dir, out p, out n, out tHit)) { p = f.center + dir * f.ry; n = dir; tHit = t; }
-            n.Normalize();
-            along = Vector3.ProjectOnPlane(f.forward, n).normalized;
-            right = Vector3.Cross(along, n).normalized;
-            if (Vector3.Dot(right, f.right) < 0f) right = -right;
-            return true;
         }
 
         /// <summary>A leather holster over the slide and barrel of a small gun (in the gun's own space).</summary>

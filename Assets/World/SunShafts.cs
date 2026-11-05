@@ -8,7 +8,8 @@ namespace SlugWorld
     /// show where it falls). Columns of light lean from the sunlit ground up toward the sun, around the eyes: most of them
     /// at the edges of shade (through gaps in the leaves, past rocks), some out in the open, brighter and more of them on
     /// salt. In the shade there are none, so the line where they stop is the line of the shade, readable from far off.
-    /// Only on a sunny day out of dawn and dusk, like the streaks on the player's view (SunGlare); everyone sees these.
+    /// Only on a sunny day out of dawn and dusk; everyone sees these. Since Nov 3 this is the only sign of the sun (the
+    /// light on the player's own view, SunGlare, got in the way of seeing).
     /// Each shaft fades in, stands a while and fades out, so they shift as the sun and the eyes move. One mesh, rebuilt each
     /// frame (a few dozen quads turned to face the camera). Added to the weather by <see cref="WeatherPresenter"/>.
     /// </summary>
@@ -103,6 +104,7 @@ namespace SlugWorld
             Vector3 dir = Quaternion.AngleAxis(ang, Vector3.up) * fwd.normalized;
             float dist = Mathf.Lerp(range.x, range.y, Mathf.Pow(Random.value, 0.7f));
             if (!Ground(eye.position + dir * dist, eye.position.y, out var g)) return false;
+            if ( WeatherPresenter.Current && WeatherPresenter.Current.WeatherAt(WeatherPresenter.Current.ShownHours, g).sky != Sky.Sunny) return false;
             if (!Sunlit(g, toSun)) return false;
 
             // the edge of the shade: a neighbour in shade
@@ -114,7 +116,9 @@ namespace SlugWorld
             }
             if (!edge && Random.value > openChance) return false;
 
-            bool salt = MoistureZone.Any(MoistureZone.Kind.Salt, g);
+            var kind = GroundKinds.At(g);
+            if (kind == GroundKind.Wet) return false;                  // wet ground does not dry: no light on it
+            bool salt = kind == GroundKind.Salt;
             if (!salt && !edge && Random.value > 0.6f) return false;
             shaft = new Shaft
             {

@@ -172,6 +172,7 @@ namespace SlugExtract
                 m.SetColor("_OutlineColor", c * 0.4f);
                 m.SetColor("_RimColor", Color.Lerp(c, Color.white, 0.35f));
                 m.SetFloat("_OutlineWidth", 0.004f);
+                if (m.HasProperty("_IslandLook")) m.SetFloat("_IslandLook", 0f);
             }
             Mats[c] = m;
             return m;

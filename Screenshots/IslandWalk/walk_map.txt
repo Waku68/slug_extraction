@@ -1,0 +1,68 @@
+# Walk map (walk_map)  grid 0.94 m, walk ≤ 50°, climb 0.45 m, falling free
+walkable 24.5 ha in 212 pieces; main 24.1 ha
+there-and-back 238 m², trap 0 m², can't reach 3681 m²
+
+no | kind | area m² | centre (x, z) | height | nearest main ground: gap m, its height (main − this)
+1 | can't reach | 1441 | (236, 56) | 60–70 m | 8 m, 15.7 m (-44.7)
+2 | can't reach | 570 | (-270, -60) | 16–18 m | 2 m, 12.6 m (-4.1)
+3 | can't reach | 561 | (-182, 82) | 42–50 m | 3 m, 44.4 m (-3.1)
+4 | can't reach | 371 | (-282, 23) | 31–32 m | 4 m, 20.3 m (-11.8)
+5 | can't reach | 371 | (-248, 92) | 38–39 m | 4 m, 29.7 m (-9.2)
+6 | can't reach | 137 | (2, 12) | 104–113 m | 4 m, 102.5 m (-3.7)
+7 | can't reach | 73 | (-23, -35) | 118–123 m | 11 m, 100.8 m (-21.7)
+8 | can't reach | 70 | (-14, -44) | 113–116 m | 6 m, 100.5 m (-14.5)
+9 | can't reach | 54 | (-243, 84) | 31–35 m | 3 m, 27.7 m (-6.5)
+10 | can't reach | 34 | (-23, -44) | 115–124 m | 6 m, 93.3 m (-26.3)
+
+walkway | pieces along it (no = list number, main, ok = there and back, - = small)
+桟道_山の北東 | main@(49,96,-3) ?@(17,101,-1) main@(17,101,-1) ?@(13,100,-15) main@(12,100,-15) 
+橋_山の南 | main@(1,96,-59) 
+はしご_山頂へ | main@(21,103,1) ?@(25,114,-2) 
+
+place | piece
+滝（12 m） | small piece
+滝の裏の岩棚 | small piece
+入江 | no walkable ground within 4 m
+天窓（下は塩水） | main
+キプカの落ち穴 | main
+岩塩の洞窟 | main
+肩の石橋 | small piece
+岩塩の山 | main
+火口の丘 | main
+切れ目 | main
+黒い溶岩原 | main
+キプカ | main
+キプカ | main
+キプカ | main
+天窓 | small piece
+天窓 | small piece
+天窓 | small piece
+黒い砂の浜 | main
+砂漠 | main
+赤い台地 | main
+枯れた谷 | main
+涸れ滝 | main
+雨の森 | main
+大ガジュマル | CAN'T REACH (no 1)
+花の草原（菌輪） | main
+塩田 | main
+中腹のたまり池 | main
+溶岩のふちの泉 | main
+浅瀬 | main
+01_saltflat 塩田から北（台地の南の壁、岩山、谷の口は隠れる） | main
+02_desert 砂漠の砂丘の谷間から東（岩山と台地） | main
+03_canyon_mouth 枯れた谷の口から奥 | main
+04_canyon_inside 谷の中、石橋の手前から奥 | main
+05_mesa_top 台地の上から西の海 | main
+06_meadow 花の草原から山と滝 | main
+07_pool 中腹のたまり池のふちから南（草原と海） | main
+08_summit 山頂から西（台地、砂漠、海） | main
+09_forest_river 雨の森の東の川から上流（泉と山） | main
+10_cone_foot 鞍部から北の火口の丘 | main
+11_lava_field 溶岩原の中から（流れのふちとキプカ） | main
+12_crater 火口の中から切れ目 | main
+13_east_forest_camp 東の森のキャンプから山 | main
+14_canyon_rim 台地の北のふちから谷をのぞく | main
+15_canyon_floor_up 谷底から壁を見上げる（奥の涸れ滝の手前） | main
+
+narrow ways (main ground 6 m wide or less, yellow): 14357 m²

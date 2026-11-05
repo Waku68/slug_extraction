@@ -4,7 +4,8 @@ using UnityEngine;
 namespace SlugDesign
 {
     /// <summary>
-    /// Gear worn by a slug, built from code to fit its body and drawn with the slug's own toon shader, so it crawls,
+    /// Gear worn by the crawling slug (<see cref="SlugPop"/>; the two-legged one's is <see cref="DinoEquipment"/>, the look
+    /// is shared on <see cref="SlugGearBase"/>), built from code to fit its body and drawn with the slug's own toon shader, so it crawls,
     /// stands up and turns with it:
     ///  - helmet: a round steel pot with a short brim, longer over the eyes; the tentacles come out through two
     ///    grommeted holes (they hear well, but can be shot). It rides the head rigidly.
@@ -15,49 +16,19 @@ namespace SlugDesign
     ///    foot. The shell is what marks a snail (the scavs); a slug carries a bag.
     ///  - bag: a canvas backpack that swells with what is in it (slumped and folded when empty, round and taut when
     ///    crammed), with a lid buckled down the front, straps, a pocket and piped seams (<see cref="CanvasBag"/>), belted
-    ///    round the body above the arms. It sits on the armour when both are worn. It rides the back rigidly.
+    ///    round the body above the arms. It sits on the armour when both are worn. It rides the back rigidly. Looked into
+    ///    (<see cref="bagOpen"/>), it tips up, its lid flips open and its mouth spreads to show the lining and the heap of
+    ///    what is in it, for everyone to see;
+    ///  - vest: a chest rig just under the face, a row of pouches with the moss balls and the magazines still carried in
+    ///    them (<see cref="SetVestLoad"/>), so what is left shows on the body.
     /// The armour wears the camouflage (a skin: the owner's look, whatever armour it is), woodland by default.
     /// </summary>
     [ExecuteAlways]
-    public class SlugEquipment : MonoBehaviour
+    public class SlugEquipment : SlugGearBase
     {
-        public enum Armor { None, ShellPlate, SnailShell }
-
         public SlugPop slug;
-        [Tooltip("ヘルメット（ふつうは触角を出す鉄の鍋）")] public bool helmet = true;
-        [Tooltip("触角の形の兜：鍋から触角を包む角が2本伸びる。触角の弱点が消え、音がこもる")] public bool tentacleHelmet;
-        [Tooltip("胴の防具（カタツムリの殻はカタツムリ用）")] public Armor armor = Armor.ShellPlate;
-        [Tooltip("背中のバッグ（ナメクジ用）")] public bool bag;
 
-        [Header("ヘルメット")]
-        [Tooltip("鉄の色")] public Color helmetColor = new Color(0.3f, 0.32f, 0.24f);
-        [Tooltip("ヘルメットにも迷彩をかける")] public bool helmetCamo;
-        [Tooltip("頭とのすき間（m）")] public float helmetGap = 0.016f;
-        [Tooltip("つばの長さ：目の上（m）と、ほかのところ（m）")] public float brimFront = 0.035f;
-        public float brimSide = 0.014f;
-        [Tooltip("触角の形の兜：角と触角のすき間（m）と、触角の先からさらに伸ばす長さ（m）")] public float hornGap = 0.006f;
-        public float hornExtend = 0.012f;
-
-        [Header("迷彩（スキン）")]
-        [Tooltip("地の色（枯れ草）。体の苔色から浮くように、明るめにする")] public Color camoBase = new Color(0.62f, 0.57f, 0.38f);
-        [Tooltip("ぶちの色 1（茶）")] public Color camo1 = new Color(0.43f, 0.28f, 0.15f);
-        [Tooltip("ぶちの色 2（こげ茶）")] public Color camo2 = new Color(0.15f, 0.13f, 0.1f);
-        [Tooltip("ぶちの色 3（苔）")] public Color camo3 = new Color(0.31f, 0.38f, 0.19f);
-        [Tooltip("ぶちの細かさ")] public float camoScale = 19f;
-        [Tooltip("ベルトの色")] public Color strapColor = new Color(0.22f, 0.16f, 0.11f);
-
-        [Header("バッグ")]
-        [Tooltip("布の色")] public Color bagColor = new Color(0.52f, 0.4f, 0.26f);
-        [Tooltip("ふたとポケットの色")] public Color bagFlapColor = new Color(0.36f, 0.26f, 0.17f);
-        [Tooltip("大きさ（幅、高さ、厚み の半分, m）")] public Vector3 bagSize = new Vector3(0.11f, 0.12f, 0.065f);
-        /// <summary>How swollen the bag is with what is in it (1 = empty; set at run time by the bag, then <see cref="Build"/>).
-        /// It grows out from the back most, taller a little less, wider least.</summary>
-        [System.NonSerialized] public float bagSwell = 1f;
-        [Tooltip("背中を覗いたとき、自分の画面だけでバッグを大きくする倍率")] public float bagLookScale = 1.6f;
-        [Range(0f, 1f), Tooltip("背中を覗いたとき、自分の画面だけでバッグの口を目のほうへ傾ける割合（1 = 真っすぐ目に向ける）")] public float bagLookTilt = 0.45f;
-        [Tooltip("ふたを開けきったときの角度（度）。ふたは前（背中から遠い面）の終わりの縫い目を軸に、外側へ開く")] public float bagLidAngle = 140f;
-        [Tooltip("留め具の色")] public Color buckleColor = BuckleColor;
-        [Range(0f, 1f), Tooltip("背中を覗いたとき、自分の画面でふたも大きくする割合（0 = 大きくしない、1 = バッグと同じだけ）")] public float bagLidGrow = 0.3f;
+        public override SlugBodyBase Body => slug;
 
         readonly List<Object> _owned = new List<Object>();
         readonly List<Renderer> _helmetRenderers = new List<Renderer>();
@@ -65,36 +36,29 @@ namespace SlugDesign
         Camera _ownCamera;
         System.Func<bool> _ownCameraInside;
 
-        /// <summary>Called after the gear is (re)built, so things fitted to it (hitboxes) can follow.</summary>
-        public event System.Action Built;
-
-        // what is on the back, for hitboxes (body space)
-        public bool HasBackItem { get; private set; }
-        public Vector3 BackItemCenter { get; private set; }
-        public Vector3 BackItemNormal { get; private set; }
-        public Quaternion BackItemRotation { get; private set; }
-        public Vector3 BackItemHalf { get; private set; }
-        public float BackItemT { get; private set; }
-        /// <summary>The bag's mouth after the last <see cref="PoseBag"/> (world): its middle, its turn (x across, y out of
-        /// the mouth toward the head, z out from the back) and how much the bag was grown.</summary>
-        public Vector3 BagMouthPosition { get; private set; }
-        public Quaternion BagMouthRotation { get; private set; }
-        public float BagPoseScale { get; private set; } = 1f;
-
         /// <summary>The buckles' dull metal, also for a bag set down on the ground.</summary>
         public static readonly Color BuckleColor = new Color(0.3f, 0.29f, 0.26f);
 
-        // the bag's parts (those sewn on it, and the lid with what goes with it) and where it sits (body space), for posing it
-        GameObject _bagGo, _bagMouth;
+        // the bag's parts (those sewn on it, and the lid with what goes with it) and where it sits (body space), for posing it;
+        // its meshes shut and opened (the same vertices), blended by how far it is opened
+        GameObject _bagGo, _bagHeap;
+        readonly List<(Mesh mesh, Vector3[] shut, Vector3[] opened)> _bagShapes = new List<(Mesh, Vector3[], Vector3[])>();
+        float _bagShaped, _bagPosedOpen;
+        // the bag rocking out from the back and back again after a jolt (degrees about its across axis, and how fast)
+        float _rock, _rockV;
+        bool _rocking;
         readonly List<GameObject> _bagFixed = new List<GameObject>(), _bagLidParts = new List<GameObject>();
-        Vector3 _bagP, _bagN, _bagX, _bagUp, _bagOut, _bagSz, _bagHinge, _bagMouthPoint;
+        Vector3 _bagP, _bagN, _bagX, _bagUp, _bagOut, _bagSz, _bagHinge, _bagHingeOpen, _bagInside, _bagInsideOpen, _bagFoot, _bagSeat;
         float _bagT;
+        // what rides in the vest's pouches: one list of parts per pouch, each kind in order
+        readonly List<GameObject[]> _vestMoss = new List<GameObject[]>(), _vestBig = new List<GameObject[]>(), _vestSmall = new List<GameObject[]>();
+        int _mossPouches = 2, _bigPouches = 2, _smallPouches = 2;
 
         /// <summary>
         /// The owner's own camera: while it sits inside the head (first person), the helmet only casts its shadow for
         /// that camera, so its brim never fills the view; every other camera sees it as usual.
         /// </summary>
-        public void SetOwnCamera(Camera cam, System.Func<bool> inside)
+        public override void SetOwnCamera(Camera cam, System.Func<bool> inside)
         {
             _ownCamera = cam;
             _ownCameraInside = inside;
@@ -143,66 +107,129 @@ namespace SlugDesign
             _helmetRenderers.Clear();
             _bagFixed.Clear();
             _bagLidParts.Clear();
-            _bagGo = _bagMouth = null;
+            _bagGo = _bagHeap = null;
+            _bagShapes.Clear();
+            _bagShaped = 0f;
+            _vestMoss.Clear(); _vestBig.Clear(); _vestSmall.Clear();
             HasBackItem = false;
         }
 
         T Own<T>(T o) where T : Object { o.hideFlags = HideFlags.DontSave; _owned.Add(o); return o; }
 
-        /// <summary>The renderers of the gear being worn (helmet, armour, the bag's belts), the bag itself only with
-        /// <paramref name="withBag"/>. For leaving the gear behind when the slug falls.</summary>
-        public void CollectGear(List<Renderer> into, bool withBag)
+        /// <summary>The renderers of the gear being worn, one list per piece that falls as one thing (the helmet; the
+        /// armour with the bag's belts), the bag itself only with <paramref name="withBag"/>. For leaving the gear behind
+        /// when the slug falls.</summary>
+        public override void CollectGear(List<List<Renderer>> pieces, bool withBag)
         {
+            var helmet = new List<Renderer>();
+            var rest = new List<Renderer>();
             foreach (var o in _owned)
             {
                 if (!(o is GameObject go) || !go) continue;
-                if (!withBag && (go == _bagGo || go == _bagMouth || _bagFixed.Contains(go) || _bagLidParts.Contains(go))) continue;
-                into.AddRange(go.GetComponentsInChildren<Renderer>());
+                if (!withBag && (_bagFixed.Contains(go) || _bagLidParts.Contains(go))) continue;
+                foreach (var r in go.GetComponentsInChildren<Renderer>())
+                    (_helmetRenderers.Contains(r) ? helmet : rest).Add(r);
             }
+            if (helmet.Count > 0) pieces.Add(helmet);
+            if (rest.Count > 0) pieces.Add(rest);
         }
 
         /// <summary>
-        /// Poses the bag for the camera about to draw: the lid opened by <paramref name="open"/> (0..1) about its hinge
-        /// (the edge away from the back, falling open outward), and by <paramref name="look"/> (0..1) the whole bag grown out from the back and tipped with
-        /// its mouth toward <paramref name="eyeWorld"/> (for the owner's own eyes only: call it again with 0 for the
-        /// others). Returns false when there is no bag.
+        /// Jolts the bag (a tool pulled free of the straps over it, + = its top swings out from the back; pushed home, -):
+        /// it rocks about where it sits on the back and settles in about half a second.
         /// </summary>
-        public bool PoseBag(float open, float look, Vector3 eyeWorld)
+        public override void Jostle(float degreesPerSecond)
+        {
+            if (!_bagGo) return;
+            _rockV += degreesPerSecond;
+            _rocking = true;
+        }
+
+        void LateUpdate()
+        {
+            if (!Application.isPlaying) return;
+            if (_rocking)
+            {
+                // a soft spring (4 Hz, lightly damped), stepped finely so a long frame does not throw it
+                float dt = Time.deltaTime;
+                int n = Mathf.Clamp(Mathf.CeilToInt(dt * 240f), 1, 32);
+                float w = 2f * Mathf.PI * 4f;
+                for (int i = 0; i < n; i++)
+                {
+                    _rockV += (-w * w * _rock - 2f * 0.3f * w * _rockV) * (dt / n);
+                    _rock += _rockV * (dt / n);
+                }
+                if (Mathf.Abs(_rock) < 0.02f && Mathf.Abs(_rockV) < 0.5f) { _rock = _rockV = 0f; _rocking = false; }
+            }
+            // posed for everyone (rocking, opened, or just shut again)
+            if (_rocking || bagOpen > 0f || _bagPosedOpen > 0f) PoseBag(bagOpen);
+        }
+
+        /// <summary>
+        /// Poses the bag opened by <paramref name="open"/> (0..1), for everyone: the lid swung about its hinge (the edge away
+        /// from the back) and falling open outward, the mouth spread and the bottom drawn in (<see cref="bagPeekMouth"/>,
+        /// <see cref="bagPeekBottom"/>), the lining and the heap of what is in it showing in the mouth, and the whole bag
+        /// tipped up onto its bottom, standing where it lay, until its mouth faces <see cref="bagPeekZenith"/> from straight
+        /// up, over to the right and a little to the front (<see cref="bagPeekLean"/>). Returns false when there is no bag.
+        /// </summary>
+        public bool PoseBag(float open)
         {
             if (!_bagGo || !slug || slug.VisualRoot == null) return false;
+            _bagPosedOpen = open;
+            Shape(open);
             var vis = slug.VisualRoot;
-            Vector3 attach = slug.FollowerLocal(_bagP, _bagT, _bagP, _bagN);
             Quaternion bend = slug.FollowerRotation(_bagT);
-            Vector3 pos = Vector3.zero;
+            Vector3 foot = slug.FollowerLocal(_bagFoot, _bagT, _bagP, _bagN), seat = slug.FollowerLocal(_bagSeat, _bagT, _bagP, _bagN);
             Quaternion rot = Quaternion.identity;
-            float s = 1f;
-            if (look > 0f)
+            if (open > 0f)
             {
-                // grown about where it sits on the back (so it does not sink into the body), the mouth tipped to the eyes;
-                // a swollen bag is grown less (it is already big), so it still fits in the view
-                float swollen = _bagSz.y / Mathf.Max(bagSize.y, 1e-4f);
-                s = Mathf.Lerp(1f, bagLookScale / Mathf.Pow(swollen, 0.75f), look);
-                Vector3 mouthDir = bend * _bagUp;
-                Vector3 toEye = vis.InverseTransformPoint(eyeWorld) - attach;
-                rot = Quaternion.Slerp(Quaternion.identity, Quaternion.FromToRotation(mouthDir, toEye.normalized), bagLookTilt * look);
-                pos = attach - rot * (s * attach);
+                // (the body's x is its right, z its front)
+                Vector3 to = PeekMouthDirection(vis.InverseTransformDirection(Vector3.up), Vector3.right, Vector3.forward);
+                rot = Quaternion.Slerp(Quaternion.identity, Quaternion.FromToRotation(bend * _bagUp, to), open);
             }
-            foreach (var go in _bagFixed) Place(go, pos, rot, s);
-            var mouthR = _bagMouth ? _bagMouth.GetComponent<Renderer>() : null;
-            if (mouthR && mouthR.enabled != open > 0.02f) mouthR.enabled = open > 0.02f;
+            Vector3 pos = Vector3.Lerp(foot, seat, open) - rot * foot;
+            if (_rock != 0f)
+            {
+                // rocked about where it sits (after a jolt from a tool pulled off or put on over it)
+                Vector3 attach = slug.FollowerLocal(_bagP, _bagT, _bagP, _bagN);
+                Quaternion rock = Quaternion.AngleAxis(_rock, bend * _bagX);
+                Vector3 pivot = pos + rot * attach;
+                rot = rot * rock;
+                pos = pivot - rot * attach;
+            }
+            foreach (var go in _bagFixed) Place(go, pos, rot, 1f);
+            if (_bagHeap)
+            {
+                var heapR = _bagHeap.GetComponent<Renderer>();
+                bool heap = open > 0.02f && bagHasContents;
+                if (heapR.enabled != heap) heapR.enabled = heap;
+            }
 
             // the lid (with the straps over it) swings about its hinge across the front and falls open outward
-            Vector3 hinge = slug.FollowerLocal(_bagHinge, _bagT, _bagP, _bagN);
+            Vector3 hinge = slug.FollowerLocal(Vector3.Lerp(_bagHinge, _bagHingeOpen, open), _bagT, _bagP, _bagN);
             Quaternion swing = Quaternion.AngleAxis(bagLidAngle * open, bend * _bagX);
-            // (in the own view the lid grows less than the bag, so it does not stand up across the mouth)
-            float lid = Mathf.Lerp(1f, s, bagLidGrow) / s;
-            foreach (var go in _bagLidParts) Place(go, pos + rot * (s * (hinge - lid * (swing * hinge))), rot * swing, s * lid);
+            foreach (var go in _bagLidParts) Place(go, pos + rot * (hinge - swing * hinge), rot * swing, 1f);
 
-            Vector3 mouth = slug.FollowerLocal(_bagMouthPoint, _bagT, _bagP, _bagN);
-            BagMouthPosition = vis.TransformPoint(pos + rot * (s * mouth));
+            Vector3 inside = slug.FollowerLocal(Vector3.Lerp(_bagInside, _bagInsideOpen, open), _bagT, _bagP, _bagN);
+            BagInsidePosition = vis.TransformPoint(pos + rot * inside);
             BagMouthRotation = vis.rotation * rot * bend * Quaternion.LookRotation(_bagOut, _bagUp);
-            BagPoseScale = s;
             return true;
+        }
+
+        /// <summary>The bag's meshes blended between shut and opened (only when that changed).</summary>
+        void Shape(float open)
+        {
+            if (Mathf.Abs(open - _bagShaped) < 1e-3f && (open > 0f || _bagShaped == 0f)) return;
+            _bagShaped = open;
+            foreach (var (mesh, shut, opened) in _bagShapes)
+            {
+                if (!mesh) continue;
+                var v = new Vector3[shut.Length];
+                for (int i = 0; i < v.Length; i++) v[i] = Vector3.LerpUnclamped(shut[i], opened[i], open);
+                mesh.vertices = v;
+                mesh.RecalculateNormals();
+                mesh.RecalculateBounds();
+            }
         }
 
         static void Place(GameObject go, Vector3 pos, Quaternion rot, float s)
@@ -214,7 +241,7 @@ namespace SlugDesign
         }
 
         /// <summary>Puts the gear (back) on. Called on enable, on every slug rebuild and after a change in the inspector.</summary>
-        public void Build()
+        public override void Build()
         {
             Clear();
             if (!slug || slug.VisualRoot == null || slug.Shape == null) return;
@@ -222,7 +249,8 @@ namespace SlugDesign
             if (armor == Armor.ShellPlate) BuildShellPlate();
             else if (armor == Armor.SnailShell) BuildSnailShell();
             if (bag) BuildBag();
-            Built?.Invoke();
+            if (vest) BuildVest();
+            RaiseBuilt();
         }
 
         Material Camo(Material m)
@@ -514,27 +542,60 @@ namespace SlugDesign
             Vector3 sz = SwollenSize(bagSize, bagSwell);
             Vector3 c = p + nOut * (standOff + sz.z);      // it stands on the back and piles up away from it
 
-            var bag = CanvasBag.Make(new CanvasBag.Frame(c, x, up, nOut), bagSize, sz, Fill(bagSwell));
-            GameObject Part(string name, GearMesh mesh, Material mat, List<GameObject> into)
+            // made twice, shut and opened (the mouth spread, the bottom drawn in, the top sunk into the lining), and blended
+            var frame = new CanvasBag.Frame(c, x, up, nOut);
+            var bag = CanvasBag.Make(frame, bagSize, sz, Fill(bagSwell));
+            // (a slack bag's top is thin: its mouth is opened deeper, to about 0.7 of its width, so it gapes rather than slits)
+            // (the fuller, the wider it gapes)
+            float mouthW = Mathf.Clamp(bagPeekMouthMax / Mathf.Max(sz.x, 1e-3f), 1f, Mathf.Lerp(bagPeekMouth, bagPeekMouthFull, Fill(bagSwell)));
+            float rimW = 0f, rimZ0 = float.MaxValue, rimZ1 = float.MinValue;
+            foreach (var v in bag.top.Positions())
             {
-                var go = AddGo(name, Own(mesh.ToMesh(name)), slug.GearFollower(mat, th, p, nrm));
+                rimW = Mathf.Max(rimW, Mathf.Abs(Vector3.Dot(v - c, x)));
+                float vz = Vector3.Dot(v - c, nOut);
+                rimZ0 = Mathf.Min(rimZ0, vz); rimZ1 = Mathf.Max(rimZ1, vz);
+            }
+            float mouthD = Mathf.Clamp(0.7f * rimW * mouthW * 2f / Mathf.Max(rimZ1 - rimZ0, 1e-3f), mouthW, 5f);
+            frame.Taper(sz.y, sz.z, bagPeekBottom, mouthW, mouthD);
+            var opened = CanvasBag.Make(frame, bagSize, sz, Fill(bagSwell), true);
+            // tipped up, it stands on its bottom where its back panel lay on the back, its lower part settled onto the body
+            _bagFoot = c - up * sz.y;
+            _bagSeat = p + nOut * standOff;
+            Drape(opened, c, up, sz, standOff);
+            float heapW = 0f, heapZ0 = float.MaxValue, heapZ1 = float.MinValue;
+            foreach (var v in opened.heap.Positions())
+            {
+                heapW = Mathf.Max(heapW, Mathf.Abs(Vector3.Dot(v - c, x)));
+                float vz = Vector3.Dot(v - c, nOut);
+                heapZ0 = Mathf.Min(heapZ0, vz); heapZ1 = Mathf.Max(heapZ1, vz);
+            }
+            BagHeapHalf = new Vector2(heapW, (heapZ1 - heapZ0) * 0.5f);
+            GameObject Part(string name, GearMesh mesh, GearMesh open, Material mat, List<GameObject> into)
+            {
+                var m = Own(mesh.ToMesh(name));
+                var go = AddGo(name, m, slug.GearFollower(mat, th, p, nrm));
                 if (go && into != null) into.Add(go);
+                _bagShapes.Add((m, m.vertices, open.Positions()));
                 return go;
             }
             Material flapMat = Own(slug.GearMaterial(bagFlapColor)), beltMat = Own(slug.GearMaterial(strapColor));
-            _bagGo = Part("Bag", bag.body, Own(slug.GearMaterial(bagColor)), _bagFixed);
+            _bagGo = Part("Bag", bag.body, opened.body, Own(slug.GearMaterial(bagColor)), _bagFixed);
             SetBackItem(c, nrm, th, Quaternion.LookRotation(nOut, up), new Vector3(sz.x, sz.y, sz.z) * 1.05f);
-            Part("BagSeams", bag.trim, Own(slug.GearMaterial(Color.Lerp(bagFlapColor, Color.black, 0.3f))), _bagFixed);
-            Part("BagPocket", bag.pocket, flapMat, _bagFixed);
-            Part("BagStraps", bag.straps, beltMat, _bagFixed);
-            Part("BagBuckles", bag.buckles, Own(slug.GearMaterial(buckleColor)), _bagFixed);
-            Part("BagLid", bag.lid, flapMat, _bagLidParts);
-            Part("BagLidStraps", bag.lidStraps, beltMat, _bagLidParts);
-            _bagMouth = Part("BagMouth", bag.mouth, Own(slug.GearMaterial(new Color(0.07f, 0.055f, 0.045f))), _bagFixed);
-            if (_bagMouth) _bagMouth.GetComponent<Renderer>().enabled = false;
+            // the top of the sack, the lining inside when it is opened (the cloth's inner side, a shade darker)
+            Part("BagInside", bag.top, opened.top, Own(slug.GearMaterial(Color.Lerp(bagColor, Color.black, 0.3f))), _bagFixed);
+            _bagHeap = Part("BagHeap", bag.heap, opened.heap, Own(slug.GearMaterial(bagHeapColor)), _bagFixed);
+            if (_bagHeap) _bagHeap.GetComponent<Renderer>().enabled = false;
+            Part("BagSeams", bag.trim, opened.trim, Own(slug.GearMaterial(Color.Lerp(bagFlapColor, Color.black, 0.3f))), _bagFixed);
+            Part("BagPocket", bag.pocket, opened.pocket, flapMat, _bagFixed);
+            Part("BagStraps", bag.straps, opened.straps, beltMat, _bagFixed);
+            Part("BagBuckles", bag.buckles, opened.buckles, Own(slug.GearMaterial(buckleColor)), _bagFixed);
+            Part("BagLid", bag.lid, opened.lid, flapMat, _bagLidParts);
+            Part("BagLidStraps", bag.lidStraps, opened.lidStraps, beltMat, _bagLidParts);
             _bagP = p; _bagN = nrm; _bagT = th; _bagX = x; _bagUp = up; _bagOut = nOut; _bagSz = sz;
-            _bagHinge = bag.hinge;
-            _bagMouthPoint = bag.mouthCenter;
+            _bagHinge = bag.hinge; _bagHingeOpen = opened.hinge;
+            _bagInside = bag.inside; _bagInsideOpen = opened.inside;
+            _bagPosedOpen = 0f;
+            if (bagOpen > 0f) PoseBag(bagOpen);
 
             // belts round the body, above the arms (and over the armour when worn)
             var belts = new GearMesh();
@@ -542,6 +603,150 @@ namespace SlugDesign
             Plate(belts, 0.66f, 0.685f, 0f, u => 180f, gap, 0.006f, 2, 36);
             Plate(belts, 0.41f, 0.435f, 0f, u => 180f, gap, 0.006f, 2, 36);
             Add("BagBelts", Own(belts.ToMesh("BagBelts")), beltMat);
+        }
+
+        /// <summary>
+        /// Settles the opened bag's lower part onto the back: posed as it is when looked into (tipped up onto its bottom, its
+        /// mouth over to the right and front), every point of its lower half that hangs a little off the body is drawn in onto it, so
+        /// no gap shows between the bag and the back; points far off it (the front of a big bag) and those in the body stay.
+        /// </summary>
+        void Drape(CanvasBag.Parts opened, Vector3 c, Vector3 up, Vector3 sz, float standOff)
+        {
+            var shape = slug.Shape;
+            // (as the pose does it in the visual's space; the body's x is its right, y its up and z its front)
+            Quaternion r = Quaternion.FromToRotation(up, PeekMouthDirection(Vector3.up, Vector3.right, Vector3.forward)), back = Quaternion.Inverse(r);
+            var centers = new List<Vector3>();
+            for (int i = 15; i <= 86; i++) centers.Add(shape.FrameAt(i * 0.01f).center);
+            float S(float x) { x = Mathf.Clamp01(x); return x * x * (3f - 2f * x); }
+            Vector3 Settle(Vector3 v)
+            {
+                float w = 1f - S((Vector3.Dot(v - c, up) / sz.y + 1f) * 0.5f / 0.55f);
+                if (w <= 0f) return v;
+                Vector3 q = r * (v - _bagFoot) + _bagSeat, mid = centers[0];
+                foreach (var e in centers) if ((q - e).sqrMagnitude < (q - mid).sqrMagnitude) mid = e;
+                Vector3 dir = (q - mid).normalized;
+                if (!shape.RaycastT(mid, dir, out var skin, out _, out _)) return v;
+                float gap = Vector3.Distance(q, mid) - Vector3.Distance(skin, mid) - standOff;
+                if (gap <= 0f) return v;
+                float pull = gap * w * (1f - S((gap - 0.05f) / 0.13f));
+                return back * (q - dir * pull - _bagSeat) + _bagFoot;
+            }
+            foreach (var m in new[] { opened.body, opened.trim, opened.pocket, opened.straps, opened.buckles }) m.Move(Settle);
+        }
+
+        // ------------------------------------------------------------------ vest (a chest rig of pouches: magazines and moss balls)
+        // The panel lies over the chest just under the face, between the arms (they come out at about t 0.82, some 60°
+        // round from the front), its lower part on the chest plate when that is worn; the pouches stand in one row along
+        // its lower part, so what rides in them sticks up out of them toward the face.
+        const float VestFrom = 0.71f, VestTo = 0.81f, VestRow = 0.738f;
+
+        /// <summary>
+        /// The chest rig: a canvas panel over the chest held by a strap round the body, with one row of pouches
+        /// (from the right of the chest to the left: the moss balls, the big gun's magazines, the small gun's magazines; in the
+        /// own view while peeking that reads moss balls on the left, magazines on the right, as in the sketch).
+        /// Each pouch has its thing in it (shown or not by <see cref="SetVestLoad"/>); an empty pouch shows its dark mouth.
+        /// </summary>
+        void BuildVest()
+        {
+            float gap = armor == Armor.ShellPlate ? 0.026f : 0.006f;
+            const float thick = 0.01f;
+            Skin(VestRow, 180f, out var at, out var atN, out float atT);
+            Material Follow(Color c) => slug.GearFollower(Own(slug.GearMaterial(c)), atT, at, atN);
+            GameObject Part(string name, GearMesh mesh, Material mat)
+            {
+                return AddGo(name, Own(mesh.ToMesh(name)), mat);
+            }
+
+            // the panel and its harness bend with the skin (the chest turns a little with the head); the pouches ride rigidly
+            // at their row
+            var panel = new GearMesh();
+            Plate(panel, VestFrom, VestTo, 180f, u => 40f + 6f * Mathf.Sqrt(Mathf.Clamp01(1f - Mathf.Pow(u * 2f - 1f, 2f))), gap, thick, 8, 18, 0.003f);
+            Part("Vest", panel, Own(slug.GearMaterial(vestColor)));
+            // the harness: a strap round the body along the panel's lower edge (one higher up would run under the face)
+            var harness = new GearMesh();
+            Plate(harness, VestFrom, VestFrom + 0.016f, 180f, u => 180f, gap - 0.004f, 0.005f, 2, 36);
+            Part("VestHarness", harness, Own(slug.GearMaterial(strapColor)));
+
+            // the pouches, laid out across the chest by their widths
+            var mag = new Vector3(0.016f, 0.05f, 0.013f);
+            var small = new Vector3(0.012f, 0.038f, 0.009f);
+            const float mossR = 0.033f, space = 0.008f;
+            var slots = new List<(int kind, float width)>();
+            for (int i = 0; i < _mossPouches; i++) slots.Add((0, (mossR + 0.005f) * 2f));
+            for (int i = 0; i < _bigPouches; i++) slots.Add((1, (mag.x + 0.005f) * 2f));
+            for (int i = 0; i < _smallPouches; i++) slots.Add((2, (small.x + 0.005f) * 2f));
+            float total = -space;
+            foreach (var s in slots) total += s.width + space;
+            float ringR = slug.Shape.FrameAt(VestRow).rx + gap + thick;
+            var pouches = new GearMesh();
+            var mouths = new GearMesh();
+            Material pouchMat = Follow(vestPouchColor), dark = Follow(new Color(0.07f, 0.06f, 0.05f));
+            Material steel = Follow(magColor), salt = Follow(saltColor), moss = Follow(mossColor);
+            float along = -total * 0.5f;
+            foreach (var s in slots)
+            {
+                along += s.width * 0.5f;
+                // + along = toward the left of the chest (angle 180 + d)
+                Skin(VestRow, 180f + along / ringR * Mathf.Rad2Deg, out var p, out var n, out _);
+                var f = slug.Shape.FrameAt(VestRow);
+                Vector3 up = Vector3.ProjectOnPlane(f.forward, n).normalized;
+                Vector3 x = Vector3.Cross(up, n).normalized;
+                Vector3 surf = p + n * (gap + thick);
+                if (s.kind == 0)
+                {
+                    // a short open cup with the moss ball sat in it, more than half of it showing
+                    var h = new Vector3(mossR + 0.005f, 0.022f, mossR * 0.85f);
+                    Vector3 c = surf + n * h.z;
+                    pouches.RoundedBox(c, x, up, n, h, 0.35f, 8, 16);
+                    mouths.RoundedBox(c + up * h.y, x, up, n, new Vector3(h.x * 0.8f, 0.002f, h.z * 0.75f), 0.4f, 4, 12);
+                    var ball = new GearMesh();
+                    ball.RoundedBox(c + up * (h.y + 0.006f), x, up, n, Vector3.one * mossR, 1f, 10, 16);
+                    _vestMoss.Add(new[] { Part("VestMoss" + _vestMoss.Count, ball, moss) });
+                }
+                else
+                {
+                    // a tall pouch with a magazine standing in it, its top (and the white salt at its lips) above the pouch
+                    var m = s.kind == 1 ? mag : small;
+                    var h = new Vector3(m.x + 0.005f, m.y * 0.72f, m.z + 0.006f);
+                    Vector3 c = surf + n * h.z;
+                    pouches.RoundedBox(c, x, up, n, h, 0.3f, 8, 16);
+                    mouths.RoundedBox(c + up * h.y, x, up, n, new Vector3(h.x * 0.85f, 0.002f, h.z * 0.75f), 0.4f, 4, 12);
+                    Vector3 top = c + up * (h.y + m.y * 0.6f);
+                    var body = new GearMesh();
+                    body.RoundedBox(top - up * m.y, x, up, n, m, 0.25f, 8, 16);
+                    var lips = new GearMesh();
+                    lips.RoundedBox(top + up * 0.002f, x, up, n, new Vector3(m.x * 0.75f, 0.005f, m.z * 0.6f), 0.5f, 4, 12);
+                    string name = (s.kind == 1 ? "VestMag" : "VestSmallMag") + (s.kind == 1 ? _vestBig.Count : _vestSmall.Count);
+                    (s.kind == 1 ? _vestBig : _vestSmall).Add(new[] { Part(name, body, steel), Part(name + "Salt", lips, salt) });
+                }
+                along += s.width * 0.5f + space;
+            }
+            Part("VestPouches", pouches, pouchMat);
+            Part("VestPouchMouths", mouths, dark);
+        }
+
+        /// <summary>
+        /// What rides on the vest: how many pouches of each kind it has (moss balls, the big gun's magazines, the small
+        /// gun's), and how many of them are filled. It is rebuilt only when the pouches change.
+        /// </summary>
+        public override void SetVestLoad(int mossPouches, int moss, int bigPouches, int big, int smallPouches, int small)
+        {
+            if (mossPouches != _mossPouches || bigPouches != _bigPouches || smallPouches != _smallPouches)
+            {
+                _mossPouches = mossPouches; _bigPouches = bigPouches; _smallPouches = smallPouches;
+                Build();
+            }
+            Show(_vestMoss, moss);
+            Show(_vestBig, big);
+            Show(_vestSmall, small);
+        }
+
+        static void Show(List<GameObject[]> pouches, int filled)
+        {
+            // the last pouches are emptied first
+            for (int i = 0; i < pouches.Count; i++)
+                foreach (var go in pouches[i])
+                    if (go && go.activeSelf != i < filled) go.SetActive(i < filled);
         }
 
         /// <summary>How full the bag is by its swell: 0 = empty (1), 1 = crammed (6).</summary>
@@ -572,6 +777,7 @@ namespace SlugDesign
             if (!strapMat) strapMat = flapMat;
             if (!metalMat) metalMat = darkMat;
             Loose(parent, "Bag", bag.body.ToMesh("Bag"), bagMat);
+            Loose(parent, "BagTop", bag.top.ToMesh("BagTop"), bagMat);
             Loose(parent, "BagSeams", bag.trim.ToMesh("BagSeams"), flapMat);
             Loose(parent, "BagPocket", bag.pocket.ToMesh("BagPocket"), flapMat);
             Loose(parent, "BagStraps", bag.straps.ToMesh("BagStraps"), strapMat);
@@ -596,15 +802,6 @@ namespace SlugDesign
             go.AddComponent<MeshRenderer>().sharedMaterial = mat;
         }
 
-        void SetBackItem(Vector3 center, Vector3 normal, float t, Quaternion rotation, Vector3 half)
-        {
-            HasBackItem = true;
-            BackItemCenter = center; BackItemNormal = normal; BackItemT = t;
-            BackItemRotation = rotation;
-            // (x across the back, y up it, z out from it)
-            BackItemHalf = new Vector3(half.x, half.y, half.z);
-        }
-
         // ------------------------------------------------------------------ a small mesh builder for gear
         /// <summary>
         /// Vertices with the skin's crawl data (uv: round / along the body, uv1.x: ring radius, uv2: ring pivot), quads
@@ -625,6 +822,8 @@ namespace SlugDesign
 
             public int Copy(int i) => Vert(_v[i], _uv[i], _uv1[i].x, _uv2[i]);
             public Vector3 Pos(int i) => _v[i];
+            public Vector3[] Positions() => _v.ToArray();
+            public void Move(System.Func<Vector3, Vector3> to) { for (int i = 0; i < _v.Count; i++) _v[i] = to(_v[i]); }
 
             /// <summary>A quad facing away from <paramref name="from"/> (<paramref name="away"/>), or toward it.</summary>
             public void Quad(int a, int b, int c, int d, Vector3 from, bool away)

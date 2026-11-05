@@ -10,8 +10,12 @@ Oct 5, 2026
 | --- | --- | --- |
 | `IslandSettings` | `World/`、アセットは `Tuning/IslandSettings.asset` | 1日の長さ（9.5時間）、時計の起点（UTC）、季節の長さ（仮 14日）、昼の長さ（乾季 0.62・雨季 0.42）、朝夕の長さ、月の周期（72時間）と潮の周期、天気の種、区画ごとの雨の多さ |
 | `IslandClock` | `World/IslandClock.cs` | 現実の時刻（起点からの時間）だけから、島の時刻・季節・太陽の向き・昼夜・朝夕・月・潮を計算する。状態を持たない |
-| `IslandWeather` | 同じファイル | 現実の時刻と区画から、雨の強さ・雲・空（晴れ・曇り・小雨・大雨）を計算する。予報（何時間先まで、何時間ごと）も出せる |
-| `WeatherPresenter` | `World/WeatherPresenter.cs` | 場面に1つ。光（太陽・月）、朝夕の色、曇り、空の色、霧、雨のつぶを、時刻と天気で動かす。`WeatherPresenter.Current` からほかが今の時刻と天気を読む |
+| `IslandWeather` | 同じファイル | 現実の時刻と世界の座標から、東風で流れる大きな雨雲（1〜2個、直径 300〜450 m、西の砂漠で縮んで消える）と区画の空を合わせて、その場所の雨・雲・空（晴れ・曇り・小雨・大雨）と予報を計算する |
+| `IslandWind` | 同じファイル | 現実の時刻から、島の風（東からの貿易風、雨の前と大雨で強まり夜は凪、地面を渡る突風の波）を計算する |
+| `WeatherPresenter` | `World/WeatherPresenter.cs` | 場面に1つ。光（晴れは暖かい光・雨と曇りは青みの光）、朝夕の色、空、霧、斜めに降る雨、地面を流れる雲の影、雨と雨上がりの地面の濡れツヤ・遠景の雨もや（`SlugAir.hlsl`）を動かす |
+| `RainCloudVisuals` | `World/RainCloudVisuals.cs` | `WeatherPresenter` が付ける。空を流れる大きな雨雲の塊と、その下に垂れる灰色の雨の柱（`World/Shaders/RainColumn.shader`）を描く |
+| `WindEffects` | `World/WindEffects.cs` | `WeatherPresenter` が付ける。足元の地面に応じた舞う物（森＝葉、砂漠＝目の高さを這う砂、塩＝塩の粉、草原＝綿毛、水辺＝しぶき）と、強い風のときにたまに出る白い風の線を描く |
+| `SlugWind.hlsl` | `Slug/Shaders/SlugWind.hlsl` | `Slug/Toon` の頂点シェーダーで、植物の頂点カラー（R＝しなり、G＝葉先の震え、B＝ずれ）と `_WindAmount` から風の揺れと突風の波を動かす |
 | `ConditionSettings` | `World/`、アセットは `Tuning/ConditionSettings.asset` | 湿り気と体力の数字（話し合いで決めた値） |
 | `MoistureZone` | `World/MoistureZone.cs` | 塩の上（乾く）・水（湿る）の箱。軸にそろった箱で、中にいるかだけ見る |
 | `SlugMoisture` | `Raid/SlugMoisture.cs` | プレイヤーの湿り気。日なた・日陰・空の下かを、1秒に5回レイで調べる。苔玉（F）。体の見た目と這う速さに出す |
@@ -21,7 +25,7 @@ Oct 5, 2026
 
 ## 日なたの光の筋（Oct 26）
 
-- `Raid/SunGlare.cs`（プレイヤーにだけ。`SlugMoisture` が付ける）：晴れの昼に日なたにいる間、画面全体に太陽の側からおおよそ同じ向きの光の帯（Oct 27 に、一点から広がる形から変えた）。強さは `SlugMoisture.SunDrying`（土・草 0.5、塩 1）。日なたに出た瞬間に一度強く光る。IMGUI で描く（`SaltCrust` と同じ）
+- `Raid/SunGlare.cs`（**Nov 3 から使わない**。視界の邪魔なので、日なたは島の光の筋だけで伝える。どこからも付けない、コードは残す）：晴れの昼に日なたにいる間、画面全体に太陽の側からおおよそ同じ向きの光の帯（Oct 27 に、一点から広がる形から変えた）。強さは `SlugMoisture.SunDrying`（土・草 0.5、塩 1）。日なたに出た瞬間に一度強く光る。IMGUI で描く（`SaltCrust` と同じ）
 - `World/SunShafts.cs`（`WeatherPresenter` が付ける。みんなに見える）：目のまわり 3〜45 m の日なたの地面から太陽へ向かう薄い光の筋を 50 本まで（Oct 27 に弱くした）。影のふちに多く、塩の上は明るい。シェーダーは `World/Shaders/SunShaft.shader`（足し算の半透明）。地形があれば地形の高さ（木の上に立たない）
 - どちらも、曇り・朝夕・夜・雨では出さない。数字は各スクリプトの上のツールチップ
 - **ビルドするとき**：`SunShaft` シェーダーは `Shader.Find` で探すので、Graphics の Always Included Shaders に入れる

@@ -3,7 +3,7 @@ using UnityEngine;
 namespace SlugExtract
 {
     /// <summary>What can be carried. New kinds go at the end (the number is saved in scenes and bags).</summary>
-    public enum ItemKind { RockSalt, Crop, UgoTake, UgoTakeCrushed }
+    public enum ItemKind { RockSalt, Crop, UgoTake, UgoTakeCrushed, Tsuyuri, TsuyuriBulb }
 
     /// <summary>The kinds of bag (what is carried on the back), and a snail's shell. Eco (the folding eco bag) is set aside for now.</summary>
     public enum BagKind { Cloth, Leather, ShellBox, Net, Eco, SnailShell, None }
@@ -79,6 +79,8 @@ namespace SlugExtract
         public float saltRegrowGameHours = 3f;
         [Tooltip("ウゴタケが、雨が上がってから生えるまでの時間（島時間, 時間）")] public float ugoTakeAfterRainGameHours = 2f;
         [Tooltip("ウゴタケが消えるまでに続く、晴れの昼の時間（島時間, 時間）。曇りや夜が挟まると数え直し")] public float ugoTakeSunGameHours = 2f;
+        [Tooltip("ツユリが、大雨のあとの晴れ間に咲いている時間（島時間, 時間）")] public float tsuyuriOpenGameHours = 1f;
+        [Range(0f, 1f), Tooltip("大雨のあとの晴れ間に、ツユリの株のうち咲く割合（毎回どれが咲くかは変わる）")] public float tsuyuriBloomShare = 0.34f;
 
         [Header("バッグの種類")]
         public BagDef cloth = new BagDef { displayName = "布の袋", durability = 60f, bodyDamage = 1f, capacity = 30f, swell = 1f, weight = 0.3f };
@@ -99,11 +101,16 @@ namespace SlugExtract
         public ItemDef ugoTake = new ItemDef { displayName = "ウゴタケ", weight = 0.15f, volume = 0.4f, value = 12, size = 0.12f, heldSize = 0.16f, canHide = true, chipColor = new Color(0.85f, 0.78f, 0.66f) };
         public ItemDef ugoTakeCrushed = new ItemDef { displayName = "潰れたウゴタケ", weight = 0.15f, volume = 0.33f, value = 4, size = 0.12f, heldSize = 0.16f, canHide = true, chipColor = new Color(0.85f, 0.78f, 0.66f), modelScale = new Vector3(1.25f, 0.45f, 1.25f) };
 
+        public ItemDef tsuyuri = new ItemDef { displayName = "ツユリ", weight = 0.05f, volume = 0.15f, value = 45, size = 0.12f, heldSize = 0.16f, canHide = true, chipColor = new Color(0.9f, 0.94f, 0.97f) };
+        public ItemDef tsuyuriBulb = new ItemDef { displayName = "ツユリの球根", weight = 0.3f, volume = 0.3f, value = 20, size = 0.11f, heldSize = 0.13f, canHide = true, chipColor = new Color(0.55f, 0.47f, 0.36f) };
+
         public ItemDef Def(ItemKind k) => k switch
         {
             ItemKind.RockSalt => rockSalt,
             ItemKind.UgoTake => ugoTake,
             ItemKind.UgoTakeCrushed => ugoTakeCrushed,
+            ItemKind.Tsuyuri => tsuyuri,
+            ItemKind.TsuyuriBulb => tsuyuriBulb,
             _ => crop,
         };
 

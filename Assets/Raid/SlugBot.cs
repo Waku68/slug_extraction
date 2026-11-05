@@ -23,7 +23,7 @@ namespace SlugExtract
         public SlugLoadout loadout;
         public SlugBag bag;
         public SlugHealth health;
-        public SlugPop slug;
+        public SlugBodyBase slug;
 
         [Header("気づく")]
         [Tooltip("見える距離（m）。晴れの昼の目安。雨や夜で短くする予定")] public float sightRange = 80f;
@@ -65,7 +65,7 @@ namespace SlugExtract
         public float Alert { get; private set; }
 
         Transform _player;
-        SlugPop _playerSlug;
+        SlugBodyBase _playerSlug;
         SlugMoveController _playerMove;
         Vector3 _lastKnown, _lastSeenFrom;
         float _lastSeenTime = -999f, _err, _errYaw, _errPitch;

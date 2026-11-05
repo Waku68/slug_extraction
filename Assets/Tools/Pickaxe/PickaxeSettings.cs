@@ -27,6 +27,8 @@ namespace SlugMove
         [Tooltip("軌道は照準の点の面よりこの深さ（m）だけ内側を狙う。縦の面にも頭の先が食い込む向きで当たる")] public float aimDepth = 0.06f;
         [Tooltip("振りの面の傾き（度）。大きいほど右から振り下ろす")] public float swingSlant = 30f;
         [Tooltip("頂点でためるときに、さらに後ろへ引く角度（度）")] public float anticipation = 8f;
+        [Tooltip("振りかぶりを見た目だけ深くする角度（度、Nov 3 わくさん：もっと振りかぶらせて）。当たり判定の軌道とタイミングは変わらず、振り下ろしの始めでほどける")] public float windupExtra = 30f;
+        [Range(0.1f, 1f), Tooltip("見た目の深い振りかぶりがほどけ終わる所（振り下ろしの時間の割合）")] public float windupExtraUnwind = 0.45f;
         [Tooltip("振りかぶったときの手首の返し（度）。振り下ろしの最後にほどけて、頭が鞭のように走る")] public float wristCock = 25f;
         [Tooltip("振りかぶったときの腕の長さ（肩から右手まで, m）")] public float windupArm = 0.15f;
         [Tooltip("腕の長さの下限・上限（m）。照準の点に届くように、この範囲で伸び縮みする")] public float minArm = 0.04f;
@@ -41,6 +43,7 @@ namespace SlugMove
         [Tooltip("左手（柄の下の端）の位置：左腕の付け根からのずれ（体の向き基準, m）")] public Vector3 tpLeftHand = new Vector3(0.04f, -0.03f, 0.08f);
         [Tooltip("右手の位置：右腕の付け根からのずれ（体の向き基準, m）。左手より少し上にして、頭が上側に来る")] public Vector3 tpRightHand = new Vector3(-0.02f, 0.06f, 0.08f);
         [Tooltip("ピッケルの頭の先が向く方向（体の向き基準）")] public Vector3 tpHeadDir = new Vector3(0f, 0.4f, 1f);
+        [Tooltip("振っている間、右腕（付け根から右手まで, m）がこれより伸びそうなら、右手を柄の下（左手の方）へすべらせる（Nov 3 わくさん：右腕が伸びすぎないように）。0 = しない")] public float rightArmMax = 0.2f;
         [Header("構え・一人称（振っていないとき）")]
         [Tooltip("左手（柄の下の端を持つ手）の位置（両肩の真ん中から、視線の向き基準, m）。体に引き寄せて持つ")] public Vector3 restGrip = new Vector3(-0.04f, -0.08f, 0.1f);
         [Tooltip("柄の向き（視線の向き基準）。左下から右上へ、頭が右肩の上に来る")] public Vector3 restHandleDir = new Vector3(0.3f, 0.9f, 0.12f);

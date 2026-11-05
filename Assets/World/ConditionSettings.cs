@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace SlugWorld
 {
@@ -15,19 +16,27 @@ namespace SlugWorld
         [Tooltip("雨と水場でためられる上限")] public float moistureOverfill = 120f;
         [Tooltip("満タンを超えた分が抜ける速さ（1分あたり）")] public float overfillDrain = 5f;
 
-        [Header("1分あたりの増減（昼）")]
-        [Tooltip("晴れ・日なた")] public float sunnyInSun = -20f;
-        [Tooltip("晴れ・日陰（巨大な木や岩の影）")] public float sunnyInShade = -4f;
-        [Tooltip("曇り（雨の中でも屋根の下ならこれ）")] public float cloudy = -5f;
-        [Tooltip("夜（晴れ・曇り）。露で止まる")] public float night = 0f;
+        [Header("足元ごとの1分あたりの増減（spec 4章の表。曇りは影と同じ）")]
+        [Tooltip("土・草：晴れの昼・日なた（約8分で0）")] public float soilInSun = -12f;
+        [Tooltip("土・草：影・曇り")] public float soilInShade = -3f;
+        [FormerlySerializedAs("sunnyInSun"), Tooltip("砂・黒い溶岩：晴れの昼・日なた（5分で0。砂漠の渡りやすさはこれで決まる）")] public float sandInSun = -20f;
+        [FormerlySerializedAs("sunnyInShade"), Tooltip("砂・黒い溶岩：影・曇り")] public float sandInShade = -4f;
+        [Tooltip("夜（土・草・砂）。露で止まる")] public float night = 0f;
+        [Tooltip("濡れて光る地面（濡れた苔、泥、しぶき、雨上がり）：昼も夜も")] public float wetGround = 10f;
         [Tooltip("小雨（空の下）")] public float lightRain = 20f;
         [Tooltip("大雨（空の下）")] public float heavyRain = 50f;
         [Tooltip("水に触れている（水たまり・沢・濡れた苔）：1秒あたり")] public float waterPerSecond = 10f;
 
         [Header("塩の上（塩田、岩塩の洞窟）")]
-        [Tooltip("減り方の倍率")] public float saltDrainMultiplier = 2f;
+        [Tooltip("晴れの昼・日なた")] public float saltInSun = -40f;
+        [Tooltip("影・曇り")] public float saltInShade = -8f;
         [Tooltip("雨の戻り方の倍率")] public float saltRainMultiplier = 0.5f;
         [Tooltip("夜の減り方（1分あたり）。夜でも塩は体の水を吸う（満タンから4分）")] public float saltNight = -25f;
+
+        [Header("雨上がり（地面が濡れて光っている間は乾かない）")]
+        [Tooltip("砂が日なたで乾くまで（現実の分）")] public float wetAfterRainSand = 5f;
+        [Tooltip("土・草が日なたで乾くまで（現実の分）")] public float wetAfterRainSoil = 20f;
+        [Tooltip("影ではこの倍だけ長く濡れている")] public float wetShadeMultiplier = 4f;
 
         [Header("乾いたとき")]
         [Tooltip("これより少ないと、見た目が乾いてくる（つやが消え、くすみ、少し縮む）")] public float looksDryBelow = 30f;

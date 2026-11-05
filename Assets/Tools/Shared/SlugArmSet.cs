@@ -8,7 +8,8 @@ namespace SlugMove
     /// The two stretchy arms of a held tool, twice over: a pair on the body (on <see cref="SlugToolHolder.BodyToolLayer"/>,
     /// seen by every camera except the player's own in first person) and a first-person pair under the player's camera.
     /// The first-person arms are drawn shrunk toward the eye, so their outline is thinned by the same factor.
-    /// The arms replace the slug's short cone hands: they grow from the same spots on the body.
+    /// The arms replace the slug's short hands: they grow from the arm roots (the shoulders of the two-legged slug), and
+    /// the body hides its short hand on a side while that side's body arm is shown (<see cref="SlugBodyBase.UseStretchyArm"/>).
     /// </summary>
     public class SlugArmSet
     {
@@ -19,11 +20,9 @@ namespace SlugMove
 
         Material _mat, _viewMat;
 
-        public static SlugArmSet Create(string prefix, SlugPop slug, Transform viewParent, float viewOutlineScale)
+        public static SlugArmSet Create(string prefix, SlugBodyBase slug, Transform viewParent, float viewOutlineScale)
         {
             var set = new SlugArmSet();
-            slug.handsExtend = 0f;
-            slug.ApplyHands();
             set._mat = new Material(slug.HandMaterial) { name = "SlugArm", hideFlags = HideFlags.DontSave };
             foreach (var p in new[] { "_Stretch", "_WaveAmp", "_SwayAmp", "_UprightAngle", "_TurnAngle" }) set._mat.SetFloat(p, 0f);
             var temp = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -42,6 +41,8 @@ namespace SlugMove
             }
             foreach (var a in new[] { set.BodyL, set.BodyR })
                 SlugBodyPart.Mark(a.gameObject, slug.transform);
+            slug.UseStretchyArm(-1f, set.BodyL.gameObject);
+            slug.UseStretchyArm(1f, set.BodyR.gameObject);
             return set;
         }
 
@@ -85,16 +86,18 @@ namespace SlugMove
         /// An arm from its root to a grip: it leaves the body mostly toward the hand (a little along the skin normal), so
         /// a long reach stays a gentle curve close to the body instead of looping out to the side, and its fist wraps
         /// <paramref name="handle"/> from the side. <paramref name="fistScale"/> also scales how far the root sinks into the skin.
+        /// <paramref name="via"/> / <paramref name="viaWeight"/>: a point to reach round by (<see cref="SlugArmMesh.Build"/>).
         /// </summary>
         public static void Build(SlugArmMesh arm, Vector3 root, Vector3 rootNormal, Vector3 grip, Vector3 handle,
-                                 float rootRadius, float handRadius, Vector3 fistSize, float fistScale)
+                                 float rootRadius, float handRadius, Vector3 fistSize, float fistScale,
+                                 Vector3 via = default, float viaWeight = 0f)
         {
             Vector3 reach = grip - root;
             Vector3 leave = (rootNormal.normalized * 0.3f + reach.normalized * 0.7f).normalized;
             Vector3 arrive = Vector3.ProjectOnPlane(reach, handle);
             if (arrive.sqrMagnitude < 1e-4f * reach.sqrMagnitude) arrive = reach;
             arm.Build(root - rootNormal.normalized * 0.01f * fistScale, leave, grip, arrive.normalized, handle,
-                      rootRadius, handRadius, fistSize);
+                      rootRadius, handRadius, fistSize, via, viaWeight);
         }
     }
 }

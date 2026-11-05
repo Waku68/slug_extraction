@@ -63,30 +63,18 @@ namespace SlugExtract
             player.GetComponent<SlugToolHolder>().enabled = false;
             loadout.guns[0].enabled = true;
             // worn gear to try on: the helmet with the tentacles out, the shell plate armour in camouflage, and a bag
-            var body = player.GetComponentInChildren<SlugDesign.SlugPop>();
-            var gear = body.gameObject.AddComponent<SlugDesign.SlugEquipment>();
-            gear.slug = body;
+            var body = player.GetComponentInChildren<SlugDesign.SlugBodyBase>();
+            var gear = ExtractTestBuilder.AddGear(body);
             gear.bag = true;                                          // slugs carry a bag (the shell is the snails' mark)
             // a practice slug in full gear to shoot at: the readout says which part was hit and what covered it
-            var dummyPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(SlugDesign.SlugLookbook.PrefabPath);
-            var dummy = (GameObject)PrefabUtility.InstantiatePrefab(dummyPrefab);
-            dummy.name = "練習用ナメクジ";
-            dummy.transform.position = new Vector3(2.2f, 0f, 4f);
-            dummy.transform.rotation = Quaternion.LookRotation(Vector3.ProjectOnPlane(-dummy.transform.position, Vector3.up), Vector3.up);
-            var dummySlug = dummy.GetComponent<SlugDesign.SlugPop>();
-            SlugDesign.SlugLookbook.ApplyCurrent(dummySlug);
-            dummySlug.handsExtend = 0f;
-            PrefabUtility.RecordPrefabInstancePropertyModifications(dummySlug);
-            var dummyGear = dummy.AddComponent<SlugDesign.SlugEquipment>();
-            dummyGear.slug = dummySlug;
-            dummyGear.bag = true;
-            dummy.AddComponent<SlugHitboxes>().slug = dummySlug;
+            var at = new Vector3(2.2f, 0f, 4f);
+            var dummy = DinoMoveTestBuilder.BuildStanding("練習用ナメクジ", at, Quaternion.LookRotation(Vector3.ProjectOnPlane(-at, Vector3.up), Vector3.up),
+                                                          true, SlugDesign.SlugGearBase.Armor.ShellPlate, true);
             // a bag with things in it, to shoot until it bursts
             var dummyBag = dummy.AddComponent<SlugBag>();
             dummyBag.settings = AssetDatabase.LoadAssetAtPath<ExtractSettings>(MoveTestBuilder.TuningDir + "/ExtractSettings.asset");
             dummyBag.startItems = new[] { ItemKind.Crop, ItemKind.RockSalt, ItemKind.Crop, ItemKind.RockSalt, ItemKind.RockSalt, ItemKind.Crop };
             ExtractTestBuilder.FitBag(dummy, dummyBag);
-            dummySlug.Rebuild();
             MoveTestBuilder.Label("練習用ナメクジ（当たった部位が出る）", new Vector3(2.2f, 0.95f, 4f), 1.4f);
 
             var debug = new GameObject("GunDebug").AddComponent<GunDebug>();

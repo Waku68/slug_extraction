@@ -148,7 +148,7 @@ namespace SlugExtract
             bag.startItems = new[] { ItemKind.RockSalt, ItemKind.RockSalt };
             ExtractTestBuilder.FitBag(bot, bag);
             bag.gear.helmet = true;
-            bag.gear.armor = SlugDesign.SlugEquipment.Armor.ShellPlate;
+            bag.gear.armor = SlugDesign.SlugGearBase.Armor.ShellPlate;
             var health = bot.AddComponent<SlugHealth>();
             health.settings = condition;
             bot.AddComponent<SlugDamage>().vanishOnFall = true;
@@ -166,7 +166,7 @@ namespace SlugExtract
             brain.slug = bag.slug;
             brain.homeCenter = new Vector3(top.x, topH + origin.y, top.z);
             brain.homeRadius = 90f;
-            bag.slug.Rebuild();
+            bag.gear.Build();
             }
 
             EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());

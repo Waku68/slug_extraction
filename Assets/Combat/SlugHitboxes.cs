@@ -8,6 +8,9 @@ namespace SlugMove
     /// What a shot can hit on a slug (or a snail), part by part, kept on the body as it crawls, stands up, turns and
     /// stretches: the head (under the helmet, if worn), the two tentacles (the ears: a weak spot, out of the helmet),
     /// the chest (under the shell plate, if worn), the belly and tail, and what is on the back (the bag or the shell).
+    /// The two-legged body (<see cref="DinoSlugBody"/>, Nov 3) has the same parts riding its bones, and its legs as well:
+    /// the head and the antennae on the head, the chest (spine to neck), the belly (hips), the tail in three pieces and
+    /// each thigh and shin.
     /// The movement capsule is not a hitbox: rounds pass it and land on these.
     ///
     /// Hitboxes live on their own layer (<see cref="Layer"/>), which the slug's own movement checks leave out, so a
@@ -17,7 +20,7 @@ namespace SlugMove
     [DefaultExecutionOrder(150)]
     public class SlugHitboxes : MonoBehaviour
     {
-        public SlugPop slug;
+        public SlugBodyBase slug;
         [Tooltip("当たり判定を画面に描く（調整用）")] public bool showGizmos = true;
 
         [Header("ダメージ倍率（仮）")]
@@ -56,27 +59,34 @@ namespace SlugMove
             public float ta, tb, radius;
             public float side;                // tentacles: -1 left, +1 right (they follow the tentacle's pose); 0 otherwise
             public Vector3 half; public Quaternion rot;   // boxes
+            public Transform ra, rb;          // the two-legged body: the bones (or antennae) a and b ride on, in their own space
         }
 
         readonly List<Bone> _bones = new List<Bone>();
-        SlugEquipment _gear;
+        SlugGearBase _gear;
         Transform _root;
+        SlugPop Pop => slug as SlugPop;
 
         void Awake()
         {
-            if (!slug) slug = GetComponentInChildren<SlugPop>();
+            if (!slug) slug = GetComponentInChildren<SlugBodyBase>();
         }
 
         void OnEnable()
         {
             if (!slug) return;
-            slug.Rebuilt += Build;
-            if (slug.Shape != null) Build();
+            if (Pop)
+            {
+                Pop.Rebuilt += Build;
+                if (Pop.Shape != null) Build();
+            }
+            else Build();
         }
 
         void OnDisable()
         {
-            if (slug) slug.Rebuilt -= Build;
+            if (Pop) Pop.Rebuilt -= Build;
+            if (_gear) _gear.Built -= Build;
             Clear();
         }
 
@@ -91,15 +101,15 @@ namespace SlugMove
         public void Build()
         {
             Clear();
-            var shape = slug.Shape;
-            if (shape == null || !Application.isPlaying) return;
-            _gear = slug.GetComponent<SlugEquipment>();
-            if (_gear) _gear.Built -= Build;
-            if (_gear) _gear.Built += Build;
+            if (!slug || !Application.isPlaying) return;
+            if (slug is DinoSlugBody dino) { BuildDino(dino); return; }
+            var shape = Pop.Shape;
+            if (shape == null) return;
+            WatchGear();
             _root = new GameObject("Hitboxes").transform;
             _root.SetParent(transform, false);
             bool helmet = _gear && _gear.helmet;
-            bool plate = _gear && _gear.armor == SlugEquipment.Armor.ShellPlate;
+            bool plate = _gear && _gear.armor == SlugGearBase.Armor.ShellPlate;
 
             Vector3 S(float t) => shape.FrameAt(t).center;
             float R(float t) { var f = shape.FrameAt(t); return (f.rx + f.ry) * 0.5f; }
@@ -115,7 +125,7 @@ namespace SlugMove
             bool horns = helmet && _gear.tentacleHelmet;
             foreach (float side in new[] { -1f, 1f })
             {
-                slug.EarRoot(side, out var root, out var axis, out float earR, out float len);
+                Pop.EarRoot(side, out var root, out var axis, out float earR, out float len);
                 var bone = NewBone("触角", horns ? "ヘルメット" : null, false);
                 bone.side = side;
                 bone.a = root; bone.b = root + axis * len;
@@ -124,21 +134,91 @@ namespace SlugMove
                 bone.radius = earR * 0.8f;
             }
 
-            // what is on the back
-            if (_gear && _gear.HasBackItem)
-            {
-                var bone = NewBone(_gear.armor == SlugEquipment.Armor.SnailShell ? "殻" : "バッグ", null, true);
-                bone.a = bone.b = _gear.BackItemCenter;
-                bone.na = bone.nb = _gear.BackItemNormal;
-                bone.ta = bone.tb = _gear.BackItemT;
-                bone.half = _gear.BackItemHalf;
-                bone.rot = _gear.BackItemRotation;
-            }
+            BackItem();
+            Done();
+        }
 
+        void WatchGear()
+        {
+            _gear = slug.GetComponent<SlugGearBase>();
+            if (_gear) _gear.Built -= Build;
+            if (_gear) _gear.Built += Build;
+        }
+
+        /// <summary>What is on the back: a box riding the body (the bag or the shell).</summary>
+        void BackItem()
+        {
+            if (!_gear || !_gear.HasBackItem) return;
+            var bone = NewBone(_gear.armor == SlugGearBase.Armor.SnailShell ? "殻" : "バッグ", null, true);
+            bone.a = bone.b = _gear.BackItemCenter;
+            bone.na = bone.nb = _gear.BackItemNormal;
+            bone.ta = bone.tb = _gear.BackItemT;
+            bone.half = _gear.BackItemHalf;
+            bone.rot = _gear.BackItemRotation;
+        }
+
+        void Done()
+        {
             // the slug's own movement capsule never bumps into its own body
             var cc = GetComponentInParent<CharacterController>();
             if (cc) foreach (var b in _bones) Physics.IgnoreCollision(cc, b.box.GetComponent<Collider>());
             Follow();
+        }
+
+        /// <summary>
+        /// The two-legged body's hitboxes, each between two points riding its bones: the head, the antennae (riding the
+        /// antennae themselves, so they droop with them), the chest, the belly, the tail, the thighs and shins.
+        /// </summary>
+        void BuildDino(DinoSlugBody d)
+        {
+            WatchGear();
+            _root = new GameObject("Hitboxes").transform;
+            _root.SetParent(transform, false);
+            bool helmet = _gear && _gear.helmet;
+            bool plate = _gear && _gear.armor == SlugGearBase.Armor.ShellPlate;
+            // (points given in body space as the body stands now; each is kept in the space of the bone it rides)
+            var body = d.transform;
+            void Part(string part, string armour, Transform ra, Vector3 a, Transform rb, Vector3 b, float radius)
+            {
+                var bone = NewBone(part, armour, false);
+                bone.ra = ra; bone.rb = rb;
+                bone.a = ra.InverseTransformPoint(body.TransformPoint(a));
+                bone.b = rb.InverseTransformPoint(body.TransformPoint(b));
+                bone.radius = radius;
+            }
+            Vector3 P(Transform t) => body.InverseTransformPoint(t.position);
+            // the head: a ball round its middle (in front of and above the head bone; 24 cm wide, 17 cm tall)
+            Vector3 head = P(d.head) + new Vector3(0f, 0.04f, 0.02f);
+            Part("頭", helmet ? "ヘルメット" : null, d.head, head + Vector3.back * 0.03f, d.head, head + Vector3.forward * 0.03f, helmet ? 0.12f : 0.1f);
+            Part("胸", plate ? "殻板" : null, d.spine, P(d.spine), d.neck, P(d.neck), 0.12f);
+            Part("おなか・尾", null, d.hips, P(d.hips) + Vector3.down * 0.06f, d.spine, P(d.spine) + Vector3.down * 0.03f, 0.12f);
+            var tail = d.tail;
+            if (tail != null && tail.Length >= 5)
+            {
+                Part("おなか・尾", null, tail[0], P(tail[0]), tail[1], P(tail[1]), 0.075f);
+                Part("おなか・尾", null, tail[1], P(tail[1]), tail[3], P(tail[3]), 0.045f);
+                Part("おなか・尾", null, tail[3], P(tail[3]), tail[4], P(tail[4]), 0.02f);
+            }
+            for (int s = 0; s < 2; s++)
+            {
+                Part("足", null, d.thighs[s], P(d.thighs[s]), d.shins[s], P(d.shins[s]), 0.045f);
+                Part("足", null, d.shins[s], P(d.shins[s]), d.feet[s], P(d.feet[s]), 0.03f);
+            }
+            // the antennae: from the root of each stalk to its ball (riding the antenna's own transform)
+            bool horns = helmet && _gear.tentacleHelmet;
+            foreach (var name in new[] { "Antenna_L", "Antenna_R" })
+            {
+                var ant = d.head.Find(name);
+                if (!ant || !ant.TryGetComponent<MeshFilter>(out var mf) || !mf.sharedMesh) continue;
+                var mb = mf.sharedMesh.bounds;
+                var bone = NewBone("触角", horns ? "ヘルメット" : null, false);
+                bone.ra = bone.rb = ant;
+                bone.a = new Vector3(mb.center.x, mb.min.y, mb.center.z);
+                bone.b = new Vector3(mb.center.x, mb.max.y, mb.center.z);
+                bone.radius = horns ? 0.022f : 0.016f;
+            }
+            BackItem();
+            Done();
         }
 
         void Capsule(string part, string armour, float t0, float t1, float radius,
@@ -191,6 +271,17 @@ namespace SlugMove
             float scale = slug.VisualRoot.lossyScale.x;
             foreach (var b in _bones)
             {
+                if (b.ra)
+                {
+                    // riding the two-legged body's bones (the bones carry the body's scale)
+                    Vector3 wa = b.ra.TransformPoint(b.a), wb = b.rb.TransformPoint(b.b), wd = wb - wa;
+                    float wl = wd.magnitude;
+                    b.box.transform.SetPositionAndRotation((wa + wb) * 0.5f, wl > 1e-5f ? Quaternion.FromToRotation(Vector3.up, wd / wl) : Quaternion.identity);
+                    b.capsule.direction = 1;
+                    b.capsule.radius = b.radius * scale;
+                    b.capsule.height = wl + b.radius * 2f * scale;
+                    continue;
+                }
                 Vector3 pa = slug.FollowPointWorld(b.a, b.ta, b.na);
                 var t = b.box.transform;
                 if (b.cube)
@@ -203,7 +294,7 @@ namespace SlugMove
                     continue;
                 }
                 // a tentacle droops and draws in (SlugPop.SetEarPose): its far end is where its tip is now
-                Vector3 pb = slug.FollowPointWorld(b.side != 0f ? slug.EarTip(b.side) : b.b, b.tb, b.nb);
+                Vector3 pb = slug.FollowPointWorld(b.side != 0f ? Pop.EarTip(b.side) : b.b, b.tb, b.nb);
                 Vector3 d = pb - pa;
                 float len = d.magnitude;
                 t.SetPositionAndRotation((pa + pb) * 0.5f, len > 1e-5f ? Quaternion.FromToRotation(Vector3.up, d / len) : Quaternion.identity);

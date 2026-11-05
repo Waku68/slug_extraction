@@ -1,0 +1,132 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &5541102796766321962
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5214677659593736164}
+  - component: {fileID: 983044083786904241}
+  - component: {fileID: 9134250361372172461}
+  - component: {fileID: 4707241568912746149}
+  m_Layer: 0
+  m_Name: Basket_B
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5214677659593736164
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5541102796766321962}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &983044083786904241
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5541102796766321962}
+  m_Mesh: {fileID: 4300000, guid: ee45f15466a01a645ada1f3cb4ca70b8, type: 2}
+--- !u!23 &9134250361372172461
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5541102796766321962}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 241cc5cd502bd7c439c51417a63596dc, type: 2}
+  - {fileID: 2100000, guid: 6a2d8a5d4f15eab42a1e4b49def2b6c3, type: 2}
+  - {fileID: 2100000, guid: 83bd2e53222ef3a47a1b220eb55d3e57, type: 2}
+  - {fileID: 2100000, guid: 9e6fcf3e6640d7341a5068bb7d0a60c2, type: 2}
+  - {fileID: 2100000, guid: f0d00501111965c4ea574d355bba8c5d, type: 2}
+  - {fileID: 2100000, guid: 03016b2e8cd9fb24f9ef1c5e270565ec, type: 2}
+  - {fileID: 2100000, guid: a85c3c79f95bbca41b741f5d00ba7bcb, type: 2}
+  - {fileID: 2100000, guid: 41acd2697ca3a3845902641ff013d999, type: 2}
+  - {fileID: 2100000, guid: 72da05d3ff0e870409433bc5827cfbd5, type: 2}
+  - {fileID: 2100000, guid: 2af5648c54f13ec4ab36487fb7ad8e51, type: 2}
+  - {fileID: 2100000, guid: 1a744651494c9464b8bcabc574a33b4f, type: 2}
+  - {fileID: 2100000, guid: de1373c3591d7214cab957020008f132, type: 2}
+  - {fileID: 2100000, guid: a50a1e2889b51744da648cc89f29a977, type: 2}
+  - {fileID: 2100000, guid: 7f660b0ed9fcc984485eb4020cdbed93, type: 2}
+  - {fileID: 2100000, guid: dc634a6191776a04fabe9275a1ba60ea, type: 2}
+  - {fileID: 2100000, guid: 81e7c2b724208fb41bcd808463e46961, type: 2}
+  - {fileID: 2100000, guid: 7b5936e34e5b4da4a95773593306863a, type: 2}
+  - {fileID: 2100000, guid: 71eb01e7a84561947a9e0b2d582a6965, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!64 &4707241568912746149
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5541102796766321962}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 4300000, guid: ee45f15466a01a645ada1f3cb4ca70b8, type: 2}
